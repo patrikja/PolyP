@@ -45,15 +45,15 @@ we will use a more refined type of parsers:
 > type Parser a = StateM [] (String,Pos) a
 
 > item :: Parser Char
-> item = STM (\(s,(l,c,ol,oc)) ->
->           case s of
+> item = STM (\(s,(l,c,ol,oc)) -> case s of
 >             []     -> []
 >             (x:xs) -> if l > ol && c < oc then []
 >                       else [(x,(xs,(l',c',ol,oc)))]
 >                       where (l',c') = case x of
 >                                         '\t' -> (l,((c `div` 8)+1)*8)
 >                                         '\n' -> (l+1,0)
->                                         _    -> (l,c+1))
+>                                         _    -> (l,c+1)
+>            )
 
 \end{verbatim}
 A parser that consumes single characters satisfying a given predicate.
@@ -114,7 +114,8 @@ But we will use specialized versions for efficiency.
 > opt :: Parser a -> a -> Parser a
 > (STM p) `opt` v = STM (\s -> case p s of
 >                                 []     -> [(v,s)]
->                                 (x:xs) -> [x])
+>                                 (x:xs) -> [x]
+>                       )
 
 > cut :: Parser a -> Parser a
 > cut (STM p) = STM (take 1 . p)

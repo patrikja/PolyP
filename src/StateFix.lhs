@@ -1,21 +1,30 @@
 \section{Mutable variables}
 \begin{verbatim}
 
-#ifndef __HBC__
+#if defined(__HUGS__) || defined(__GLASGOW_HASKELL__)
 > module StateFix(module ST,MutVar, newVar, readVar, writeVar, (===),(>>=!)) where
 
-#ifdef __HUGS__
-> import ST 
-#else
+# ifdef __HUGS__
+> import ST
+# else
 > import ST(ST,STRef,runST,newSTRef,readSTRef,writeSTRef)
+# endif
 #endif
 
-#else /* __HBC__ */
+#ifdef __HBC__
 > module StateFix(module State,MutVar,(===)) where
 > import State
 #endif /* __HBC__ */
 
-#ifndef __HBC__
+#ifdef __HBC__
+> type MutVar s a = MutableVar s a
+
+#else /* not __HBC__ */
+
+#ifdef __OLD_HUGS__
+> instance Functor (ST s) where
+>   map f mx = mx >>= \x -> return (f x)
+#else
 > type MutVar s a = STRef s a
 
 newVar :: a -> ST s (STRef s a)
@@ -25,9 +34,7 @@ newVar :: a -> ST s (STRef s a)
 > writeVar= writeSTRef
 
 In earlier versions of Hugs, the three lines above were not needed.
-
-#else /* __HBC__ */
-> type MutVar s a = MutableVar s a
+#endif /* __OLD_HUGS__ */
 #endif /* __HBC__ */
 
 \end{verbatim}

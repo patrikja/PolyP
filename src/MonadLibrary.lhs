@@ -114,7 +114,8 @@ instance Functor (ST a) where
 >   = IOErr (xs >>= \x ->
 >            case x of
 >              Done a  -> unIOErr (f a)
->              Err msg -> return (Err msg))
+>              Err msg -> return (Err msg)
+>           )
 >     where unIOErr (IOErr x) = x
 > 
 > instance Monad IOErr where
@@ -166,10 +167,9 @@ instance Functor (ST a) where
 > (STErr xs) `bindSTE` f 
 >   = STErr (xs >>=! \x ->  -- could be >>= also (>>=! slightly stricter)
 >            case x of
->              Done a  -> unSTErr (f a)
->              Err msg -> return (Err msg))
->     where unSTErr (STErr x) = x
-> 
+>              Done a  -> convertSTErr (f a)
+>              Err msg -> return (Err msg)
+>           )
 > 
 > instance Monad (STErr s) where
 >   return = returnSTE
@@ -209,7 +209,7 @@ instance Functor (ST a) where
 > data State s a = ST (s -> (a,s))
 > 
 > instance Functor (State s) where
->   map f (ST st) = ST (\s -> let (x,s') = st s in (f x, s'))
+>   map f (ST st) = ST (\s -> let {(x,s') = st s} in (f x, s'))
 > 
 > instance Monad (State s) where
 >   return x      = ST (\s -> (x,s))

@@ -235,7 +235,8 @@
 
 > prTypeOp :: Type -> [Type] -> Doc
 > prTypeOp fun args 
->   | n >= 2 = let (a:b:cs) = args in sep (map prT (a:fun:b:cs))
+>   | n >= 2 = let (a:b:cs) = args 
+>              in sep (map prT (a:fun:b:cs))
 >   | otherwise = sep (ppParentheses fun : map prT args)
 >   where 
 >     n = length args

@@ -21,6 +21,12 @@ hugs ghc hbc:
 # interpreter, its makefile only provides a name for the call to
 # runhugs hugssrc/Main.lhs
 
+oldhugs:
+# Make the source for older (before ~1998) versions of hugs
+	-mkdir hugssrc
+	$(MAKE) -C src $@src 
+
+
 clean:
 	rm -f *~
 	rm -f \#*\#

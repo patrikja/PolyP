@@ -1,3 +1,5 @@
+PolyP = polyp
+
 targets = testSum.hs testCrush.hs testFlatten.hs testPropagate.hs	\
           testThread.hs testZip.hs testConstructorName.hs testEqOrd.hs 	\
           testEqual.hs testSubstructures.hs testShow.hs
@@ -44,7 +46,7 @@ all: $(targets)
 
 test%.hs : test%.phs
 	$(CHASE) $< >tmp.phs
-	-(   polyp tmp.phs >tmp.hs \
+	-(   $(PolyP) tmp.phs >tmp.hs \
           && cat $(wildcard type$*.hs) tmp.hs >$@ \
           && hugs $@) \
          || (mv $@ tmp.hs; more tmp.hs)
@@ -62,7 +64,7 @@ check::
 test%.check : test%.phs
 	@echo "--!!! Checking $*"
 	@$(CHASE) $< >tmp.phs
-	@-(polyp tmp.phs | cat $(wildcard type$*.hs) - >test$*.hs \
+	@-($(PolyP) tmp.phs | cat $(wildcard type$*.hs) - >test$*.hs \
           && runhugs test$*.hs > test$*.check) || echo >test$*.check
 	@diff test$*.check test$*.out
 

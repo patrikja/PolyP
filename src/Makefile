@@ -42,6 +42,10 @@ hugssrc:
 	cp hugs.mk ../hugssrc/Makefile
 	cppdir . ../hugssrc -D__HUGS__
 
+oldhugssrc:
+	cp hugs.mk ../hugssrc/Makefile
+	cppdir . ../hugssrc "-D__OLD_HUGS__ -D__HUGS__"
+
 ghcsrc:
 	cp ghc.mk ../ghcsrc/Makefile
 	cp rules.mk depends.mk ../ghcsrc/

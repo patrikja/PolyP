@@ -18,7 +18,9 @@
 > import MyPrelude(swap,maytrace)
 #else
 > import MyPrelude(swap)
+#ifndef __OLD_HUGS__
 > maytrace _ = id
+#endif
 #endif
 
 > lifE = mliftErr   -- local short name
@@ -168,10 +170,11 @@ The algorithm implements the following (successful) cases:
 >              err toogeneral a b
 >            (HpApp af ax, HpApp bf bx) ->
 >              (b ==> a)            >>
->             (isInstance ngs af bf >>= \inst -> 
->              case inst of
->                TOk -> isInstance ngs ax bx
->                _   -> return inst )
+>              (isInstance ngs af bf >>= \inst -> 
+>               case inst of
+>                 TOk -> isInstance ngs ax bx
+>                 _   -> return inst 
+>              )
 >            (HpCon conA, HpCon conB) | conA==conB -> ok
 >            _ -> 
 >              err mismatch a b
@@ -269,9 +272,10 @@ constructor.
 >    unify3 p a b f x t = 
 >         lifE (maytrace "u3 " (checkCon f)) >>= 
 >         maybe continue (\c-> case c of
->           "Mu" -> unifyMu p a b f x t
+>           "Mu"        -> unifyMu p a b f x t
 >           "FunctorOf" -> unifyFun p a b x t
->           _ -> continue)
+>           _           -> continue
+>          )
 >      where continue = unify4 p a b
 >    unify4 p a b = case maytrace "u4 " p of
 >      (HpApp f x,HpApp g y) -> 
@@ -301,9 +305,12 @@ datatype and try to unify this functor with the rhs.
 \begin{verbatim}
 
 >    unifyFun p a b x (HpApp g y) = 
->        lifE (checkCon g) >>= maybe cont (\gc-> case gc of
->          "FunctorOf" -> punify x y
->          _           -> cont)
+>        lifE (checkCon g) >>= 
+>        maybe cont 
+>          (\gc-> case gc of
+>            "FunctorOf" -> punify x y
+>            _           -> cont
+>          )
 >    
 >      where 
 >        cont =
