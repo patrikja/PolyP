@@ -34,11 +34,12 @@ hugs ghc hbc: bin/chase
 # compile[1] the source
 	$(MAKE) -C $@src "hc=$($@)"
 	@echo Read the files src/$@.USAGE and USAGE for details on how to run PolyP
-# install 
+# compile (with the new polyp) the standard library PolyLib
+	$(MAKE) -C polylib all
+# "install"
 	-ln -s $(POLYPDIR)/bin/$@polyp $(INSTALLBINDIR)/$@polyp
 	-ln -s $(INSTALLBINDIR)/$@polyp $(INSTALLBINDIR)/polyp
 	-ln -s $(POLYPDIR)/bin/chase $(INSTALLBINDIR)/chase
-
 
 # [1] For hbc and ghc the source is really compiled, but as hugs is an
 # interpreter, its makefile only provides a name for the call to
