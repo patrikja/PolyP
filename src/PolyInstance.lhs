@@ -66,9 +66,9 @@ from the sugared versions used in the PolyP code (+ -> SumF, * -> ProdF, ...)
 
 > realFuncEnv :: FuncEnv -> FuncEnv
 > realFuncEnv funcenv = map (mapSnd $ mapSnd realFuncNames) funcenv
->       where
->    -- Change to real functor names
->    realFuncNames t = case t of
+>
+> -- Change to real functor names
+> realFuncNames t = case t of
 >              TCon "+"       -> TCon "SumF"
 >              TCon "*"       -> TCon "ProdF"
 >              TCon "Empty"   -> TCon "EmptyF"
@@ -264,40 +264,44 @@ the correct types and constraints for polytypic functions.
 
 >           -- Build an instance from a polytypic case branch
 >           buildInstance (c :=> t, e) = let c :=> _ = inferQType polyenv e in
->              case t of
->                 TCon "+" :@@: f :@@: g ->
->                    Instance c
->                             (className, [TCon "SumF" :@@: f :@@: g])
->                             [simp $ VarBind name Nothing [] e]
->                 TCon "*" :@@: f :@@: g ->
->                    Instance c
->                             (className, [TCon "ProdF" :@@: f :@@: g])
->                             [simp $ VarBind name Nothing [] e]
->                 TCon "Empty" ->
->                    Instance c
->                             (className, [TCon "EmptyF"])
->                             [simp $ VarBind name Nothing [] e]
->                 TCon "Par" ->
->                    Instance c
->                             (className, [TCon "ParF"])
->                             [simp $ VarBind name Nothing [] e]
->                 TCon "Rec" ->
->                    Instance c
->                             (className, [TCon "RecF"])
->                             [simp $ VarBind name Nothing [] e]
->                 TCon "@" :@@: d :@@: g ->
->                    Instance c
->                             (className, [TCon "CompF" :@@: d :@@: g])
->                             [simp $ VarBind name Nothing [] e]
->                 TCon "Const" :@@: t ->
->                    Instance c
->                             (className, [TCon "ConstF" :@@: t])
->                             [simp $ VarBind name Nothing [] e]
->                 TCon ">" :@@: f :@@: g ->
->                    Instance c
->                             (className, [TCon "FunF" :@@: f :@@: g])
->                             [simp $ VarBind name Nothing [] e]
->                 _  -> error ("PolyInstance.rewrite: " ++ pshow e ++ ":: " ++ pshow (c :=> t))
+>		let t' = realFuncNames t in
+>		    Instance c (className, [t'])
+>			[ simp $ VarBind name Nothing [] e ]
+
+              case t of
+                 TCon "+" :@@: f :@@: g ->
+                    Instance c
+                             (className, [TCon "SumF" :@@: f :@@: g])
+                             [simp $ VarBind name Nothing [] e]
+                 TCon "*" :@@: f :@@: g ->
+                    Instance c
+                             (className, [TCon "ProdF" :@@: f :@@: g])
+                             [simp $ VarBind name Nothing [] e]
+                 TCon "Empty" ->
+                    Instance c
+                             (className, [TCon "EmptyF"])
+                             [simp $ VarBind name Nothing [] e]
+                 TCon "Par" ->
+                    Instance c
+                             (className, [TCon "ParF"])
+                             [simp $ VarBind name Nothing [] e]
+                 TCon "Rec" ->
+                    Instance c
+                             (className, [TCon "RecF"])
+                             [simp $ VarBind name Nothing [] e]
+                 TCon "@" :@@: d :@@: g ->
+                    Instance c
+                             (className, [TCon "CompF" :@@: d :@@: g])
+                             [simp $ VarBind name Nothing [] e]
+                 TCon "Const" :@@: t ->
+                    Instance c
+                             (className, [TCon "ConstF" :@@: t])
+                             [simp $ VarBind name Nothing [] e]
+                 TCon ">" :@@: f :@@: g ->
+                    Instance c
+                             (className, [TCon "FunF" :@@: f :@@: g])
+                             [simp $ VarBind name Nothing [] e]
+                 _  -> error ("PolyInstance.rewrite: " ++ pshow e ++ ":: " ++ pshow (c :=> t))
 
 \end{verbatim}
 
@@ -468,11 +472,11 @@ PolyEnv.
 >     Case e alts          -> foldr (\(c1 :=> t) (c2 :=> _) -> c1 `union` c2 :=> t)
 >                             (inferQType env e)
 >                             $ map (inferQType env . snd) alts
->     -- Should be a fresh type variable
+>     -- TODO: Should be a fresh type variable
 >     WildCard             -> [] :=> TVar "dummy"
 >     _                    -> error $ "Cannot infer type of " ++ pshow t
 
-> -- Infer constraints arising from let bindings
+> -- Infer constraints arising from let bindings TODO: Buggy?
 > inferContextEqn :: PolyEnv -> Eqn' QType -> [Qualifier Type]
 > inferContextEqn env eqn = case eqn of
 >     VarBind name _ _ e   -> let c :=> _ = inferQType env e in c
