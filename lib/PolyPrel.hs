@@ -69,6 +69,10 @@ unlines :: [String] -> String
 unwords :: [String]->String
 words   :: String->[String]
 zip     :: [a] -> [b] -> [(a,b)]
+unParF  :: ParF a b -> a
+unRecF  :: RecF a b -> b
+unCompF :: CompF d g a b -> d (g a b)
+unConstF:: ConstF t a b -> t
 -- Prelude data types
 data Bool        =  False | True
 data Either a b  =  Left a | Right b
@@ -79,3 +83,10 @@ data Ordering    =  LT | EQ | GT
 -- data (), (,), (,,)
 -- data Char, Double, Float, Int, Integer, IOError, Void
 -- data IO a
+data SumF f g a b  = InL (f a b) | InR (g a b)
+data ProdF f g a b = f a b :*: g a b
+data EmptyF a b    = EmptyF
+data ParF a b      = ParF a
+data RecF a b      = RecF b
+data CompF d g a b = CompF (d (g a b))
+data ConstF t a b  = ConstF t
