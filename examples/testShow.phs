@@ -28,6 +28,7 @@ showsPrecExpr s p e =
                       ([]) -> (++) c
                       _    -> mayparen p (((++) c).showsPrecExprList s high l)
 
+high, low :: Int
 high = 1
 low = 0
 mayparen p s = if p == high 

@@ -9,7 +9,7 @@ compiling with pre-Haskell 98 compilers, like hbc 0.9999.4 and ghc
 2.10.)
 
 This leaves the executable in the file bin/Xpolyp and adds soft links
-from INSTALLBINDIR to this exacutable.
+from INSTALLBINDIR to this executable.
 
 [The makefiles are written for GNU make, sometimes called gmake.]
 
@@ -18,7 +18,7 @@ To run a test suite do
 (If it prints nothing, everything is fine.)
 
 Please send an email to 
-  patrikj@cs.chalmers.se 
+  patrikj@NOcs.SPAMchalmers.se 
 saying that you have installed PolyP so that we can give you
 information about future changes to PolyP.
 

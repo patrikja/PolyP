@@ -5,7 +5,9 @@ import PolyLib.Substructures(substructures)
 data Tree a = T | S (Tree a) a (Tree a) deriving Show
 l y = S T y T
 
+x :: Tree Char
 x = S (l 'H') 'e' (S (l 'l') 'l' (l 'o'))
+y :: Tree Int
 y = S T 1 (S T 2 (l 3)) 
 
 main = print (substructures y)

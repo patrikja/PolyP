@@ -1,3 +1,4 @@
+f, g :: [Int]
 f = 1 : g
 g = 2 : f
 main = print $ take 10 f
