@@ -13,18 +13,7 @@
 > import Parser(parse,pModule,pType1)
 > import PolyInstance(instantiateProgram)
 > import PrettyPrinter(Pretty(..),($$),text)
-
-#ifdef __GLASGOW_HASKELL__
-
-> import StateFix(runST)
-
-#endif /* __GLASGOW_HASKELL__ */
-#ifdef __HBC__
-
-> import StateFix(runST,RunST)
-
-#endif /* __HBC__ */
-
+> import StateFix -- [(runST [,RunST])] in hugs, ghc, hbc
 > import System(getArgs,getProgName)
 > import TypeBasis(TBasis)
 > import TypeGraph(kindIntoHeap,typesOutOfHeap)
@@ -34,6 +23,7 @@
 \section{The main compilation function}
 \begin{verbatim}
 
+#ifdef __DEBUG__
 > comp :: PrgName -> IO ()
 > comp = putStr @@ compile 
 
@@ -48,6 +38,7 @@
 >          . labelProgram 
 >          . dependencyProgram 
 >          . parseProgram
+#endif
 
 \end{verbatim}
 \section{Verbose mode}
@@ -159,6 +150,7 @@ These are still preliminary versions.
 >   where
 >     err = error . ("Parser: "++)
 
+#ifdef __DEBUG__
 > prettify :: PrgText -> PrgText
 > prettify = concat . map (show.pretty) . parseProgram
 
@@ -174,13 +166,7 @@ These are still preliminary versions.
 >           . labelProgram 
 >           . dependencyProgram 
 >           . parseProgram
-
-\end{verbatim}
-\subsection{Test expressions}
-\begin{verbatim}
-
- parsedtext :: PrgName -> [Eqn]
- parsedtext = parseProgram . openfile 
+#endif
 
 \end{verbatim}
 \section{Type inference}
@@ -218,20 +204,21 @@ Two possible approaches:
 > main :: IO ()
 > main =  report
 
+#ifdef __DEBUG__
 > testunify = do t <- getType
 >                t'<- getType
 >                let (t2,t2') = testunify' (t,t')
 >                putStr (show (pretty t2))
 >                putStr (show (pretty t2'))
 
-#ifndef __HBC__
-> testunify' (t,t') = unDone $ runST m' 
+#ifdef __HBC__
+> testunify' (t,t') = unDone $ runST $ RunST m'
 >   where m'= convertSTErr m
->         m = mliftErr (kindIntoHeap t) >>= \ht-> 
-#else /* __HBC__ */
-> testunify' (t,t') = unDone $ runST (RunST (convertSTErr m))
->   where m = mliftErr (kindIntoHeap t) >>= \ht-> 
+#else /* not __HBC__ */
+> testunify' (t,t') = unDone $ runST         m' 
+>   where m'= convertSTErr m
 #endif /* __HBC__ */
+>         m = mliftErr (kindIntoHeap t) >>= \ht-> 
 >             mliftErr (kindIntoHeap t')>>= \ht'->
 >             unify ht ht'              >>
 >             mliftErr (typesOutOfHeap [] (ht,ht'))
@@ -264,5 +251,6 @@ Two possible approaches:
 >               s <- getLine
 >               putStr (f s)
 >               loopit f
+#endif
 
 \end{verbatim}

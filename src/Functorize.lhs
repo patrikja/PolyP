@@ -1,7 +1,8 @@
 \chapter{Functors and predefined instances}
 \begin{verbatim}
 
-> module Functorize where
+> module Functorize(inn_def,out_def,either_def,fcname_def,
+>                   Struct,makeFunctorStruct,Req,eqReq) where
 > import Char(toLower)
 > import Env(lookupEnv)
 > import Grammar(Eqn'(..),Expr'(..),Expr,Type(..),Qualified(..),Literal(..),

@@ -7,11 +7,10 @@
 >                  typeOutOfHeap,typesOutOfHeap,
 >                  flattenHpType,mkCon,mkApp,
 >                  HpNode(..),HpQType,NonGenerics,(==>),   NodePtr)
-> import StateFix(ST,(===),   readVar)
-> import MonadLibrary(STErr,mliftErr,ErrorMonad(failEM),(<@),mIf,liftop)
+> import MonadLibrary(STErr,mliftErr,ErrorMonad(failEM),(<@),mIf,liftop,
+>                     ST,(===),readVar)
 > import Env(newEnv,lookupEnv,extendsEnv)
-> import PrettyPrintExtra(Pretty(..),($$),nest,text,sep)
-> import PrettyPrinter(prType)
+> import PrettyPrinter(Pretty(..),($$),nest,text,sep,prType)
 > import Grammar(Type(..),Qualified(..),qualify,deQualify)
 
 #ifdef __DEBUG_UNIFY__

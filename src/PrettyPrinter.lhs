@@ -4,7 +4,9 @@
 > module PrettyPrinter(module PrettyPrinter,module PrettyPrintExtra,
 >                      module Grammar) where
 > import Char(isAlpha)
-> import MonadLibrary(Error)
+
+import MonadLibrary(Error)
+
 > import PrettyPrintExtra(Pretty(..),ppVerticalList,ppCommaList,
 >                         ppTuple,ppParentheses,ppApp,ppPackedList,showDoc,
 >                         (<>),($$),nest,text,Doc,sep)

@@ -72,6 +72,7 @@ disthugs:
 	cd ../polyphugs$(version); tar -zcf hugssrc.tar.gz hugssrc
 
 # compile with all three compilers and check the results
+# make checkdist hs_link_flags=/home/patrikj/haskell/hbcfix/fix.o
 checkdist: check.ghc check.hbc check.hugs
 
 check.% : %

@@ -2,17 +2,12 @@
 \begin{verbatim}
 
 > module TypeGraph where
-#ifndef __HBC__
-> import StateFix(ST,MutVar,newVar,writeVar,readVar, (===))
-#else /* __HBC__ */
-> import StateFix(ST,MutableVar,MutVar,newVar,writeVar,readVar, (===))
-#endif /* __HBC__ */
 > import MyPrelude(variablename,pair)
 > import Grammar
-> import PrettyPrintExtra(Pretty(..))
-> import PrettyPrintLibrary(text)
+> import PrettyPrinter(Pretty(..),text)
 > import MonadLibrary(State,StateM,(<@),liftop,(<@-),fetchST,executeST,mliftSTM,
->                     mfoldl,executeSTM,updateSTM,mfoldr)
+>                     mfoldl,executeSTM,updateSTM,mfoldr,
+>                     ST,MutVar,newVar,writeVar,readVar, (===))
 > import Env(Env,Cache,lookupEqEnv,rememberST,newEnv,lookaside,remember)
 > import Folding(mmapEqn,mmapQualified,dmmapQualified,mcataType)
 

@@ -15,12 +15,7 @@
 >                     convertSTErr, Error(..), mapl, foreach,map2)
 > import MyPrelude(pair,mapFst,mapSnd,splitUp,  maytrace)
 > import StartTBasis(startTBasis)
-#ifdef __GLASGOW_HASKELL__
-> import StateFix-- (ST,runST,RunST)
-#endif /* __GLASGOW_HASKELL__ */
-#ifdef __HBC__
-> import StateFix(ST,runST,RunST)
-#endif /* __HBC__ */
+> import StateFix-- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 > import TypeBasis(Basis,KindBasis,TBasis,extendKindEnv,
 >                  extendKindTBasis,extendTypeAfterTBasis,
 >                  extendTypeEnv,extendTypeTBasis,getKindEnv,
@@ -227,10 +222,10 @@ an identifier in the basis together with the corresponding equation.
 \begin{verbatim}
 
 > labelTopBlock :: [Eqn] -> TBasis -> Error ([TEqn],[(VarID,QType)])
-#ifndef __HBC__
-> labelTopBlock eqns tbasis = map simplify (runST ((convertSTErr m)))
-#else /* __HBC__ */
-> labelTopBlock eqns tbasis = map simplify (runST (RunST (convertSTErr m)))
+#ifdef __HBC__
+> labelTopBlock eqns tbasis = map simplify (runST $ RunST (convertSTErr m))
+#else /* not __HBC__ */
+> labelTopBlock eqns tbasis = map simplify (runST         (convertSTErr m))
 #endif /* __HBC__ */
 >   where basis = (tbasis,(newEnv,[]))
 >         m :: STErr s ([TEqn],[(VarID,QType)])

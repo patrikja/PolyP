@@ -2,10 +2,16 @@
 #  compiled with ghc or hbc
 #  or interpreted by hugs
 
+# This Makefile is invoked by ../Makefile
+
 default:	ghc
 
 # Clear the implicit suffix-rules
 .SUFFIXES:
+
+# The C-preprocessor
+CPP = cpp -P -C -traditional
+#CPP = gcc -E -C -P -traditional -x c-header
 
 # make ghc/hbc in this directory uses cpp as a filter
 export hs_flags += -cpp
@@ -22,7 +28,7 @@ hbc:
 	$(MAKE) -f hbc.mk hs_link_flags=$(HOME)/haskell/hbcfix/fix.o
 hugs:
 	@echo "Ignore any warnings about closed pipes."
-	hugs -F"cpp -P -C -traditional -D__HUGS__" Main.lhs
+	hugs -F"$(CPP) -D__HUGS__" Main.lhs
 
 clean::	ghcclean hbcclean
 	rm -f *~
@@ -53,4 +59,5 @@ ghcsrc:
 
 hbcsrc:
 	cp hbc.mk ../hbcsrc/Makefile
+	-cp hbcdepends.mk ../hbcsrc/
 	cppdir . ../hbcsrc -D__HBC__

@@ -13,7 +13,7 @@ functions.
 > import Folding(cataType,cataEqn,cataExpr,ExprFuns,EqnFuns)
 > import Functorize(inn_def,out_def,either_def,fcname_def,
 >                   makeFunctorStruct,Struct,Req,eqReq)
-> import MonadLibrary(State, executeST, join,mapl,(<@),(@@),unDone,
+> import MonadLibrary(State, executeST, mapl,(<@),(@@),unDone,
 >                     OutputT,output,runOutput,mliftOut,map0,map1,map2)
 > import MyPrelude(maytrace,pair,mapFst,mapSnd,combineUniqueBy,  debug)
 > import Parser(tupleConstructor)
@@ -798,6 +798,9 @@ getFunctor :: FuncEnv -> VarID -> QType -> QType -> Func
   evaluateTopFun
 evaluateTopFun :: FuncEnv -> Type -> Type
   functorOf
+
+type FuncEnv = Env ConID (Struct,Func)
+  Env.Env Grammar.ConID Functorize.Struct Grammar.Func
 functorOf :: VarID -> FuncEnv -> Func
 codeFunctors :: [Func] -> String
   codeFunctor
@@ -807,6 +810,8 @@ decodeFunctor :: String -> Func
   decodeStr
 codeStr :: String -> String
 decodeStr :: String -> (String,String)
+
+
 getFunctors :: QType -> QType -> [Func] -- used by traverseEqn
 matchfuns :: (QType, QType) -> [(String, Func)]
 match :: (Type, Type) -> Maybe Subst

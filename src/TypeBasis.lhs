@@ -4,10 +4,10 @@
 > module TypeBasis where
 > import Grammar(QType,Kind,VarID)
 > import Folding(dmmapQualified)
-> import StateFix(ST,(===))
 > import MyPrelude(pair)
 > import MonadLibrary((<@),StateM,executeSTM,fetchSTM,mliftSTM,
->                     STErr,mliftErr,ErrorMonad(failEM),mapl)
+>                     STErr,mliftErr,ErrorMonad(failEM),mapl,
+>                     ST,(===))
 > import Env(Env,Cache,newEnv,lookupEqEnv,lookupEnv,
 >            extendsEnv,assocsEnv,remember,extendsAfterEnv)
 > import TypeGraph(HpType,HpKind,HpQType,NonGenerics,NodePtr,

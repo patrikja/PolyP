@@ -17,14 +17,9 @@
 > import MyPrelude(pair,splitUp)
 > import MonadLibrary(STErr,mliftErr,convertSTErr,Error(..),unDone,(@@),
 >                     foreach,mapl,(<@),(<@-),LErr)
+> import StateFix-- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 > import Grammar -- (Qualified,Type(..),PrgEqns)
 > import Folding(freeVarsPat,cataType)
-#ifdef __GLASGOW_HASKELL__
-> import StateFix-- (ST,runST,RunST)
-#endif /* __GLASGOW_HASKELL__ */
-#ifdef __HBC__
-> import StateFix(ST,runST,RunST)
-#endif /* __HBC__ */
 > import ParseLibrary(parse)
 > import Parser(pType1)
 > import PrettyPrinter(Pretty(..))
@@ -114,10 +109,10 @@ way that they can be lazily pulled out of it one group at a time.
 \begin{verbatim}
 
 > inferGroup :: [Eqn] -> TBasis -> Error [(VarID,QType)]
-#ifndef __HBC__
-> inferGroup eqns tbasis = runST (convertSTErr (mInferGroup eqns tbasis))
-#else /* __HBC__ */
-> inferGroup eqns tbasis = runST (RunST (convertSTErr (mInferGroup eqns tbasis)))
+#ifdef __HBC__
+> inferGroup eqns tbasis = runST $ RunST (convertSTErr (mInferGroup eqns tbasis))
+#else /* not __HBC__ */
+> inferGroup eqns tbasis = runST         (convertSTErr (mInferGroup eqns tbasis))
 #endif /* __HBC__ */
 
 > mInferGroup :: [Eqn] -> TBasis -> STErr s [(String,QType)]
@@ -480,10 +475,10 @@ polytypic checking of x :: ty = case f of {fi -> ei}
 
 > inferDataDefs :: TBasis -> [Eqn] -> 
 >                  Error ([(ConID, QType)],[(ConID, Kind)])
-#ifndef __HBC__
-> inferDataDefs tbasis eqns = runST ((convertSTErr m))
-#else /* __HBC__ */
-> inferDataDefs tbasis eqns = runST (RunST (convertSTErr m))
+#ifdef __HBC__
+> inferDataDefs tbasis eqns = runST $ RunST (convertSTErr m)
+#else /* not __HBC__ */
+> inferDataDefs tbasis eqns = runST         (convertSTErr m)
 #endif /* __HBC__ */
 >   where m :: STErr s ([(String,QType)],[(String,Kind)])
 >         m = inventKinds names >>= \kinds -> 

@@ -5,20 +5,9 @@ Some graph algorithms based on:
 ---------------------------------------------------------------------------
 
 > module GraphLibrary where
-> import Array
 > import MyPrelude(swap)
-
-#ifndef __HBC__
-
-> import StateArrayFix
-
-#else /* __HBC__ */
-
-> import StateFix(runST,RunST)
-> import StateArrayFix -- in Hugs: import STArray
-
-#endif /* __HBC__ */
-
+> import Array(Array,array,accumArray,bounds,indices,(!))
+> import StateFix -- (ST [,runST [,RunST]]) for hugs, ghc, hbc
 
 > type Vertex  = Int
 
@@ -85,16 +74,11 @@ Depth-first search
 > pruneF        :: Bounds -> Forest Vertex -> Forest Vertex
 
 #ifndef __HBC__
-
-> pruneF bnds ts = runST ((mkEmpty bnds  >>= \m ->
-
+> pruneF bnds ts = runST         (mkEmpty bnds  >>= \m ->
 #else /* __HBC__ */
-
-> pruneF bnds ts = runST (RunST (mkEmpty bnds  >>= \m ->
-
+> pruneF bnds ts = runST $ RunST (mkEmpty bnds  >>= \m ->
 #endif /* __HBC__ */
-
->                                chop m ts))
+>                                 chop m ts)
 
 > chop         :: Set s -> Forest Vertex -> ST s (Forest Vertex)
 > chop m []     = return []
@@ -129,5 +113,3 @@ Strongly connected components
 
 > scc'         :: Graph -> Forest Vertex
 > scc' g        = dfs g (reverse (postOrd (transposeG g)))
-
-

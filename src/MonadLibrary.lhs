@@ -1,8 +1,16 @@
 \chapter{Monad library}
 \begin{verbatim}
 
-> module MonadLibrary where
-> import StateFix(ST,  (>>=!)) -- Hugs import ST
+> module MonadLibrary(module StateFix,
+>                     State     ,updateST ,fetchST ,executeST ,
+>                     StateM(..),updateSTM,fetchSTM,executeSTM,mliftSTM,
+>                     (<@),(<@-),(<*>),(<:*>),(<<),(@@),mIf,
+>                     Error(..),unDone,LErr,mapLErr,showLErr,handleError,
+>                     STErr,mliftErr,convertSTErr,ErrorMonad(failEM),
+>                     OutputT,output,runOutput,mliftOut,
+>                     mapl,foreach,liftop,map0,map1,map2,mfoldl,mfoldr) where
+> import StateFix
+> import Monad(join)
 > import MyPrelude(pair,mapFst)
 
 > infixl 9 <@
@@ -18,8 +26,8 @@
 > x <@ f = map f x
 > x <@- e = map (\_->e) x
 
-> join      :: Monad m => m (m a) -> m a
-> join x     = x >>= id
+join      :: Monad m => m (m a) -> m a
+join x     = x >>= id
 
 > (@@) :: Monad m => (b -> m c) -> (a -> m b) -> (a -> m c)
 > (@@) f g x        = g x >>= f
@@ -165,7 +173,7 @@ instance Functor (ST a) where
 > 
 > bindSTE :: STErr s a -> (a -> STErr s b) -> STErr s b
 > (STErr xs) `bindSTE` f 
->   = STErr (xs >>=! \x ->  -- could be >>= also (>>=! slightly stricter)
+>   = STErr (xs >>= \x ->
 >            case x of
 >              Done a  -> convertSTErr (f a)
 >              Err msg -> return (Err msg)
@@ -334,7 +342,7 @@ will be a nice left recursive black hole;-)
 >   map f (OT mx) = OT (map (map f) mx)
 
 > instance (Functor m ,Monad m) => Monad (OutputT a m) where
->   return x   = OT (return (return x))
+>   return x     = OT (return (return x))
 >   (OT m) >>= f = OT ((map join . join . map f') m)
 >        where f' = swap . map (unOT . f)
 >              swap (Writer s ma) = map (Writer s) ma

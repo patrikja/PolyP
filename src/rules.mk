@@ -37,21 +37,24 @@ clean::
 	rm -f $(o_files)
 	rm -f $(prog)
 
-veryclean::
+veryclean:: clean
 	rm -f $(hi_files)
 
-install: depends.mk
-
-# 
+# The dependencies are remade using mkdependHS
 depends.mk: $(hs_files) $(lhs_files)
 		cat /dev/null > depends2.mk
 		$(mkdependHS) $(mkdependHS_flags) -f depends2.mk $(hs_files) $(lhs_files) 
 		sed -e "s/\.o/\.$(osuf)/g" -e "s/\.hi/\.$(hisuf)/g" <depends2.mk >depends.mk
 		rm -f depends2.mk
 
-# A rule copying changed files from ../src would be great
-#	gcc -E -C -P -traditional -x c-header $< -o $@  
-
+# A rule copying changed files from ../src would be great. The only
+#   problem is that it should not be used from the src directory but
+#   only from the ghcsrc directory.
+##CPP = gcc -E -C -P -traditional -x c-header
+##ifndef IN_SRCDIR
+##../ghcsrc/%.lhs:	../src/%.lhs
+##	$(CPP) $< -o $@  
+##endif
 include depends.mk
 
 ################################################################
