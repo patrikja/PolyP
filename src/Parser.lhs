@@ -4,12 +4,6 @@ The basic idea for all these parsers is that they should {\em end} by
 eating white space (and comments) and assume that the first character
 they receive be non-space.
 
-Known bugs:
-
-\begin{itemize}
-\item 
-The argument to \texttt{pBackQuoted} should not allow trailing
-white-space. (Because this allows the incorrect `elem `.)
 \end{itemize}
 
 \begin{verbatim}
@@ -46,13 +40,13 @@ The module parser accepts but ignores the module head, exports and imports.
 > pModule = pModule'
 
 > pModule' :: Parser [Eqn]
-> pModule' = (pModuleHead `opt` ("Main",["main"])) >> 
+> pModule' = pModuleHead >> 
 >            pImpDecls >> 
 >            pEqns
 
 > pModuleHead :: Parser (ConID, [ConID])
-> pModuleHead =  (symbol "module" >> pConID)
->             <*> pExports << mustbe "where"
+> pModuleHead = (   (symbol "module" >> pConID)
+>                <*> pExports << mustbe "where") `opt` ("Main",["main"])
 
 > pExports :: Parser [ConID]
 > pExports = pParenTuple pExport `opt` []
@@ -571,6 +565,8 @@ Function \texttt{pPack'} does not allow space after leading symbol.
 >              <@- ExplType [] (error "Parser.pAnyLine: internal error")
 
 > pTypeFile :: Parser [Eqn]
-> pTypeFile = some_offside pMaybeExplType `opt` []
+> pTypeFile = pModuleHead >>  -- throw away the head
+>             pImpDecls >>    -- and the imports
+>             some_offside pMaybeExplType `opt` [] -- return the types
 
 \end{verbatim}
