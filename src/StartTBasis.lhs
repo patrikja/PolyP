@@ -160,14 +160,15 @@ Gofer's {\tt cc.prelude}.
 >   [DataDef "[]" ["a"] 
 >            [("[]",[]), (":",[TVar "a",TCon listConstructor :@@: TVar "a"])] 
 >            [] -- deriving
->   ,DataDef "Maybe" ["a"] 
->            [("Nothing",[]), ("Just",[TVar "a"])]
->            [] -- deriving (Eq, Ord, Read, Show)
 >   ]
-
+>   ++ dataDefs
 
 \end{verbatim}
+The \texttt{preludedatadefs} are used in \texttt{PolyInstance} to
+translate datatypes to functors.
+%
 
+%
 There is no type synonym handling in the main part of PolyP, but the
 type synonym \texttt{String} is translated to \texttt{[Char]} by the
 parser.

@@ -83,6 +83,7 @@ export version
 www: polyp$(version).tar.gz
 	cp polyp$(version).tar.gz $(WWWDIR)
 	cd $(WWWDIR); $(MAKE) -e polyp$(version)
+	rm -rf polyp$(version).tar.gz polyp$(version)
 # `-e' `--environment-overrides'
 #     Give variables taken from the environment precedence over
 #     variables from makefiles. Used here to export $(version)

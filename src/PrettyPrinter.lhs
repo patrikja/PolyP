@@ -124,7 +124,9 @@ output Haskell code violates the monomorphism restriction.
 >   pretty = prExpr
 
 > prId :: Expr' t -> String -> Doc
-> prId e name = (if isOperator e then ppParentheses else id ) (text name)
+
+> prId e n | isOperator e = ppParentheses (text n)
+>          | otherwise    = text n
 
 > prExpr :: Pretty a => Expr' a -> Doc
 > prExpr e@(Var name) = prId e name
@@ -255,7 +257,7 @@ output Haskell code violates the monomorphism restriction.
 > prOperator :: Pretty a => Expr' a -> [Expr' a] -> Doc
 > prOperator fun args 
 >   | n >= 2 = let (a:b:cs) = map prP args 
->                  doc = ppApp [a,prOp fun,b]
+>                  doc = sep [a <> text " " <> prOp fun,b]
 >              in if null cs then doc
 >                 else sep (text "(" <> doc <> text ") " : map (nest 2) cs)
 >   | otherwise = sep (pretty fun : map (nest 2 . prP) args)
@@ -309,7 +311,9 @@ and thus do not need to be parenthesized when used as type arguments.
 > isTypeOp _        = False
 
 > isOperatorName :: String -> Bool
-> isOperatorName = not . isAlpha . head
+> isOperatorName ('(':s) = False 
+> isOperatorName (c  :s) = not (isAlpha c) 
+> isOperatorName ""      = error "PrettyPrinter.isOperatorName: empty name"
 
 \end{verbatim}
 Gives the size of the tuple or -1 if no tuple. Assumes that the tuple

@@ -47,11 +47,16 @@
 > ppBraces      x = ppPack "{" x "}"
 
 > ppTuple,ppList,ppCommaList :: Pretty a => [a] -> Doc
-> ppTuple xs = ppPackedList "(" xs ")" ", "
+> --ppTuple xs = ppPackedList "(" xs ")" ", "
 > ppList  xs = ppPackedList "[" xs "]" ", "
 > ppCommaList xs = xs `ppSepby` text ","
 
 > ppApp :: [Doc] -> Doc
 > ppApp xs = foldr1 (\x y -> x <> (text " ") <> y) xs
+
+> ppTuple xs = text "(" <> 
+>              sep (map (<>(text ",")) (init ds) ++ 
+>                   [(last ds)<>text ")"]) 
+>   where ds = map pretty xs
 
 \end{verbatim}
