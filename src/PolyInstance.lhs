@@ -66,7 +66,7 @@ from the sugared versions used in the PolyP code (+ -> SumF, * -> ProdF, ...)
 
 > realFuncEnv :: FuncEnv -> FuncEnv
 > realFuncEnv funcenv = map (mapSnd $ mapSnd realFuncNames) funcenv
-> 	where
+>       where
 >    -- Change to real functor names
 >    realFuncNames t = case t of
 >              TCon "+"       -> TCon "SumF"
@@ -76,7 +76,7 @@ from the sugared versions used in the PolyP code (+ -> SumF, * -> ProdF, ...)
 >              TCon "Rec"     -> TCon "RecF"
 >              TCon "@"       -> TCon "CompF"
 >              TCon "Const"   -> TCon "ConstF"
->	       TCon ">"	      -> TCon "FunF"
+>              TCon ">"       -> TCon "FunF"
 >              f :@@: g       -> realFuncNames f :@@: realFuncNames g
 >              _              -> t
 
@@ -126,7 +126,7 @@ the datatype and its functor.
 
 >           -- Takes a list of constructor arguments and computes pattern and result arguments
 >           inn'' (TCon "EmptyF":fs) names   = addP (Con "EmptyF") $ inn'' fs names
->	    inn'' (c:fs) (n:names)	    = addPE (Var n) (fromFunction c :@: Var n) $ inn'' fs names
+>           inn'' (c:fs) (n:names)          = addPE (Var n) (fromFunction c :@: Var n) $ inn'' fs names
 
            inn'' (TCon "ParF":fs) (n:names) = addPE (Con "ParF" :@: Var n) (Var n) $ inn'' fs names
            inn'' (TCon "RecF":fs) (n:names) = addPE (Con "RecF" :@: Var n) (Var n) $ inn'' fs names
@@ -134,10 +134,10 @@ the datatype and its functor.
               = addPE (Con "CompF" :@: Var n) (Var "gmap" :@: unF g :@: Var n) $ inn'' fs names
            inn'' ((TCon "ConstF" :@@: t):fs) (n:names)
               = addPE (Con "ConstF" :@: Var n) (Var n) $ inn'' fs names
-	    inn'' ((TCon "FunF" :@@: f :@@: g):fs) (n:names) = addPE (Con "FunF" :@: Var n) (Var n) $ inn'' fs names
+            inn'' ((TCon "FunF" :@@: f :@@: g):fs) (n:names) = addPE (Con "FunF" :@: Var n) (Var n) $ inn'' fs names
 
 >           inn'' [] _ = ([],[])
->	    inn'' (x:fs) _ = error $ "inn'' applied to " ++ show x
+>           inn'' (x:fs) _ = error $ "inn'' applied to " ++ show x
 
 >           -- Pattern/result pairs for out
 >           out _ []          = []
@@ -151,7 +151,7 @@ the datatype and its functor.
 
 >           -- Takes a list of constructor arguments and computes pattern and result arguments
 >           out'' (TCon "EmptyF":fs) names   = addE (Con "EmptyF") $ out'' fs names
->	    out'' (c:fs) (n:names)	     = addPE (Var n) (toFunction c :@: Var n) $ out'' fs names
+>           out'' (c:fs) (n:names)           = addPE (Var n) (toFunction c :@: Var n) $ out'' fs names
 
            out'' (TCon "ParF":fs) (n:names) = addPE (Var n) (Con "ParF" :@: Var n) $ out'' fs names
            out'' (TCon "RecF":fs) (n:names) = addPE (Var n) (Con "RecF" :@: Var n) $ out'' fs names
@@ -162,23 +162,23 @@ the datatype and its functor.
 
 >           out'' [] _ = ([],[])
 
->	    -- Remodelling
+>           -- Remodelling
 
->	    -- toFunction : g --> toG
->	    toFunction (TCon "ParF")		    = Var "toPar"
->	    toFunction (TCon "RecF")		    = Var "toRec"
->	    toFunction (TCon "CompF" :@@: _ :@@: g) = Var "toComp" :@: toFunction g
->	    toFunction (TCon "ConstF" :@@: _)	    = Var "toConst"
->	    toFunction (TCon "FunF" :@@: g :@@: h)  = Var "toFun" :@: fromFunction g
->								  :@: toFunction h
+>           -- toFunction : g --> toG
+>           toFunction (TCon "ParF")                = Var "toPar"
+>           toFunction (TCon "RecF")                = Var "toRec"
+>           toFunction (TCon "CompF" :@@: _ :@@: g) = Var "toComp" :@: toFunction g
+>           toFunction (TCon "ConstF" :@@: _)       = Var "toConst"
+>           toFunction (TCon "FunF" :@@: g :@@: h)  = Var "toFun" :@: fromFunction g
+>                                                                 :@: toFunction h
 
->	    -- fromFunction : g --> fromG
->	    fromFunction (TCon "ParF")			= Var "fromPar"
->	    fromFunction (TCon "RecF")			= Var "fromRec"
->	    fromFunction (TCon "CompF" :@@: _ :@@: g)	= Var "fromComp" :@: fromFunction g
->	    fromFunction (TCon "ConstF" :@@: _)		= Var "fromConst"
->	    fromFunction (TCon "FunF" :@@: g :@@: h)	= Var "fromFun" :@: toFunction g
->									:@: fromFunction h
+>           -- fromFunction : g --> fromG
+>           fromFunction (TCon "ParF")                  = Var "fromPar"
+>           fromFunction (TCon "RecF")                  = Var "fromRec"
+>           fromFunction (TCon "CompF" :@@: _ :@@: g)   = Var "fromComp" :@: fromFunction g
+>           fromFunction (TCon "ConstF" :@@: _)         = Var "fromConst"
+>           fromFunction (TCon "FunF" :@@: g :@@: h)    = Var "fromFun" :@: toFunction g
+>                                                                       :@: fromFunction h
 
 >           -- Helpers
 >           unF (TCon "ParF") = Var "unParF"
@@ -293,10 +293,10 @@ the correct types and constraints for polytypic functions.
 >                    Instance c
 >                             (className, [TCon "ConstF" :@@: t])
 >                             [simp $ VarBind name Nothing [] e]
->		  TCon ">" :@@: f :@@: g ->
->		     Instance c
->			      (className, [TCon "FunF" :@@: f :@@: g])
->			      [simp $ VarBind name Nothing [] e]
+>                 TCon ">" :@@: f :@@: g ->
+>                    Instance c
+>                             (className, [TCon "FunF" :@@: f :@@: g])
+>                             [simp $ VarBind name Nothing [] e]
 >                 _  -> error ("PolyInstance.rewrite: " ++ pshow e ++ ":: " ++ pshow (c :=> t))
 
 \end{verbatim}
@@ -364,10 +364,10 @@ generate a variable name from the type {\tt d} that is unique in every case.
 
 > -- Translate a type
 > translateType funcenv t = case t of
->     TCon "FunctorOf" :@@: d@(TCon c)	-> maybe (fOfVar d) snd $ lookupEnv c funcenv
->     TCon "FunctorOf" :@@: d	    -> fOfVar d
->     a :@@: b			    -> translateType funcenv a :@@: translateType funcenv b
->     _				    -> t
+>     TCon "FunctorOf" :@@: d@(TCon c)  -> maybe (fOfVar d) snd $ lookupEnv c funcenv
+>     TCon "FunctorOf" :@@: d       -> fOfVar d
+>     a :@@: b                      -> translateType funcenv a :@@: translateType funcenv b
+>     _                             -> t
 
 > -- The variable name for FunctorOf d
 > fOfVar d = TVar $ "functorOf_" ++ encode d

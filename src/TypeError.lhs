@@ -2,8 +2,8 @@
 \begin{verbatim}
 
 > module TypeError(mayreportTError, continueIfNoError, 
->	           TError(..),mayshowargs', failWith,
->	           handleTypeError,noErrMsg,continueIfNoErr,
+>                  TError(..),mayshowargs', failWith,
+>                  handleTypeError,noErrMsg,continueIfNoErr,
 >                  ErrMsg(..), LocalErrMsg(..), internalError, impossible) where
 > import TypeGraph(HpType,NonGenerics,
 >                  qtypeOutOfHeap,typesOutOfHeap,
@@ -38,7 +38,7 @@
 >        $$ text "or more specifically when comparing"
 >        $$ nest 3 (sep [pretty t',text "with",pretty u'])
 >        $$ text "The first is not an instance of the second because"
->	 $$ text mess
+>        $$ text mess
 
 > failWith :: String -> HpType s -> HpType s -> STErr s b
 > failWith mess a b = mliftErr (typesOutOfHeap allGeneric [a,b]) >>= \l->
@@ -95,9 +95,9 @@
 >             | EImpossible    
 >             | ENoFunctorFor String
 >             | ENoFunctorEnv String
->	      | EFOfnonDT String
->	      | ECyclicType 
->	      | EDifferentConstructors
+>             | EFOfnonDT String
+>             | ECyclicType 
+>             | EDifferentConstructors
 
 > instance Show LocalErrMsg where
 >   showsPrec _ e = showString (prError e)
@@ -111,8 +111,8 @@
 > prError (ENoFunctorEnv d)= "Unify: functorOf "++d++" can't be calculated. (Functorenv not implemented.)"
 > prError (EFOfnonDT msg)  = "punifyFOf: "++ msg
 > prError EMissedCase      = "Unify: missed a case"
-> prError EImpossible	   = "Unify: impossible! Internal error."
-> prError ECyclicType	   = "unifyVar: Cyclic types not allowed"
+> prError EImpossible      = "Unify: impossible! Internal error."
+> prError ECyclicType      = "unifyVar: Cyclic types not allowed"
 > prError EDifferentConstructors = "Unify: different constructors"
 
 > internalError :: String -> a

@@ -13,7 +13,7 @@
 > import MonadLibrary(Error(..),ErrorMonad(..),map0,map1,map2,accumseq)
 > import MyPrelude(mapFst,mapSnd,pair,variablename,fMap)
 > import StartTBasis(innType,outType,fcnameType,dnameType,
->		     leftname,rightname,eitherType)
+>                    leftname,rightname,eitherType)
 > import PrettyPrinter(pshow)
 
 \end{verbatim}
@@ -165,7 +165,7 @@ uncn :: (a0->a1->...->an) -> (a0,(a1,...,an-1)...) -> an
 >            unc n [f,p] ((funcurry (n-1) (f :@: p1)) :@: p2 ))
 >    where [f,p]      = map Var ["f","p"]
 >          [p1,p2]    = map ((:@:p).Var) ["fst","snd"]
->	   unc :: Int -> [Expr] -> Expr -> [Eqn]
+>          unc :: Int -> [Expr] -> Expr -> [Eqn]
 >          unc n ps e = [VarBind name (Just (tunc n)) ps e]
 >          tpairf a b = TCon (tupleConstructor 2) :@@: a :@@: b
 >          req k      = (uncurryn k,tunc k)
@@ -174,7 +174,7 @@ uncn :: (a0->a1->...->an) -> (a0,(a1,...,an-1)...) -> an
 >          righttuple 0= TCon (tupleConstructor 0)
 >          righttuple 1= var 0
 >          righttuple n= foldr1 tpairf (map var [0..n-1])
->	   var :: Int -> Type
+>          var :: Int -> Type
 >          var n = TVar ("a"++show n)
 
 > funcurry :: Int -> Expr' a -> Expr' a
@@ -195,9 +195,9 @@ uncn :: (a0->a1->...->an) -> (a0,(a1,...,an-1)...) -> an
 > parseUncurry :: String -> [Int]
 > parseUncurry name | length name > uncurryNameLength && 
 >                     maybeUncurry == uncurryName = [n]
->		    | otherwise = []
+>                   | otherwise = []
 >   where (maybeUncurry,rest) = splitAt uncurryNameLength name
->	  n :: Int
+>         n :: Int
 >         n = read rest
 
 

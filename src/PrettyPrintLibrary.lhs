@@ -11,11 +11,11 @@ Pretty printing combinators.
 > data Alt = Text Int SS | Above Int SS Doc
 > type SS  = String -> String
 
-> text   :: String -> Doc			-- literal text
-> nest   :: Int -> Doc -> Doc		-- indention
-> ($$)   :: Doc -> Doc -> Doc		-- vertical composition
-> (<>)   :: Doc -> Doc -> Doc		-- horizontal composition
-> sep    :: [Doc] -> Doc			-- "intelligent" composition
+> text   :: String -> Doc                       -- literal text
+> nest   :: Int -> Doc -> Doc           -- indention
+> ($$)   :: Doc -> Doc -> Doc           -- vertical composition
+> (<>)   :: Doc -> Doc -> Doc           -- horizontal composition
+> sep    :: [Doc] -> Doc                        -- "intelligent" composition
 > layout :: Int -> Int -> Doc -> String   -- layout a document
 
 > text xs = Nest 0 [Text (length xs) (xs ++)]

@@ -7,8 +7,8 @@ The default starting point for code generation in a PolyP file is the
   tree.
 -}
 main = print ( separate "1738"
-	     , separate (Leaf 'a')
-	     , separate (Fork True [Fork False [],Fork True []])
+             , separate (Leaf 'a')
+             , separate (Fork True [Fork False [],Fork True []])
              )
 
 {-
@@ -45,13 +45,13 @@ pmap f   = inn . fmap2 f  (pmap f)   . out
 
 polytypic fmap2 :: (a -> c) -> (b -> d) -> f a b -> f c d
   = \p r -> case f of
-      	      g + h   ->  (fmap2 p r) -+- (fmap2 p r)
-      	      g * h   ->  (fmap2 p r) -*- (fmap2 p r)
-      	      Empty   ->  \EmptyF -> EmptyF
-      	      Par     ->  ParF . p . unParF
-      	      Rec     ->  RecF . r . unRecF
-      	      d @ g   ->  CompF . pmap (fmap2 p r) . unCompF
-      	      Const t ->  \(ConstF x) -> ConstF x
+              g + h   ->  (fmap2 p r) -+- (fmap2 p r)
+              g * h   ->  (fmap2 p r) -*- (fmap2 p r)
+              Empty   ->  \EmptyF -> EmptyF
+              Par     ->  ParF . p . unParF
+              Rec     ->  RecF . r . unRecF
+              d @ g   ->  CompF . pmap (fmap2 p r) . unCompF
+              Const t ->  \(ConstF x) -> ConstF x
 
 {-
 The definition of flatten is taken from ../polylib/Flatten.phs.

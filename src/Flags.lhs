@@ -2,12 +2,12 @@
 > import CommandLine(unsafeGetArgs,unsafeGetEnvDef)
 
 > data Flags = Flags {verbose          :: Bool, 
->		      version          :: Bool, 
->		      help	       :: Bool,
->		      requests         :: [String],
->		      preludeFileNames :: [String],
+>                     version          :: Bool, 
+>                     help             :: Bool,
+>                     requests         :: [String],
+>                     preludeFileNames :: [String],
 >                     polypDir         :: String,
->		      fileargs	       :: [String]}
+>                     fileargs         :: [String]}
 >   deriving Show
 
 > defaultPreludeFileName :: String
@@ -31,13 +31,13 @@
 > thePolyPDir = unsafeGetEnvDef "POLYPDIR" defaultPolyPDir
 
 > defaultflags :: Flags
-> defaultflags = Flags {verbose		 = False, 
->		        version          = False,
->			help             = False,
->			requests	 = [],
->		        preludeFileNames = [preludeFileName],
+> defaultflags = Flags {verbose          = False, 
+>                       version          = False,
+>                       help             = False,
+>                       requests         = [],
+>                       preludeFileNames = [preludeFileName],
 >                       polypDir         = thePolyPDir,
->			fileargs         = []}
+>                       fileargs         = []}
 
 > flags :: Flags
 > flags = analyseFlags unsafeGetArgs
@@ -45,9 +45,9 @@
 > analyseFlags :: [String] -> Flags
 > analyseFlags []            = defaultflags
 > analyseFlags (fl:rest)     
->    | isVersionFlag fl      = (analyseFlags rest) {version = True}	    
->    | isVerboseFlag fl      = (analyseFlags rest) {verbose = True}	    
->    | isHelpFlag fl	     = (analyseFlags rest) {help    = True}	    
+>    | isVersionFlag fl      = (analyseFlags rest) {version = True}         
+>    | isVerboseFlag fl      = (analyseFlags rest) {verbose = True}         
+>    | isHelpFlag fl         = (analyseFlags rest) {help    = True}         
 > analyseFlags (fl:name:rest) 
 >    | isIncludeFlag fl      = mapPrFileName (name:) (analyseFlags rest)
 >    | isRequestFlag fl      = mapRequests    (name:) (analyseFlags rest)
@@ -76,4 +76,4 @@
 
 > isHelpFlag :: String -> Bool
 > isHelpFlag ('-':c:_) = c `elem` "h?"
-> isHelpFlag _	       = False
+> isHelpFlag _         = False

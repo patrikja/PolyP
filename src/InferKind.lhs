@@ -80,11 +80,11 @@ the corresponding functors are added to the functor environment.
 >           Done (tass,kass) -> 
 >            let basis = (extendTypeTBasis tass . 
 >                         extendKindTBasis kass .
->			  extendFuncTBasis funcass) startTBasis
+>                         extendFuncTBasis funcass) startTBasis
 >            in (basis,Done ())
 >  where funcass = noErrorFilter 
->		 . map (\d->makeFunctorStruct' d <@ (pair (getNameOfDataDef d))) 
->		 $ dataDefs
+>                . map (\d->makeFunctorStruct' d <@ (pair (getNameOfDataDef d))) 
+>                $ dataDefs
 
 > inferDataDefs' :: TBasis -> [Eqn] -> 
 >                   Error ([(ConID, QType)],[(ConID, Kind)])

@@ -183,8 +183,8 @@ output Haskell code violates the monomorphism restriction.
 >      then pretty (types!!0) <> text (" "++constr++" ") <> pretty (types!!1)
 >      else text constr
 >        <> if null types                                         
->   	    then text ""                                          
->   	    else ppPackedList " " (map prT types) "" " "
+>           then text ""                                          
+>           else ppPackedList " " (map prT types) "" " "
 
 \end{verbatim}
 \section{Expressions}

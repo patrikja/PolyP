@@ -27,8 +27,8 @@
 > putErrStrLn s = putErrStr (s ++ "\n")
 #else
 > putErrStr   = if verbose flags 
->	        then IO.hPutStr   errorfile 
->		else const (return ())
+>               then IO.hPutStr   errorfile 
+>               else const (return ())
 > putErrStrLn s = putErrStr (s++"\n")
 #endif
 > flushErr :: IO ()

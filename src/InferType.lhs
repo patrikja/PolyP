@@ -14,7 +14,7 @@
 >                     mapl,(<@),(<@-),accumseq,accumseq_)
 > import StateFix -- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 > import Grammar(Eqn'(..),Expr'(..),
->		 Qualified(..),Qualifier,QType,
+>                Qualified(..),Qualifier,QType,
 >                VarID,ConID,Type(..))
 > import ParseLibrary(parse)
 > import Parser(pType1)
@@ -39,7 +39,7 @@ in the context list.
 > tevalAndSubst basis hpty' (_:=>hpfi) = 
 >   instantiate allGeneric hpty' >>= \hpty->
 >   let pf = pickFunctorVariable hpty
->	funcenv = getFuncEnv (getTBasis basis)
+>       funcenv = getFuncEnv (getTBasis basis)
 >   in 
 >     pf ==> hpfi                  >> -- substitution by destructive update
 >     hpQTypeEval funcenv hpty     >> -- type evaluation  
@@ -57,8 +57,8 @@ in the context list.
 > qTypeEval funcenv qt = __RUNST__ mqt
 >   where mqt :: ST s QType
 >         mqt = qtypeIntoHeap qt      >>= 
->		hpQTypeEval funcenv   >>= 
->		qtypeOutOfHeap allGeneric
+>               hpQTypeEval funcenv   >>= 
+>               qtypeOutOfHeap allGeneric
 
 typeEval :: Type -> Type
 typeEval t = __RUNST__ m
@@ -85,9 +85,9 @@ changed by \texttt{hpQTypeEval}.
 >   = checkInstance ngs small big 
 >   +++
 >     do smallsimple <- mliftErr $
->	  do smallcopy <- TypeBasis.instantiate ngs small
->	     hpQTypeEval (getFuncEnv (getTBasis basis)) smallcopy
->	 checkInstance ngs smallsimple big
+>         do smallcopy <- TypeBasis.instantiate ngs small
+>            hpQTypeEval (getFuncEnv (getTBasis basis)) smallcopy
+>        checkInstance ngs smallsimple big
 
 > hpQTypeEval :: FuncEnv -> HpQType s -> ST s (HpQType s)
 > hpQTypeEval funcenv (l :=> t) = 
@@ -264,19 +264,19 @@ The evaluation is done by side-effecting the pointer structure.
 
 > hpTypeEval funcenv = hpteval 
 >   where hpteval = (accumseq_ . fMap hpteval) @@ 
->		    hpTypeEval' funcenv        @@ 
->		    spineWalkHpType 
+>                   hpTypeEval' funcenv        @@ 
+>                   spineWalkHpType 
 
 > hpTypeEval' funcenv [] = error "InferType.hpTypeEval': impossible: nothing to apply"
 > hpTypeEval' funcenv pargs = case f of
 >     HpVar _   -> def
 >     HpCon c | isFuncorOf c -> evalFunctorOf funcenv children
->	      | otherwise    -> maybe def eval (lookupEnv c typeSynEnv)
+>             | otherwise    -> maybe def eval (lookupEnv c typeSynEnv)
 >     HpApp _ _ -> error "InferType.hpTypeEval': impossible: HpApp found after spine removal"
 >   where f:args   = map snd pargs
 >         nargs    = length args
 >         children = map getChild args
->	  debug	   = fmap (error . show) $ sequence $ map (uncurry showHpNode) pargs
+>         debug    = fmap (error . show) $ sequence $ map (uncurry showHpNode) pargs
 >         def      = return children
 >         eval (arity,syn) | arity > nargs = def -- partial application
 >                          | otherwise     = applySynonym syn children >>= again
@@ -297,8 +297,8 @@ The evaluation is done by side-effecting the pointer structure.
 >         evalFunctorOf funcenv (d:args) = checkCon d >>= maybe def fOf
 >
 >         -- fOf :: ConID -> ST s [NodePtr s]
->	  fOf d = maybe def (again2 @@ (typeIntoHeap . snd)) $ 
->		  lookupEnv d funcenv
+>         fOf d = maybe def (again2 @@ (typeIntoHeap . snd)) $ 
+>                 lookupEnv d funcenv
 
 
 > isFuncorOf :: ConID -> Bool
@@ -350,19 +350,19 @@ Problem: The program loops if not all synonyms are present.
 
 > applySynonym :: QType -> [HpType s] -> ST s (HpType s)
 > applySynonym syn@(vs:=>body) args =
->	do  let syn' = case splitTypeSyn syn of
->		    (vars, rhs)
+>       do  let syn' = case splitTypeSyn syn of
+>                   (vars, rhs)
 
->			| length args > length vars -> let len = length args - length vars in
->							(vs ++ take len extraCtx)
->							:=> foldl (:@@:) rhs
->							    (take len extraArgs)
+>                       | length args > length vars -> let len = length args - length vars in
+>                                                       (vs ++ take len extraCtx)
+>                                                       :=> foldl (:@@:) rhs
+>                                                           (take len extraArgs)
 
->			| otherwise		    -> syn
->	    (vars,rhs) <- qtypeIntoHeap syn' <@ splitTypeSyn
->	    accumseq (zipWith (==>) vars args) <@- rhs
->   where   extraArgs	= map (TVar . ('_':) . show) [0..]
->	    extraCtx	= map (\v -> ("",[v])) extraArgs
+>                       | otherwise                 -> syn
+>           (vars,rhs) <- qtypeIntoHeap syn' <@ splitTypeSyn
+>           accumseq (zipWith (==>) vars args) <@- rhs
+>   where   extraArgs   = map (TVar . ('_':) . show) [0..]
+>           extraCtx    = map (\v -> ("",[v])) extraArgs
 
 \end{verbatim}
 \section{Groups}

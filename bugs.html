@@ -12,7 +12,7 @@
 <ul>
   <li>Context simplification errors: 
       <ul>
-	<li>Problem: currently the context simplification algorithm
+        <li>Problem: currently the context simplification algorithm
             simply removes all contexts without type variables. This
             can err in two ways: firstly ill-typed programs can be
             accepted (too much simplification, for example removing a
@@ -21,19 +21,19 @@
             (too little simplification, for example <code>Monad (State
             s)</code> is not simplified away.)
 
-	<li>Solution: improve the context simplification
+        <li>Solution: improve the context simplification
             algorithm. Extend PolyP to handle class and instance
             declarations so that the simlification rules can be given
             in the prelude file(s).
 
-	<li>Almost solution: Add a PolyP-flag to allow explicit types
+        <li>Almost solution: Add a PolyP-flag to allow explicit types
             not to be generated. (The types are there to get around
             the monomorphism restriction, and it usually bites at the
             same time as this bug, so the gain might be small.)
 
-	<li>Work-around: Make unwanted contexts variable-free by
+        <li>Work-around: Make unwanted contexts variable-free by
             inserting an explicit type somewhere.
-	    
+            
       </ul>
 
   <li>Several (minor?) parser bugs:

@@ -31,41 +31,41 @@ sub chase {
     $stored{$filename} = $phase; # kom ihag att vi varit har (undvik loop)
 
     while (<$handle>) {               # for varje rad i filen
-	if( /^${lineprefix}import\s*(qualified)? (\w+)/ )      # om den borjar med ordet "import"
-	{
-	    $filename= $2 . $filenamesuffix;# Nasta ord + .phs ger filnamn
-	    if( !defined($stored{$filename}) ||
+        if( /^${lineprefix}import\s*(qualified)? (\w+)/ )      # om den borjar med ordet "import"
+        {
+            $filename= $2 . $filenamesuffix;# Nasta ord + .phs ger filnamn
+            if( !defined($stored{$filename}) ||
                 $stored{$filename} ne $phase) # Om namnet ej besokts i denna fas
-	    {
-		# om det finns en sadan fil i någon katalog
-		if ( defined($ModuleIn{$filename}) ) {
-		    $directory = $ModuleIn{$filename};
-		    $fresh = $handle;
-		    # get a fresh file handle name (see man perlfunc | grep fh00)
-		    print "\n"; #empty line hack for literate scripts (.lhs)
-		    &chase($directory,$filename,++$fresh,$phase,$false); # print_module_line=false
-		}
-		else
-		{   #Varna och skriv ut aktuell rad vid forsta genomlopningen
-		    if( $phase eq 1 )
-		    {
-			print STDERR "-- Warning: file `$filename' not found\n";
-			print $_ ;
-		    }
-		}
-	    }
-	}
-	elsif (/^${lineprefix}module/)
             {
-		if ( $print_module_line && ($phase eq 1))
-		{ # 
-		    print $_ ; # skriv ut raden
-		}
-	    }
+                # om det finns en sadan fil i någon katalog
+                if ( defined($ModuleIn{$filename}) ) {
+                    $directory = $ModuleIn{$filename};
+                    $fresh = $handle;
+                    # get a fresh file handle name (see man perlfunc | grep fh00)
+                    print "\n"; #empty line hack for literate scripts (.lhs)
+                    &chase($directory,$filename,++$fresh,$phase,$false); # print_module_line=false
+                }
+                else
+                {   #Varna och skriv ut aktuell rad vid forsta genomlopningen
+                    if( $phase eq 1 )
+                    {
+                        print STDERR "-- Warning: file `$filename' not found\n";
+                        print $_ ;
+                    }
+                }
+            }
+        }
+        elsif (/^${lineprefix}module/)
+            {
+                if ( $print_module_line && ($phase eq 1))
+                { # 
+                    print $_ ; # skriv ut raden
+                }
+            }
         elsif ( ($phase eq 2) ^ (/^${lineprefix}infix[lr \t]/) )
         { # 
-	  print $_ ; # skriv ut raden
-	}
+          print $_ ; # skriv ut raden
+        }
     } # end while <$handle>
     close($handle);
 }
@@ -76,22 +76,22 @@ sub chase {
 sub handle_command_line_arguments {
     @Import_dirs = ('.',$POLYLIBDIR);
     while($_ = $ARGV[0]) {
-	shift(@ARGV);
-	if ( /^-i$/ ) {# next arg is the include path to add
-	    push(@Import_dirs, $ARGV[0]);
-	    shift(@ARGV);
-	}
-	elsif ( /^-v$/ ) {
-	    $Verbose = $true;
-	}
-	else {
-	    push(@Src_files, $_);
-	}
+        shift(@ARGV);
+        if ( /^-i$/ ) {# next arg is the include path to add
+            push(@Import_dirs, $ARGV[0]);
+            shift(@ARGV);
+        }
+        elsif ( /^-v$/ ) {
+            $Verbose = $true;
+        }
+        else {
+            push(@Src_files, $_);
+        }
     }
     print STDERR "Source files: @Src_files\n"   if $Verbose;
     print STDERR "Import dirs: @Import_dirs\n"  if $Verbose;
     die "No source file"                        if length(@Src_files) == 0;
-    print STDERR "Ignoring extra src files\n"	if length(@Src_files) > 1;
+    print STDERR "Ignoring extra src files\n"   if length(@Src_files) > 1;
 }
 
 sub preprocess_import_dirs {
@@ -102,21 +102,21 @@ sub preprocess_import_dirs {
 
     print STDERR "Scanning the import dirs.\n" if $Verbose;
     foreach $d ( @Import_dirs ) {
-	opendir(DIR, $d) || die "chase: can't open directory $d\n";
-	
-	for ($_ = readdir(DIR); $_; $_ = readdir(DIR)) {
-	    next unless /(.*$filenamesuffix)$/;
-	    $thing = $1;
-	    print STDERR "Found '$d/$thing'.\n" if $Verbose;
-	    if (! defined($ModuleIn{$thing})) {
-		$ModuleIn{$thing} = $d;
-	    } else {
-		print STDERR "File '$thing' found in ";
+        opendir(DIR, $d) || die "chase: can't open directory $d\n";
+        
+        for ($_ = readdir(DIR); $_; $_ = readdir(DIR)) {
+            next unless /(.*$filenamesuffix)$/;
+            $thing = $1;
+            print STDERR "Found '$d/$thing'.\n" if $Verbose;
+            if (! defined($ModuleIn{$thing})) {
+                $ModuleIn{$thing} = $d;
+            } else {
+                print STDERR "File '$thing' found in ";
                 print STDERR "'$ModuleIn{$thing}' and '$d'";
                 print STDERR " - using the first occurrence.\n";
-	    }
-	}
-	closedir(DIR);
+            }
+        }
+        closedir(DIR);
     }
 }
 

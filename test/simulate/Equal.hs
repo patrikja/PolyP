@@ -14,9 +14,9 @@ fequal p r x y = onlyUsefulForTypeChecking "fequal" p r x y
 sumequal :: (a->b->Bool) -> (c->d->Bool) -> 
             Either a c -> Either b d -> Bool
 sumequal f g a b = case (a,b) of
-		   (Left  x, Left  v)  ->  f x v
-		   (Right y, Right w)  ->  g y w
-		   _                   ->  False
+                   (Left  x, Left  v)  ->  f x v
+                   (Right y, Right w)  ->  g y w
+                   _                   ->  False
 
 prodequal :: (a->b->Bool) -> (c->d->Bool) -> 
              (a,c)->(b,d) -> Bool

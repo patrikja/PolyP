@@ -23,7 +23,7 @@
 > import TypeGraph(HpQType,HpType, HpTExpr, HpTEqn, 
 >                  mkVar, mkFun, (+#+), mkQFun,
 >                  eqnIntoHeap, blockOutOfHeap,allGeneric,
->		   qtypeIntoHeap)
+>                  qtypeIntoHeap)
 > import UnifyTypes(unify, checkInstance)
 > import Monad(foldM)
 
@@ -304,7 +304,7 @@ recursive, n is mostly 1.)
 >     pair (extendTypeEnv (map typePoly peqns) basis)
 >  where typeVar veqn = mkVar <@ (pair (getNameOfVarBind veqn) . qualify)
 >        typePoly (Polytypic v hpt _ _) = (v,hpt)
->	 typePoly _	                = error "LabelType.prepBasis: Impossible!"
+>        typePoly _                     = error "LabelType.prepBasis: Impossible!"
 
 > splitEqns :: [Eqn' (Qualified t)] -> 
 >              ([Eqn' (Qualified t)],[Eqn' (Qualified t)])
@@ -380,7 +380,7 @@ labelling rules.
 >  where (e,inv) = patBindToVarBind eqn
 >        insType t (VarBind v Nothing ps e') = VarBind v (Just t) ps e'
 >        insType _ q = q
->	 addPosition s = getNameOfVarBind eqn++": error in type checking:\n"++s
+>        addPosition s = getNameOfVarBind eqn++": error in type checking:\n"++s
 
 \end{verbatim}
 
@@ -398,7 +398,7 @@ alternatives one by one.
 > labelPoly basis (Polytypic n hpty' _ cases) =
 >    changeError (\e->n++": error in type checking:\n"++e) $ 
 >    let (funs',es) = maytrace "labelPoly starts\n"
->								$ unzip cases
+>                                                               $ unzip cases
 >    in mapl (basis |->) es  <@ unzip >>= \(es',ti)->
 
 \end{verbatim}

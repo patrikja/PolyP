@@ -44,54 +44,54 @@ f @@ g = applyM f . g
 
   polytypic fthread :: Monad m => f (m a) (m b) -> m (f a b)
     = case f of
-	g + h     ->  sumthread  . (fthread -+- fthread)
-	g * h     ->  prodthread . (fthread -*- fthread)
-	Empty     ->  return
-	Par       ->  id
-	Rec       ->  id
-	d @ g     ->  thread     . (pmap fthread)
-	Const t   ->  return
+        g + h     ->  sumthread  . (fthread -+- fthread)
+        g * h     ->  prodthread . (fthread -*- fthread)
+        Empty     ->  return
+        Par       ->  id
+        Rec       ->  id
+        d @ g     ->  thread     . (pmap fthread)
+        Const t   ->  return
 
   polytypic fmap :: (a -> c) -> (b -> d) -> f a b -> f c d
     = \p r -> case f of                             
-		g + h   ->  (fmap p r) -+- (fmap p r)
-		g * h   ->  (fmap p r) -*- (fmap p r)
-		Empty   ->  id                    
-		Par     ->  p                     
-		Rec     ->  r                     
-		d @ g   ->  pmap (fmap p r)       
-		Const t ->  id                    
+                g + h   ->  (fmap p r) -+- (fmap p r)
+                g * h   ->  (fmap p r) -*- (fmap p r)
+                Empty   ->  id                    
+                Par     ->  p                     
+                Rec     ->  r                     
+                d @ g   ->  pmap (fmap p r)       
+                Const t ->  id                    
   -}
   polytypic fmapM :: (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
     = \p r -> case f of
-	g + h     ->  sumthread  . (fthread -+- fthread) . (fmap p r) -+- (fmap p r)
-	g * h     ->  prodthread . (fthread -*- fthread) . (fmap p r) -*- (fmap p r)
-	Empty     ->  return                             . id                    
-	Par       ->  id				       . p                     
-	Rec       ->  id				       . r                     
-	d @ g     ->  thread     . (pmap fthread)	       . pmap (fmap p r)       
-	Const t   ->  return			       . id                    
+        g + h     ->  sumthread  . (fthread -+- fthread) . (fmap p r) -+- (fmap p r)
+        g * h     ->  prodthread . (fthread -*- fthread) . (fmap p r) -*- (fmap p r)
+        Empty     ->  return                             . id                    
+        Par       ->  id                                       . p                     
+        Rec       ->  id                                       . r                     
+        d @ g     ->  thread     . (pmap fthread)              . pmap (fmap p r)       
+        Const t   ->  return                           . id                    
   {- (-+-), (-*-) are bifunctors, pmap is a functor, id, (.) monoid -}
   polytypic fmapM :: (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
     = \p r -> case f of
-	g + h     ->  sumthread  . (fthread.fmap p r -+- fthread.fmap p r)
-	g * h     ->  prodthread . (fthread.fmap p r -*- fthread.fmap p r)
-	Empty     ->  return
-	Par       ->  p                     
-	Rec       ->  r                     
-	d @ g     ->  thread     . (pmap (fthread . fmap p r))
-	Const t   ->  return                    
+        g + h     ->  sumthread  . (fthread.fmap p r -+- fthread.fmap p r)
+        g * h     ->  prodthread . (fthread.fmap p r -*- fthread.fmap p r)
+        Empty     ->  return
+        Par       ->  p                     
+        Rec       ->  r                     
+        d @ g     ->  thread     . (pmap (fthread . fmap p r))
+        Const t   ->  return                    
   {- fmapM f g = fthread . fmap f g , pmapM f = thread . pmap f 
      summapM f g = sumthread . f -+- g, prodmapM f g = prodthread . f -*- g -}
   polytypic fmapM :: (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
     = \p r -> case f of
-	g + h     ->  summapM  (fmapM p r) (fmapM p r)
-	g * h     ->  prodmapM (fmapM p r) (fmapM p r)
-	Empty     ->  return
-	Par       ->  p                     
-	Rec       ->  r                     
-	d @ g     ->  pmapM (fmapM p r)
-	Const t   ->  return                    
+        g + h     ->  summapM  (fmapM p r) (fmapM p r)
+        g * h     ->  prodmapM (fmapM p r) (fmapM p r)
+        Empty     ->  return
+        Par       ->  p                     
+        Rec       ->  r                     
+        d @ g     ->  pmapM (fmapM p r)
+        Const t   ->  return                    
 -}
 
 {- calculation of summapM

@@ -1,6 +1,6 @@
 > module Functorise(makeFunctorStruct,makeFunctorStruct',Struct) where
 > import Grammar(ConID,VarID,Eqn,Eqn'(DataDef),Func,
->		 Type(..),spineWalkType,isTupleCon)
+>                Type(..),spineWalkType,isTupleCon)
 > import MyPrelude(mapSnd,pair)
 > import Folding(cataType)
 > import MonadLibrary(foreach,(<@),Error,handleError,ErrorMonad(..))
@@ -38,7 +38,7 @@ in inn, out, or forbidden below.
 > makeFunctorStruct' :: Eqn -> Error (Struct,Func)
 > makeFunctorStruct' (DataDef def args alts _) | arity == 1
 >   = convAlts def alts <@ pair ((def,arity), map (mapSnd length) alts)
->					       | otherwise
+>                                              | otherwise
 >   = failEM (def++" is not Regular as only 1-parameter datatypes are Regular")
 >   where arity = length args
 > makeFunctorStruct' _ = error "Functorise.makeFunctorStruct: impossible: not a DataDef"
@@ -59,9 +59,9 @@ Function |convFunc| must be called with length ts == 2.
 > convType :: ConID -> Type -> Error Func
 > convType _   (TVar _)          = return parFunctor -- indexed if multiple params
 > convType _   t 
->   | isConstantType t		 = return (constFunctor t)
+>   | isConstantType t           = return (constFunctor t)
 > convType def (TCon con :@@: TVar _)
->   | con == def		 = return recFunctor
+>   | con == def                 = return recFunctor
 > convType def t 
 >   | isTupleCon c               = convProd def ts
 >   | isFunType c ts             = convFun  def ts

@@ -7,7 +7,7 @@ singleton x = [x]
 -- 
 polytypic badfmap :: (a -> c) -> (b -> d) -> f a b -> f c d
   = \p r -> case f of                             
-      	      g -> id
+              g -> id
 
 -- e is forall quantified, the others not.
 --  teval {f -> g} (f a b -> f c d) <? e -> e

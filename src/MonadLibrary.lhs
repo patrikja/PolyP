@@ -9,11 +9,11 @@
 >                     Error(..),unDone,noErrorFilter,errorToList,
 >                     LErr,unLErr,mapLErr,showLErr,handleError,
 >                     STErr,mliftErr,convertSTErr,ErrorMonad(failEM),
->		      changeError,
+>                     changeError,
 >                     OutputT,output,runOutput,mliftOut,
 >                     mapl,foreach,liftop,map0,map1,map2,mfoldl,mfoldr,
->		      mZero,
->		      accumseq,accumseq_,mguard) where
+>                     mZero,
+>                     accumseq,accumseq_,mguard) where
 > import StateFix
 > import MyPrelude(pair,mapFst,fMap)
 
@@ -272,8 +272,8 @@ instance Functor (ST a) where
 > 
 > changeError :: (String -> String) -> STErr s a -> STErr s a
 > changeError f (STErr m) = STErr $ m >>= \e-> case e of
->				Done x -> return (Done x)
->				Err msg-> return (Err (f msg))
+>                               Done x -> return (Done x)
+>                               Err msg-> return (Err (f msg))
 > 
 > liftSTtoSTErr :: ST s a -> STErr s a
 > liftSTtoSTErr = STErr . fMap Done
@@ -293,8 +293,8 @@ instance Functor (ST a) where
 #endif
 >   a MONADPLUSOP b = STErr $ 
 >     convertSTErr a >>= \x -> case x of
->   	Done y -> return (Done y)
->   	Err _  -> convertSTErr b
+>       Done y -> return (Done y)
+>       Err _  -> convertSTErr b
 
 > {- 
 > dropSTErrtoST :: STErr s a -> ST s a

@@ -63,7 +63,7 @@ The module parser accepts but ignores the module head, exports and imports.
 > pModule' = pModuleHead >>= \(name, exps) ->
 >            pImpDecls >>= \imps ->
 >            pEqns >>= \eqns ->
->				 return $ Module name exps imps eqns
+>                                return $ Module name exps imps eqns
 
 > pModuleHead :: Parser (ConID, [Export])
 > pModuleHead = (   (symbol "module" >> pConID)
@@ -97,7 +97,7 @@ The module parser accepts but ignores the module head, exports and imports.
 >             ) <@ uncurry Subs)
 >        +++ ((pParenthesized infixcon) <@ Plain)
 >        +++ ((pParenthesized infixop) <@ Plain)
->	 +++ (pConID <@ Plain)
+>        +++ (pConID <@ Plain)
 
 > pParenTuple :: Parser a -> Parser [a]
 > pParenTuple p = pParenthesized (pCommaList p `opt` [])
@@ -171,9 +171,9 @@ Work in progress
 
 > pClass :: Parser Eqn
 > pClass = do
->		symbol "class"
->		let ctx = ("Foo", [TVar "t"])
->		return $ Class [] ctx []
+>               symbol "class"
+>               let ctx = ("Foo", [TVar "t"])
+>               return $ Class [] ctx []
 
 \end{verbatim}
 Some simple hungry expressions should be allowed before the case
@@ -557,7 +557,7 @@ From the Haskell report:
 > keywords :: [VarID]
 > keywords = [ "case", "of", "let", "in", "if", "then", "else",
 >              "data", "polytypic", "deriving", "where", "class",
->					"instance"]
+>                                       "instance"]
 
 \end{verbatim}
 ***

@@ -31,7 +31,7 @@ funzip x = (fmap2 fst fst x, fmap2 snd snd x)
 
 -- Note: a different kind of typing compared to pzipWith
 fzipWith :: Bifunctor f => ((a,a')->c) -> ((b,b')->d) -> 
-	    (f a b, f a' b') -> Maybe (f c d)
+            (f a b, f a' b') -> Maybe (f c d)
 fzipWith f g = mapMaybe (fmap2 f g) . fzip 
 
 fzip :: Bifunctor f => (f a b,f c d) -> Maybe (f (a,c) (b,d))
@@ -40,9 +40,9 @@ fzip p = onlyUsefulForTypeChecking "fzip" (-+-) sumprop prodprop p
 
 sumzip :: (Either a b,Either c d)-> Maybe (Either (a,c) (b,d))
 sumzip p = case p of
-	     (Left s ,Left t ) -> resultM (Left (s,t))
-	     (Right s,Right t) -> resultM (Right (s,t))
-	     _                 -> zeroM
+             (Left s ,Left t ) -> resultM (Left (s,t))
+             (Right s,Right t) -> resultM (Right (s,t))
+             _                 -> zeroM
 
 prodzip :: ((a,b),(c,d)) -> Maybe ((a,c),(b,d))
 prodzip ((x,y),(s,t))  =  resultM ((x,s),(y,t))

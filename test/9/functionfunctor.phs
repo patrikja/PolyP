@@ -3,13 +3,13 @@ data S a = Leaf a
 data R a = L a | B (R a) (R a) | C (S (T [R a]))
 
 data Bifun = Plus  Bifun Bifun
-	   | Times Bifun Bifun
-	   | Fun   Bifun Bifun
-	   | Empty
-	   | Par
-	   | Rec
-	   | At  Regular Bifun
-	   | Const Type
+           | Times Bifun Bifun
+           | Fun   Bifun Bifun
+           | Empty
+           | Par
+           | Rec
+           | At  Regular Bifun
+           | Const Type
   deriving Show
 
 data Regular = Name String deriving Show
