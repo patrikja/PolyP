@@ -6,14 +6,16 @@
 >                    eitherType,fcnameType,boolType,strType,
 >                    sumtypename,leftname,rightname,
 >                    preludedatadefs,sumdatadef) where
-> import Parser(pType0,pType1)
+> import Parser(pType0,pType1,pExplicitTypes)
 > import ParseLibrary(parse)
 > import MyPrelude(mapSnd,trace)
-> import Grammar(Eqn'(..),Qualified(..),Type(..),VarID,(-=>),deQualify,
+> import Grammar(Eqn'(..),Qualified(..),Type(..),VarID,(-=>),QType,
+>                deQualify,
 >                tupleConstructor,listConstructor,functionConstructor)
 > import MonadLibrary(Error,unDone)
 > import Env(newEnv,extendsEnv)
 > import TypeBasis(TBasis)
+> import NonStdTrace(unsafePerformIO)
 
 \end{verbatim}
 We will need three versions of the prelude:
@@ -34,8 +36,24 @@ For the PolyP version - see \verb|../comments.txt|.
 > preludeFuns :: [VarID]
 > preludeFuns = map fst haskellass
 
-These should be read from a file.
+\end{verbatim}
 
+Idea: A prelude (haskell) file (specified on the command line) is used
+to initialize the type information. Only data type declarations and
+explicit type declarations are recorded - the rest is ignored.
+
+First try: only explicit type declarations are accepted - the rest is
+ignored.
+
+\begin{verbatim}
+
+> haskellass2 :: [(String,QType)]
+> haskellass2 = unDone . parse pExplicitTypes . unsafePerformIO $ prelfileIO
+
+> prelfileIO :: IO String
+> prelfileIO = readFile "prelude.hs"
+
+> haskellass :: [(String,QType)]
 > haskellass = map (mapSnd (unDone . parse pType0))
 >              [(listConstructor,"[a]"),(":","a->[a]->[a]"),
 >               (leftname ,"a->"++sumtypename++" a b"),

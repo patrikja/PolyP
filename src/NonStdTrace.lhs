@@ -1,20 +1,22 @@
-> module NonStdTrace(trace) where
+> module NonStdTrace(trace,unsafePerformIO) where
 
-primitive trace "primTrace" :: String -> a -> a
+In Gofer and older hugs - this was required
+  primitive trace "primTrace" :: String -> a -> a
 
-#ifdef __DEBUG__
-#ifndef __HBC__
-
+#ifdef __HBC__
+# ifdef __DEBUG__
+> import Trace(trace)
+# endif
+> import UnsafePerformIO(unsafePerformIO)
+#else /* not __HBC__ */
+# ifdef __DEBUG__
 > import IOExts(trace)
-
-#else /* __HBC__ */
-
-> trace x y = y  --*** replace by proper hbc-code for debugging
-
+# endif
+> import IOExts(unsafePerformIO)
 #endif /* __HBC__ */
-#else /* not __DEBUG__ */
 
+#ifndef __DEBUG__
+> trace :: String -> a -> a
 > trace x y = y
-
 #endif /* __DEBUG__ */
 

@@ -10,7 +10,7 @@ The argument to \texttt{pBackQuoted} should not allow trailing white-space. (Bec
 
 \begin{verbatim}
 
-> module Parser(parse,pModule,pType0,pType1) where
+> module Parser(parse,pModule,pType0,pType1,pExplicitTypes) where
 
 > import Char(isUpper,isLower,isAlphanum,isDigit)
 > import MyPrelude(mapSnd)
@@ -24,7 +24,7 @@ The argument to \texttt{pBackQuoted} should not allow trailing white-space. (Bec
 >                Expr,Eqn,Func,QType,Qualifier,VarID,ConID,
 >                qualify,noType,spineWalk,spineWalkType,(-=>),
 >                tupleConstructor,listConstructor,isTupleCon,
->		 functionConstructor)
+>                functionConstructor)
 
 \end{verbatim}
 The parser is not in good shape and uses far too many reductions
@@ -426,10 +426,10 @@ liftop (:=>) pContext pType1
 
 From the Haskell report:
   gtycon -> qtycon
-	  | () (unit type)
-	  | [] (list constructor)
-	  | (->) (function constructor)
-	  | (,{,}) (tupling constructors)
+          | () (unit type)
+          | [] (list constructor)
+          | (->) (function constructor)
+          | (,{,}) (tupling constructors)
 
 > pTypeCon = map (expandStringSynonym . TCon) $
 >              pConID 
@@ -490,5 +490,24 @@ Function \texttt{pPack'} does not allow space after leading symbol.
 > pParenthesized p = pPack "(" p ")"
 
 > pCommaList p = p `sepby` symbol ","
+
+\end{verbatim}
+
+\subsection{Searching for explicit types}
+
+\begin{verbatim}
+
+> pMaybeExplType :: Parser [(VarID,QType)]
+> pMaybeExplType = (pExplType <@ convExplType) ++ pAnyLine
+
+> pAnyLine :: Parser [a]
+> pAnyLine = some (sat (/='\n')) <@- []
+
+> pExplicitTypes :: Parser [(VarID,QType)]
+> pExplicitTypes = some_offside pMaybeExplType <@ concat
+
+> convExplType :: Eqn -> [(VarID,QType)]
+> convExplType (ExplType ns t) = ns <@ (\n->(n,t))
+> convExplType _               = error "Parser.convExplType: not ExplType"
 
 \end{verbatim}

@@ -72,7 +72,7 @@
 > prError (EUnifyConstApp c)  = "Unify: constructor `" ++ c ++
 >                               "' can not be unified with type application"
 > prError EUnifyKind       = "Unify: kind error"
-> prError ENoMuApp         = "Unify: Mu f can't match a typeapplication"
+> prError ENoMuApp         = "Unify: Mu f can't match a type application"
 > prError (ENoFunctorFor d)= "Unify: No functor defined for datatype constructor "++d
 > prError EFOfnonDT        = "FunctorOf <not datatype>"
 

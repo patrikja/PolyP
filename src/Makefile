@@ -11,6 +11,7 @@ default:	ghc
 # The C-preprocessor
 CPP = gcc -E -C -P -traditional -x c-header
 #CPP = cpp -P -C -traditional
+CPPFLAGS = 
 
 # All Haskell source files in this directory
 lhs_files = $(wildcard *.lhs)
@@ -19,7 +20,7 @@ hugssrc: $(lhs_files:%=../hugssrc/%)
 	cp hugs.mk ../hugssrc/Makefile
 
 ../hugssrc/%.lhs:	../src/%.lhs
-	$(CPP) -D__HUGS__ $< -o $@  
+	$(CPP) $(CPPFLAGS) -D__HUGS__ $< -o $@  
 
 ghcsrc: $(lhs_files:%=../ghcsrc/%)
 	cp ghc.mk ../ghcsrc/Makefile
@@ -27,14 +28,14 @@ ghcsrc: $(lhs_files:%=../ghcsrc/%)
 	sed -e "s/\.g_o/\.o/g" -e "s/\.g_hi/\.hi/g" <depends.mk >../ghcsrc/depends.mk
 
 ../ghcsrc/%.lhs:	../src/%.lhs
-	$(CPP) -D__GLASGOW_HASKELL__ $< -o $@  
+	$(CPP) $(CPPFLAGS) -D__GLASGOW_HASKELL__ $< -o $@  
 
 hbcsrc: $(lhs_files:%=../hbcsrc/%)
 	cp hbc.mk ../hbcsrc/Makefile
 	-cp hbcdepends.mk ../hbcsrc/
 
 ../hbcsrc/%.lhs:	../src/%.lhs
-	$(CPP) -D__HBC__ $< -o $@  
+	$(CPP) $(CPPFLAGS) -D__HBC__ $< -o $@  
 
 # make ghc/hbc in this directory uses cpp as a filter
 export hs_flags += -cpp
@@ -53,7 +54,7 @@ hbc:
 
 hugs:
 	@echo "Ignore any warnings about closed pipes."
-	hugs -F"$(CPP) -D__HUGS__" Main.lhs
+	hugs -F"$(CPP) $(CPPFLAGS) -D__HUGS__" Main.lhs
 
 clean::	ghcclean hbcclean
 	rm -f *~
@@ -78,5 +79,5 @@ dist:
 
 oldhugssrc:
 	cp hugs.mk ../hugssrc/Makefile
-	cppdir . ../hugssrc "-D__OLD_HUGS__ -D__HUGS__"
+	cppdir . ../hugssrc "$(CPPFLAGS) -D__OLD_HUGS__ -D__HUGS__"
 
