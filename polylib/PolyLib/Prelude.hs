@@ -2,8 +2,6 @@
 
 module PolyLib.Prelude where
 
-import PolyLib.FunctorOf
-
 ---
 --    Structure types
 ---
@@ -131,6 +129,28 @@ instance (PatternFunctor f p r t, PatternFunctor g p r u)
 --  Default FunctorOf instances
 ---
 
-$(deriveFunctorOf $ reifyDecl [])
-$(deriveFunctorOf $ reifyDecl Maybe)
+instance FunctorOf (SumF EmptyF (ProdF ParF RecF)) [] where
+    inn (InL EmptyF)                    = []
+    inn (InR ((ParF a) :*: (RecF b)))   = a : b
+    out []                              = InL EmptyF
+    out (a : b)                         = InR ((ParF a) :*: (RecF b))
+
+    datatypeName                        = const "[]"
+    constructorName []                  = "[]"
+    constructorName (_:_)               = ":"
+    constructorFixity []                = defaultFixity
+    constructorFixity (_:_)             = Fixity RightAssoc 5
+ 
+instance FunctorOf (SumF EmptyF ParF) Maybe where
+    inn (InL EmptyF)            = Nothing
+    inn (InR (ParF a))          = Just a
+    out Nothing                 = InL EmptyF
+    out (Just a)                = InR (ParF a)
+    datatypeName                = const "Maybe"
+    constructorName Nothing     = "Nothing"
+    constructorName (Just _)    = "Just"
+
+--import PolyLib.FunctorOf
+-- $(deriveFunctorOf $ reifyDecl [])
+-- $(deriveFunctorOf $ reifyDecl Maybe)
 
