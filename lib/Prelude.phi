@@ -35,6 +35,7 @@ filter  :: (a->Bool)->[a]->[a]
 flip    :: (a -> b -> c) -> b -> a -> c
 fmap    :: Functor f => (a -> b) -> f a -> f b
 foldr   :: (a -> b -> b) -> b -> [a] -> b
+fromEnum:: Enum a => a -> Int
 fst     :: (a,b)->a
 getLine :: IO String
 head    :: [a]->a
