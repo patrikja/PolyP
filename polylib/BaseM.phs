@@ -18,11 +18,9 @@ polytypic fmap2M :: Monad m => (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
 	      Const t   ->  return                    
 
 
-summapM :: Monad b => (a -> b c) -> (d -> b e) -> 
-                      Either a d -> b (Either c e)
+summapM :: Monad b => (a -> b c) -> (d -> b e) -> Either a d -> b (Either c e)
 summapM f g = (mapm Left . f) `either` (mapm Right . g)
-prodmapM :: Monad b => (a -> b c) -> (d -> b e) -> 
-                       (a,d) -> b (c,e)
+prodmapM :: Monad b => (a -> b c) -> (d -> b e) -> (a,d) -> b (c,e)
 prodmapM  f g p = f (fst p) >>= \x-> g (snd p) >>= \y-> return (x,y) 
 prodmapMr f g p = g (snd p) >>= \y-> f (fst p) >>= \x-> return (x,y) 
 
@@ -38,7 +36,7 @@ idM :: Monad m => a -> m a
 idM  = return
 innM :: (Regular d, Monad m) => FunctorOf d a (d a) -> m (d a)
 innM = idM . inn
-innM :: (Regular d, Monad m) => d a -> m (FunctorOf d a (d a))
+outM :: (Regular d, Monad m) => d a -> m (FunctorOf d a (d a))
 outM = idM . out
 -- synonym
 pmapMl :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)

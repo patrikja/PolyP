@@ -1,0 +1,344 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<title>PolyLib - a library of polytypic functions</title>
+</head>
+
+<body>
+
+<h1>PolyLib - a library of polytypic functions</h1>
+
+The library contains a number of basic polytypic building blocks
+divided into a number of modules.
+
+Below is a first a <a href="#Contents">list by module</a> and then an
+alphabetical <a href="#index">index</a> of the library functions.
+
+A companion
+
+<a href="http://www.cs.chalmers.se/~patrikj/poly/polylib/">paper</a>
+
+describes the polytypic functions in PolyLib, motivates their presence
+in the library, and gives a rationale for their design.
+
+<h2><a name="Contents">Contents</a></h2>
+[
+<A Href="#Base">Base</A>
+<A Href="#BaseM">BaseM</A>
+<A Href="#ConstructorName">ConstructorName</A>
+<A Href="#Crush">Crush</A>
+<A Href="#CrushFuns">CrushFuns</A>
+<A Href="#EqOrd">EqOrd</A>
+<A Href="#Equal">Equal</A>
+<A Href="#Flatten">Flatten</A>
+<A Href="#Propagate">Propagate</A>
+<A Href="#Sum">Sum</A>
+<A Href="#Thread">Thread</A>
+<A Href="#ThreadFuns">ThreadFuns</A>
+<A Href="#Zip">Zip</A>
+<A Href="#ZipVariants">ZipVariants</A>
+]
+
+<H3><A Name="Base" Href="Base.phs">Base</A></H3>
+<pre>
+-- Basic polytypic functions
+module Base(pmap,fmap2,cata,ana,hylo,para,(-*-),(-+-)) where
+pmap :: Regular d =&gt; (a -&gt; b) -&gt; d a -&gt; d b
+polytypic fmap2 :: (a -&gt; c) -&gt; (b -&gt; d) -&gt; f a b -&gt; f c d
+cata :: Regular d =&gt; (FunctorOf d a b -&gt; b) -&gt; (d a -&gt; b)
+ana  :: Regular d =&gt; (b -&gt; FunctorOf d a b) -&gt; (b -&gt; d a)
+hylo :: Bifunctor f =&gt; (f a b -&gt; b) -&gt; (c -&gt; f a c) -&gt; c -&gt; b
+para :: Regular d =&gt; (d a -&gt; FunctorOf d a b -&gt; b) -&gt; d a -&gt; b
+-- non-polytypic help functions
+(-*-) :: (a -&gt; c) -&gt; (b -&gt; d) -&gt; (a,b) -&gt; (c,d)
+(-+-) :: (a -&gt; c) -&gt; (b -&gt; d) -&gt; Either a b -&gt; Either c d
+</pre>
+<H3><A Name="BaseM" Href="BaseM.phs">BaseM</A></H3>
+<pre>
+-- Monadic polytypic functions
+module BaseM(pmapM,fmap2M,cataM,anaM,hyloM,paraM,innM,outM,idM,(@@),mapm) where
+pmapM :: (Regular d, Monad m) =&gt; (a -&gt; m b) -&gt; d a -&gt; m (d b)
+polytypic fmap2M :: Monad m =&gt; (a -&gt; m c) -&gt; (b -&gt; m d) -&gt; f a b -&gt; m (f c d)
+summapM :: Monad b =&gt; (a -&gt; b c) -&gt; (d -&gt; b e) -&gt; Either a d -&gt; b (Either c e)
+prodmapM :: Monad b =&gt; (a -&gt; b c) -&gt; (d -&gt; b e) -&gt; (a,d) -&gt; b (c,e) 
+cataM :: (Regular d,Monad m) =&gt; (FunctorOf d a b -&gt; m b) -&gt; (d a -&gt; m b)
+anaM  :: (Regular d,Monad m) =&gt; (b -&gt; m (FunctorOf d a b)) -&gt; (b -&gt; m (d a))
+hyloM :: (Bifunctor f,Monad m) =&gt; (f a b -&gt; m b)-&gt; (c -&gt; m (f a c)) -&gt; c -&gt; m b
+-- new names for symmetry
+idM :: Monad m =&gt; a -&gt; m a
+innM :: (Regular d, Monad m) =&gt; FunctorOf d a (d a) -&gt; m (d a)
+outM :: (Regular d, Monad m) =&gt; d a -&gt; m (FunctorOf d a (d a))
+-- synonym
+pmapMl :: (Regular d, Monad m) =&gt; (a -&gt; m b) -&gt; d a -&gt; m (d b)
+paraM :: (Regular d, Monad m) =&gt; (d a -&gt; FunctorOf d a b -&gt; m b) -&gt; d a -&gt; m b
+-- Reverse order traversals
+pmapMr :: (Regular d, Monad m) =&gt; (a -&gt; m b) -&gt; d a -&gt; m (d b)
+polytypic fmap2Mr :: Monad m =&gt; (a -&gt; m c) -&gt; (b -&gt; m d) -&gt; f a b -&gt; m (f c d)
+cataMr :: (Regular d,Monad m) =&gt; (FunctorOf d a b -&gt; m b) -&gt; (d a -&gt; m b)
+anaMr  :: (Regular d,Monad m) =&gt; (b -&gt; m (FunctorOf d a b)) -&gt; (b -&gt; m (d a))
+hyloMr :: (Bifunctor f,Monad m) =&gt; (f a b -&gt; m b)-&gt; (c -&gt; m (f a c)) -&gt; c -&gt; m b
+-- Monad operations (that are not in PolyPs prelude)
+mapm :: Monad m =&gt; (a-&gt;b) -&gt; m a -&gt; m b
+(@@) :: Monad m =&gt; (b-&gt;m c) -&gt; (a-&gt;m b) -&gt; (a-&gt;m c)
+</pre>
+<H3><A Name="ConstructorName" Href="ConstructorName.phs">ConstructorName</A></H3>
+<pre>
+module ConstructorName where
+constructorName :: Regular d =&gt; d a -&gt; String
+fconstructorName :: Bifunctor f =&gt; f a b -&gt; String -- is built in
+constructorNames :: Regular d =&gt; d a -&gt; [String]
+fconstructorNames :: Bifunctor f =&gt; f a b -&gt; [String]
+constructorNamesAndArities :: Regular d =&gt; d a -&gt; [(String,Int)]
+fconstructorNamesAndArities :: Bifunctor f =&gt; f a b -&gt; [(String,Int)]
+mapFst :: (a-&gt;b) -&gt; (a,c) -&gt; (b,c)
+constructors  :: Regular d =&gt; [d a]
+polytypic fconstructors :: [f a b] =
+polytypic fconstructorsAndArities :: [(f a b,Int)] =
+polytypic fconstructorArity :: f a b -&gt; Int =
+constructor2Int :: Regular d =&gt; d a -&gt; Int
+polytypic fconstructor2Int :: f a b -&gt; Int =
+int2constructor :: Regular d =&gt; Int -&gt; d a
+int2fconstructor :: Bifunctor f =&gt; Int -&gt; f a b
+</pre>
+<H3><A Name="Crush" Href="Crush.phs">Crush</A></H3>
+<pre>
+module Crush(crush,fcrush) where 
+crush :: Regular d =&gt; (a-&gt;a-&gt;a) -&gt; a -&gt; d a -&gt; a
+polytypic fcrush :: (a-&gt;a-&gt;a) -&gt; a -&gt; f a a -&gt; a
+</pre>
+<H3><A Name="CrushFuns" Href="CrushFuns.phs">CrushFuns</A></H3>
+<pre>
+module CrushFuns(psum,prod,conc,pand,por,size,flatten,pall,pany,pelem) where
+psum :: Regular d =&gt; d Int -&gt; Int
+prod :: Regular d =&gt; d Int -&gt; Int
+comp :: Regular d =&gt; d (a-&gt;a) -&gt; (a-&gt;a)
+conc :: Regular d =&gt; d [a] -&gt; [a]
+pand :: Regular d =&gt; d Bool -&gt; Bool
+por  :: Regular d =&gt; d Bool -&gt; Bool
+size    :: Regular d =&gt; d a -&gt; Int
+flatten :: Regular d =&gt; d a -&gt; [a]
+pall    :: Regular d =&gt; (a -&gt; Bool) -&gt; d a -&gt; Bool
+pany    :: Regular d =&gt; (a -&gt; Bool) -&gt; d a -&gt; Bool
+pelem   :: (Regular d,Eq a) =&gt; a -&gt; d a -&gt; Bool
+flatten' :: Regular d =&gt; d a -&gt; [a]
+</pre>
+<H3><A Name="EqOrd" Href="EqOrd.phs">EqOrd</A></H3>
+<pre>
+-- Equality and ordering
+module EqOrd(pequal,peq,peq',pord) where
+pequal :: Regular d =&gt; (a-&gt;b-&gt;Bool) -&gt; d a -&gt; d b -&gt; Bool
+peq :: (Regular d, Eq a) =&gt; d a -&gt; d a -&gt; Bool
+peq' :: (Regular d, Eq a) =&gt; d a -&gt; d a -&gt; Bool
+pord :: (Regular d, Ord a) =&gt; (d a,d a) -&gt; Ordering
+ordop :: Ordering -&gt; Ordering -&gt; Ordering
+</pre>
+<H3><A Name="Equal" Href="Equal.phs">Equal</A></H3>
+<pre>
+-- Equivalence
+module Equal(pequal,fequal,peq) where
+pequal :: Regular d =&gt; (a-&gt;b-&gt;Bool) -&gt; d a -&gt; d b -&gt; Bool
+peq :: (Regular d, Eq a) =&gt; d a -&gt; d a -&gt; Bool
+polytypic fequal :: (a-&gt;b-&gt;Bool) -&gt; (c-&gt;d-&gt;Bool) -&gt; f a c -&gt; f b d -&gt; Bool
+sumequal :: (a-&gt;b-&gt;Bool) -&gt; (c-&gt;d-&gt;Bool) -&gt; Either a c -&gt; Either b d -&gt; Bool
+prodequal :: (a-&gt;b-&gt;Bool) -&gt; (c-&gt;d-&gt;Bool) -&gt; (a,c)-&gt;(b,d) -&gt; Bool
+</pre>
+<H3><A Name="Flatten" Href="Flatten.phs">Flatten</A></H3>
+<pre>
+module Flatten(flatten,fflatten,fl_par,fl_rec,fl_all) where
+flatten :: Regular d =&gt; d a -&gt; [a]
+polytypic fflatten :: f [a] [a] -&gt; [a]
+fl_par :: Bifunctor f =&gt; f a b -&gt; [a]
+fl_rec :: Bifunctor f =&gt; f a b -&gt; [b]
+fl_all :: Bifunctor f =&gt; f a a -&gt; [a]
+-- Help functions for lists
+singleton :: a -&gt; [a]
+nil :: a -&gt; [b]
+-- alternative definitions
+polytypic fl_rec :: f a b -&gt; [b]
+polytypic fl_par :: f a [a] -&gt; [a]
+</pre>
+<H3><A Name="Propagate" Href="Propagate.phs">Propagate</A></H3>
+<pre>
+-- Propagate Maybe to the top
+-- (Can be generalised to thread any monad, see Thread)
+module Propagate(propagate,fprop,sumprop,prodprop,mapMaybe) where
+propagate  :: Regular d =&gt; d (Maybe a) -&gt; Maybe (d a)
+polytypic fprop :: f (Maybe a) (Maybe b) -&gt; Maybe (f a b)
+sumprop  :: Either (Maybe a) (Maybe b) -&gt; Maybe (Either a b)
+prodprop :: (Maybe a,Maybe b) -&gt; Maybe (a,b)
+--  Maybe functions
+mapMaybe :: (a-&gt;b) -&gt; Maybe a -&gt; Maybe b
+</pre>
+<H3><A Name="Sum" Href="Sum.phs">Sum</A></H3>
+<pre>
+-- Sum and size
+module Sum(psum,fsum,size) where 
+psum :: Regular d =&gt; d Int -&gt; Int
+polytypic fsum :: f Int Int -&gt; Int
+size :: Regular d =&gt; d a -&gt; Int
+</pre>
+<H3><A Name="Thread" Href="Thread.phs">Thread</A></H3>
+<pre>
+-- Threads a monad through a value
+module Thread(thread,pmapM,fthread,fmap2M) where
+thread :: (Regular d, Monad m) =&gt; d (m a) -&gt; m (d a)
+polytypic fthread :: Monad m =&gt; f (m a) (m b) -&gt; m (f a b)
+sumthread  :: Monad m =&gt; Either (m a) (m b) -&gt; m (Either a b)
+prodthread :: Monad m =&gt; (m a,m b) -&gt; m (a,b)
+-- Monad operations (that are not in PolyPs prelude)
+mapm :: Monad m =&gt; (a-&gt;b) -&gt; m a -&gt; m b
+-- pmapM :: (Regular d, Monad m) =&gt; (a -&gt; m b) -&gt; d a -&gt; m (d b)
+-- fmap2M :: (Bifunctor f, Monad m) =&gt; (a -&gt; m c) -&gt; (b -&gt; m d) -&gt; 
+--                                     f a b -&gt; m (f c d)
+</pre>
+<H3><A Name="ThreadFuns" Href="ThreadFuns.phs">ThreadFuns</A></H3>
+<pre>
+module ThreadFuns(propagate,cross) where
+cross :: Regular d =&gt; d [a] -&gt; [d a]
+propagate :: Regular d =&gt; d (Maybe a) -&gt; Maybe (d a)
+</pre>
+<H3><A Name="Zip" Href="Zip.phs">Zip</A></H3>
+<pre>
+module Zip(pzip,fzip,pzipWith,pzipWith',(@@),resultM) where
+-- Maybe could be replaced by any MonadZero
+pzip :: Regular d =&gt; (d a,d b) -&gt; Maybe (d (a,b))
+punzip :: Regular d =&gt; d (a,b) -&gt; (d a,d b)
+pzipWith' :: Regular d =&gt; (FunctorOf d c e -&gt; e) -&gt; 
+                          ((d a,d b)-&gt;e) -&gt; 
+                          ((a,b)-&gt;c) -&gt; (d a,d b) -&gt; e
+pzipWith :: Regular d =&gt; ((a, b) -&gt; Maybe c) -&gt; (d a, d b) -&gt; Maybe (d c)
+funzip :: Bifunctor f =&gt; f (a,c) (b,d) -&gt; (f a b,f c d)
+polytypic fzip :: (f a b,f c d) -&gt; Maybe (f (a,c) (b,d))
+sumzip :: (Either a b,Either c d)-&gt; Maybe (Either (a,c) (b,d))
+prodzip :: ((a,b),(c,d)) -&gt; Maybe ((a,c),(b,d))
+resultM  :: a -&gt; Maybe a
+(@@)     :: (a -&gt; Maybe b) -&gt; (c -&gt; Maybe a) -&gt; c -&gt; Maybe b
+</pre>
+<H3><A Name="ZipVariants" Href="ZipVariants.phs">ZipVariants</A></H3>
+<pre>
+module ZipVariants(pzipWith'',pzip'',pzip') where
+pzipWith'' :: Regular d =&gt; ((a, b) -&gt; c) -&gt; (d a, d b) -&gt; Maybe (d c)
+pzip'' :: Regular d =&gt; (d a,d b) -&gt; Maybe (d (a,b))
+pzip' :: Regular d =&gt; (d a, d b) -&gt; (d (a,b), Bool)
+</pre>
+
+<h2><a name="index">Index</a></h2>
+
+<!-- Base.-*- --> <a href="#Base">-*-</a>
+<!-- Base.-+- --> <a href="#Base">-+-</a>
+<!-- BaseM.@@ --> <a href="#BaseM">@@</a>
+<!-- Zip.@@ --> <a href="#Zip">@@</a>
+<!-- Base.ana --> <a href="#Base">ana</a>
+<!-- BaseM.anaM --> <a href="#BaseM">anaM</a>
+<!-- BaseM.anaMr --> <a href="#BaseM">anaMr</a>
+<!-- Base.cata --> <a href="#Base">cata</a>
+<!-- BaseM.cataM --> <a href="#BaseM">cataM</a>
+<!-- BaseM.cataMr --> <a href="#BaseM">cataMr</a>
+<!-- CrushFuns.comp --> <a href="#CrushFuns">comp</a>
+<!-- CrushFuns.conc --> <a href="#CrushFuns">conc</a>
+<!-- ConstrustorName.constructor2Int --> <a href="#ConstrustorName">constructor2Int</a>
+<!-- ConstrustorName.constructorName --> <a href="#ConstrustorName">constructorName</a>
+<!-- ConstrustorName.constructorNames --> <a href="#ConstrustorName">constructorNames</a>
+<!-- ConstrustorName.constructorNamesAndArities --> <a href="#ConstrustorName">constructorNamesAndArities</a>
+<!-- ConstrustorName.constructors --> <a href="#ConstrustorName">constructors</a>
+<!-- ThreadFuns.cross --> <a href="#ThreadFuns">cross</a>
+<!-- Crush.crush --> <a href="#Crush">crush</a>
+<!-- ConstrustorName.fconstructor2Int --> <a href="#ConstrustorName">fconstructor2Int</a>
+<!-- ConstrustorName.fconstructorArity --> <a href="#ConstrustorName">fconstructorArity</a>
+<!-- ConstrustorName.fconstructorName --> <a href="#ConstrustorName">fconstructorName</a>
+<!-- ConstrustorName.fconstructorNames --> <a href="#ConstrustorName">fconstructorNames</a>
+<!-- ConstrustorName.fconstructorNamesAndArities --> <a href="#ConstrustorName">fconstructorNamesAndArities</a>
+<!-- ConstrustorName.fconstructors --> <a href="#ConstrustorName">fconstructors</a>
+<!-- ConstrustorName.fconstructorsAndArities --> <a href="#ConstrustorName">fconstructorsAndArities</a>
+<!-- Crush.fcrush --> <a href="#Crush">fcrush</a>
+<!-- Equal.fequal --> <a href="#Equal">fequal</a>
+<!-- Flatten.fflatten --> <a href="#Flatten">fflatten</a>
+<!-- Flatten.fl_all --> <a href="#Flatten">fl_all</a>
+<!-- Flatten.fl_par --> <a href="#Flatten">fl_par</a>
+<!-- Flatten.fl_rec --> <a href="#Flatten">fl_rec</a>
+<!-- CrushFuns.flatten --> <a href="#CrushFuns">flatten</a>
+<!-- Flatten.flatten --> <a href="#Flatten">flatten</a>
+<!-- CrushFuns.flatten' --> <a href="#CrushFuns">flatten'</a>
+<!-- Base.fmap2 --> <a href="#Base">fmap2</a>
+<!-- BaseM.fmap2M --> <a href="#BaseM">fmap2M</a>
+<!-- BaseM.fmap2Mr --> <a href="#BaseM">fmap2Mr</a>
+<!-- Propagate.fprop --> <a href="#Propagate">fprop</a>
+<!-- Sum.fsum --> <a href="#Sum">fsum</a>
+<!-- Thread.fthread --> <a href="#Thread">fthread</a>
+<!-- Zip.funzip --> <a href="#Zip">funzip</a>
+<!-- Zip.fzip --> <a href="#Zip">fzip</a>
+<!-- Base.hylo --> <a href="#Base">hylo</a>
+<!-- BaseM.hyloM --> <a href="#BaseM">hyloM</a>
+<!-- BaseM.hyloMr --> <a href="#BaseM">hyloMr</a>
+<!-- BaseM.idM --> <a href="#BaseM">idM</a>
+<!-- BaseM.innM --> <a href="#BaseM">innM</a>
+<!-- ConstrustorName.int2constructor --> <a href="#ConstrustorName">int2constructor</a>
+<!-- ConstrustorName.int2fconstructor --> <a href="#ConstrustorName">int2fconstructor</a>
+<!-- ConstrustorName.mapFst --> <a href="#ConstrustorName">mapFst</a>
+<!-- Propagate.mapMaybe --> <a href="#Propagate">mapMaybe</a>
+<!-- BaseM.mapm --> <a href="#BaseM">mapm</a>
+<!-- Thread.mapm --> <a href="#Thread">mapm</a>
+<!-- Flatten.nil --> <a href="#Flatten">nil</a>
+<!-- EqOrd.ordop --> <a href="#EqOrd">ordop</a>
+<!-- BaseM.outM --> <a href="#BaseM">outM</a>
+<!-- CrushFuns.pall --> <a href="#CrushFuns">pall</a>
+<!-- CrushFuns.pand --> <a href="#CrushFuns">pand</a>
+<!-- CrushFuns.pany --> <a href="#CrushFuns">pany</a>
+<!-- Base.para --> <a href="#Base">para</a>
+<!-- BaseM.paraM --> <a href="#BaseM">paraM</a>
+<!-- CrushFuns.pelem --> <a href="#CrushFuns">pelem</a>
+<!-- EqOrd.peq --> <a href="#EqOrd">peq</a>
+<!-- Equal.peq --> <a href="#Equal">peq</a>
+<!-- EqOrd.peq' --> <a href="#EqOrd">peq'</a>
+<!-- EqOrd.pequal --> <a href="#EqOrd">pequal</a>
+<!-- Equal.pequal --> <a href="#Equal">pequal</a>
+<!-- Base.pmap --> <a href="#Base">pmap</a>
+<!-- BaseM.pmapM --> <a href="#BaseM">pmapM</a>
+<!-- BaseM.pmapMl --> <a href="#BaseM">pmapMl</a>
+<!-- BaseM.pmapMr --> <a href="#BaseM">pmapMr</a>
+<!-- CrushFuns.por --> <a href="#CrushFuns">por</a>
+<!-- EqOrd.pord --> <a href="#EqOrd">pord</a>
+<!-- CrushFuns.prod --> <a href="#CrushFuns">prod</a>
+<!-- Equal.prodequal --> <a href="#Equal">prodequal</a>
+<!-- BaseM.prodmapM --> <a href="#BaseM">prodmapM</a>
+<!-- Propagate.prodprop --> <a href="#Propagate">prodprop</a>
+<!-- Thread.prodthread --> <a href="#Thread">prodthread</a>
+<!-- Zip.prodzip --> <a href="#Zip">prodzip</a>
+<!-- ThreadFuns.propagate --> <a href="#ThreadFuns">propagate</a>
+<!-- Propagate.propagate --> <a href="#Propagate">propagate</a>
+<!-- CrushFuns.psum --> <a href="#CrushFuns">psum</a>
+<!-- Sum.psum --> <a href="#Sum">psum</a>
+<!-- Zip.punzip --> <a href="#Zip">punzip</a>
+<!-- Zip.pzip --> <a href="#Zip">pzip</a>
+<!-- ZipVariants.pzip' --> <a href="#ZipVariants">pzip'</a>
+<!-- ZipVariants.pzip'' --> <a href="#ZipVariants">pzip''</a>
+<!-- Zip.pzipWith --> <a href="#Zip">pzipWith</a>
+<!-- Zip.pzipWith' --> <a href="#Zip">pzipWith'</a>
+<!-- ZipVariants.pzipWith'' --> <a href="#ZipVariants">pzipWith''</a>
+<!-- Zip.resultM --> <a href="#Zip">resultM</a>
+<!-- Flatten.singleton --> <a href="#Flatten">singleton</a>
+<!-- Sum.size --> <a href="#Sum">size</a>
+<!-- CrushFuns.size --> <a href="#CrushFuns">size</a>
+<!-- Equal.sumequal --> <a href="#Equal">sumequal</a>
+<!-- BaseM.summapM --> <a href="#BaseM">summapM</a>
+<!-- Propagate.sumprop --> <a href="#Propagate">sumprop</a>
+<!-- Thread.sumthread --> <a href="#Thread">sumthread</a>
+<!-- Zip.sumzip --> <a href="#Zip">sumzip</a>
+<!-- Thread.thread --> <a href="#Thread">thread</a>
+
+
+
+<hr>
+<!-- hhmts start -->
+Last modified: Wed Oct 20 10:40:55 MET DST 1999
+<!-- hhmts end -->
+by
+<address>
+<a href="http://www.cs.chalmers.se/~patrikj/"
+ >Patrik Jansson</a> /
+<a href="mailto:patrikj@cs.chalmers.se"
+               >patrikj@cs.chalmers.se</a>
+</address>
+</body>
+</html>
