@@ -1,3 +1,8 @@
+040907:
+
+  Ny PolyLib-struktur som använder hierarkiska bibliotek. Pensionerar
+  *.lphs som inte uppdaterats i takt med .phs-filerna.
+
 000330:
   Fortsätter med .lphs-dokumenten och uppdaterar samtidigt filerna så
     att de skall fungera bättre. Tar bort EqOrd.phs till förmån för
