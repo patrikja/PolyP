@@ -1,10 +1,11 @@
 PolyP = polyp
+PERL = perl
 
 targets = testSum.hs testCrush.hs testFlatten.hs testPropagate.hs	\
           testThread.hs testZip.hs testConstructorName.hs testEqOrd.hs 	\
           testEqual.hs testSubstructures.hs testShow.hs
 
-CHASE = ../bin/chase
+CHASE = $(PERL) ../bin/chase
 
 default: $(targets)
 
