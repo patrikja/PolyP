@@ -69,7 +69,8 @@ We need a version of \verb|lookaside| that uses pointer equality,
 > typeOutOfHeap  :: NonGenerics s -> HpType s  -> ST s Type
 > kindOutOfHeap  ::                  HpKind s  -> ST s Kind
 
-> typeIntoHeap  :: QType -> ST s (HpQType s)
+> qtypeIntoHeap :: QType -> ST s (HpQType s)
+> typeIntoHeap  :: Type  -> ST s (HpType s)
 > kindIntoHeap  :: Kind  -> ST s (HpKind s)
 > eqnIntoHeap   :: Eqn   -> ST a (HpTEqn a)
 
@@ -301,9 +302,10 @@ common subexpressions. {\em Do it!})
 The types are in the Interface section above.
 \begin{verbatim}
 
-> kindIntoHeap = executeSTM newEnv . typeIntoHeap'
-> eqnIntoHeap  = mmapEqn typeIntoHeap
-> typeIntoHeap = executeSTM newEnv . mmapQualified typeIntoHeap'
+> kindIntoHeap = typeIntoHeap
+> typeIntoHeap = executeSTM newEnv . typeIntoHeap'
+> eqnIntoHeap  = mmapEqn qtypeIntoHeap
+> qtypeIntoHeap = executeSTM newEnv . mmapQualified typeIntoHeap'
 
 > type Name2HpType s a = StateM (ST s) (Cache VarID (HpType s)) a
 

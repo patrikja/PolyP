@@ -4,7 +4,7 @@
 > module MonadLibrary(module StateFix,
 >                     State     ,updateST ,fetchST ,executeST ,
 >                     StateM(..),updateSTM,fetchSTM,executeSTM,mliftSTM,
->                     (<@),(<@-),(<*>),(<:*>),(<<),(@@),mIf,
+>                     (<@),(<@-),(<*>),(<:*>),(<<),(@@),mIf,applyM2,
 >                     Error(..),unDone,LErr,mapLErr,showLErr,handleError,
 >                     STErr,mliftErr,convertSTErr,ErrorMonad(failEM),
 >                     OutputT,output,runOutput,mliftOut,
@@ -28,6 +28,13 @@
 
 join      :: Monad m => m (m a) -> m a
 join x     = x >>= id
+
+From the prelude:
+applyM  :: Monad m => (a -> m b) -> m a -> m b
+
+> applyM2 :: Monad m => (a -> b -> m c) -> m a -> m b -> m c
+> applyM2 f ma mb = ma >>= \a -> mb >>= \b -> f a b
+> --applyM2 f ma mb = ma >>= (mb >>=) . f
 
 > (@@) :: Monad m => (b -> m c) -> (a -> m b) -> (a -> m c)
 > (@@) f g x        = g x >>= f

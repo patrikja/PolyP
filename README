@@ -2,8 +2,6 @@ PolyP - a polytypic programming language
 
     Patrik Jansson & Johan Jeuring
 
-          980413: version 0.7
-
 This distribution contains 
   * the source files for a compiler written in Haskell that compiles
     PolyP-code to Haskell.

@@ -12,7 +12,7 @@
 >            extendsEnv,assocsEnv,remember,extendsAfterEnv)
 > import TypeGraph(HpType,HpKind,HpQType,NonGenerics,NodePtr,
 >                  mkVar,mkCon,mkApp,cataHpType,
->                  qtypeOutOfHeap,kindOutOfHeap,typeIntoHeap,kindIntoHeap,
+>                  qtypeOutOfHeap,kindOutOfHeap,qtypeIntoHeap,kindIntoHeap,
 >                  flattenNgs)
 
 \end{verbatim}
@@ -87,7 +87,7 @@ as non-generic in the type basis.
 
 > lookinrom :: String -> TypeEnv   -> Maybe (ST s (HpQType s))
 > lookinrom name typeEnv =
->   lookupEnv name typeEnv   <@ typeIntoHeap
+>   lookupEnv name typeEnv   <@ qtypeIntoHeap
 
 \end{verbatim}
 When looking up a kind variable no copies are made as all kind

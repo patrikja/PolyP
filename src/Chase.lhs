@@ -7,7 +7,7 @@ files to try and a list of files that have been found.
 > module Chase(chaseImports)  where
 > chaseImports = chaseImports
 
-#ifdef FALSE
+#if 0
 > chaseImports :: [String] -> [String] -> [String] -> IO [String]
 > chaseImports path [] seen 
 >   = return seen
@@ -27,4 +27,4 @@ files to try and a list of files that have been found.
 >   decls <- map (fromMaybe []) (tryRead path file)
 >   --print decls
 >   return (catMaybes [mbImportName s | Haskell s <- decls])
-#endif
+#endif /* 0 */

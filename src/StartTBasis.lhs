@@ -74,6 +74,7 @@ These should be read from a file.
 >               ("const","a->b->a"),
 >               ("either",eitherTextType),
 >               ("id","a->a"),
+>               ("flip","(a -> b -> c) -> b -> a -> c"),
 >               ("map","(a->b)->[a]->[b]"),
 >               ("++","[a]->[a]->[a]"),
 >               ("fst","(a,b)->a"),("snd","(a,b)->b"),
@@ -82,7 +83,8 @@ These should be read from a file.
 >               ("zip","[a] -> [b] -> [(a,b)]"),
 >--               ("@@","Monad m => (b->m c) -> (a->m b) -> (a->m c)"),
 >               ("return","Monad m => a -> m a"),
->               (">>=","Monad m => m a -> (a -> m b) -> m b")
+>               (">>=",   "Monad m => m a -> (a -> m b) -> m b"),
+>               ("applyM","Monad m => (a -> m b) -> m a -> m b")
 >               ]
 
 \end{verbatim}

@@ -1,7 +1,8 @@
 \chapter{Type errors}
 \begin{verbatim}
 
-> module TypeError(mayreportTError, TError(..),mayshowargs, failWith) where
+> module TypeError(mayreportTError, TError(..),mayshowargs, failWith,
+>                  ErrMsg(..), internalError, impossible) where
 > import TypeGraph(HpType,NonGenerics,
 >                  qtypeOutOfHeap,typesOutOfHeap,
 >                  showNodePtr)
@@ -53,5 +54,36 @@
 >                           (return ())
 >    where st = show (pretty t) 
 >          st'= show (pretty t') 
+
+
+> data ErrMsg = EUnifyConstApp 
+>             | EUnifyKind     
+>             | ENoMuApp       
+>             | EMissedCase    
+>             | EImpossible    
+>             | ENoFunctorFor String
+>	      | EFOfnonDT      
+
+> instance Show ErrMsg where
+>   showsPrec _ e = showString "ErrMsg:" . showString (prError e)
+
+
+> prError :: ErrMsg -> String
+> prError EUnifyConstApp   = "Unify: constructor match against application"
+> prError EUnifyKind       = "Unify: kind error"
+> prError ENoMuApp         = "Unify: Mu f can't match a typeapplication"
+> prError (ENoFunctorFor d)= "Unify: No functor defined for datatype constructor "++d
+> prError EFOfnonDT        = "FunctorOf <not datatype>"
+
+-- partially applied types are not Regular
+
+> internalError :: String -> a
+> internalError s = error ("Internal PolyP error: " ++ s)
+
+> unimpl :: String -> a
+> unimpl s = internalError (s++" is not implemented yet")
+
+> impossible :: String -> a
+> impossible s = internalError ("impossible: "++s)
 
 \end{verbatim}

@@ -6,7 +6,7 @@
 > import UnifyTypes(unify,checkInstance)
 > import TypeGraph(HpType,HpKind,NodePtr,HpNode(..),HpQType,
 >                  mkFun,mkCon,mkVar,mkFOfd,
->                  (==>),fetchNode,typeIntoHeap,
+>                  (==>),fetchNode,qtypeIntoHeap,
 >                  spineWalkHpType,getChild)
 > import TypeBasis(Basis,TBasis,KindBasis,
 >                  extendTypeTBasis,extendTypeAfterTBasis,
@@ -182,7 +182,7 @@ predicates. Adapt mkFun, mkVar to QTypes. (How to do with inferPat?)
 >     basis' |- expr
 
 > basis |- (Typed expr uType)
->   = mliftErr (typeIntoHeap uType)   >>= \uHpQType -> 
+>   = mliftErr (qtypeIntoHeap uType)   >>= \uHpQType -> 
 >     basis |- expr                   >>= \tExpr   -> 
 >     checkInstance ngs uHpQType tExpr >>= \_ ->
 >     return tExpr
@@ -194,11 +194,11 @@ Just selects the type of the literal.
 \begin{verbatim}
 
 > inferLiteral :: Basis s -> Literal -> STErr s (HpQType s)
-> inferLiteral basis (IntLit _)  = mliftErr (typeIntoHeap intType)
-> inferLiteral basis (FloatLit _)= mliftErr (typeIntoHeap floatType)
-> inferLiteral basis (BoolLit _) = mliftErr (typeIntoHeap boolType)
-> inferLiteral basis (CharLit _) = mliftErr (typeIntoHeap charType)
-> inferLiteral basis (StrLit _)  = mliftErr (typeIntoHeap strType)
+> inferLiteral basis (IntLit _)  = mliftErr (qtypeIntoHeap intType)
+> inferLiteral basis (FloatLit _)= mliftErr (qtypeIntoHeap floatType)
+> inferLiteral basis (BoolLit _) = mliftErr (qtypeIntoHeap boolType)
+> inferLiteral basis (CharLit _) = mliftErr (qtypeIntoHeap charType)
+> inferLiteral basis (StrLit _)  = mliftErr (qtypeIntoHeap strType)
 
 \end{verbatim}
 \section{Patterns}
@@ -256,7 +256,7 @@ right kind.)
 >     [peqns,veqns] = splitUp [isPolytypic] eqns
 >     typeVar veqn = mkVar <@ (pair (getNameOfVarBind veqn) . qualify)
 >     typePoly (Polytypic v (ps:=>t) f cs) = 
->                 typeIntoHeap (poly f ps :=> t) <@ pair v
+>                 qtypeIntoHeap (poly f ps :=> t) <@ pair v
 >     typePoly _ = error "InferType: inferBlock: impossible: not Polytypic"
 >     poly :: QType -> [Context]-> [Context]
 >     poly f ps = ("Poly",[deQualify f]):ps
@@ -326,8 +326,8 @@ given type and evaluating the resulting type using teval.
 
 \begin{verbatim}
 
->       mliftErr (typeIntoHeap ty        >>= \hpty->
->                 mapl typeIntoHeap funs >>= \funs'->
+>       mliftErr (qtypeIntoHeap ty        >>= \hpty->
+>                 mapl qtypeIntoHeap funs >>= \funs'->
 >                 mapl (tevalAndSubst hpty) funs') >>= \taui -> 
 
 \end{verbatim}
@@ -557,7 +557,7 @@ rewrite rules: \\
 \end{verbatim}
 We represent type synonyms by their arity, and a qualified type where
 the context is used to name the variables and the type is the body. In
-this way the normal typeIntoHeap will give us pointers into the body
+this way the normal qtypeIntoHeap will give us pointers into the body
 that we can use for substitution.
 
 Problem: The program loops if not all synonyms are present. 
@@ -570,7 +570,7 @@ Problem: The program loops if not all synonyms are present.
 >         f _ = error "splitTypeSyn: not a type variable"
 
 > applySynonym syn args = 
->     typeIntoHeap syn <@ splitTypeSyn  >>= \(vars,rhs)->
+>     qtypeIntoHeap syn <@ splitTypeSyn  >>= \(vars,rhs)->
 >     sequence (zipWith (==>) vars args) <@- rhs
 
 \end{verbatim}
