@@ -25,7 +25,7 @@ DIFF = diff
 ###################
 # The target Haskell files of the tests to be performed
 targets = testSum.hs testCrush.hs testFlatten.hs testPropagate.hs	\
-          testThread.hs testZip.hs testConstructorName.hs testEqOrd.hs 	\
+          testThread.hs testZip.hs testConstructorName.hs testCompare.hs 	\
           testEqual.hs testSubstructures.hs testShow.hs testBaseM.hs \
           Separate.hs
 
@@ -43,7 +43,7 @@ print:
 	cat ../polylib/Base.phs    ../polylib/Sum.phs       ../polylib/Crush.phs \
 	    ../polylib/Flatten.phs ../polylib/Propagate.phs ../polylib/Thread.phs\
 	    ../polylib/Zip.phs     ../polylib/ConstructorName.phs		 \
-            ../polylib/EqOrd.phs   ../polylib/Equal.phs				 \
+            ../polylib/Compare.phs ../polylib/Equal.phs				 \
 	    ../polylib/BaseM.phs   Show.phs > All.phs ; \
 	enscript -2Gr All.phs 
 

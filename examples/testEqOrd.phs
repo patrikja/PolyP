@@ -1,5 +1,0 @@
-module Main where
-import EqOrd(peq,pord)
-ones = 1:ones
-main = print (peq ones (2:ones), pord ("Pat","rik"))
--- expected output: (False, LT)
