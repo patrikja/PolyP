@@ -1,13 +1,23 @@
 \chapter{Pretty printer}
 \begin{verbatim}
 
+#ifdef __DEBUG__
 > module PrettyPrinter(module PrettyPrinter,module PrettyPrintExtra,
 >                      module Grammar) where
 > import Char(isAlpha)
+> --import Folding
+> import PrettyPrintExtra
+> import Grammar
+#else
+> module PrettyPrinter(module PrettyPrinter,module PrettyPrintExtra,
+>                      module Grammar) where
+> import Char(isAlpha)
+> --import Folding
 > import PrettyPrintExtra(Pretty(..),ppVerticalList,ppCommaList,
 >                         ppTuple,ppParentheses,ppApp,ppPackedList,showDoc,
 >                         (<>),($$),nest,text,Doc,sep)
 > import Grammar
+#endif
 
 \end{verbatim}
 \section{Instances}
@@ -30,6 +40,12 @@ A third way is to abandon show and use pshow = showDoc . pretty instead.
 
 > pshow :: Pretty a => a -> String
 > pshow = showDoc . pretty
+
+> instance Pretty a => Pretty (Module' a) where
+>   pretty = prModule
+
+> instance Pretty ImpExp where
+>   pretty = prImpExp
 
 > instance Pretty a => Pretty (Eqn' a) where
 >   pretty = prEqn
@@ -75,6 +91,25 @@ restriction that forbids instances for \texttt{Qualified Type}.
 
 \section{Equations}
 \begin{verbatim}
+
+> prModule :: Pretty a => Module' a -> Doc
+> prModule (Module name exps imps eqns)
+>     = (text ("module " ++ name) <> exports <> text " where")
+>        $$ imports
+>        $$ ppVerticalList eqns
+>  where
+>     impexp [] = text ""
+>     impexp xs = text " " <> ppTuple xs
+>     exports = impexp exps
+>     imports = ppVerticalList $ map (\(m,is) -> text ("import " ++ m) <> impexp is) imps
+
+> prImpExp :: ImpExp -> Doc
+> prImpExp (Plain n)
+>  | isOperatorName n  = ppParentheses $ text n
+>  | otherwise         = text n
+> prImpExp (Mod m)     = text $ "module " ++ m
+> prImpExp (Subs t []) = text $ t ++ "(..)"
+> prImpExp (Subs t xs) = text t <> ppTuple xs
 
 > prEqn :: Pretty a => Eqn' a -> Doc
 > prEqn (VarBind name mt pats body) 
@@ -181,9 +216,51 @@ output Haskell code violates the monomorphism restriction.
 > prExpr WildCard = text "_"
 
 > prExpr (Letrec eqnss expr)
->   = sep [ text "let " <> ppVerticalList (map ppVerticalList eqnss)
+>   = sep [ text "let " <> ppVerticalList (map ppVerticalList $ map (map noTypes) eqnss)
 >         , text "in " <> prExpr expr
 >         ]
+>   where
+>     noTypes = cataEqn (  ( Var
+>                          , Con
+>                          , (:@:)
+>                          , Lambda
+>                          , Literal
+>                          , WildCard
+>                          , Case
+>                          , Letrec
+>                          , Typed
+>                          )
+>                       ,  ( \a _ b c -> VarBind a Nothing b c
+>                          , DataDef
+>                          , Polytypic
+>                          , ExplType
+>                          )
+>                       )
+>     cataExpr t@((var,con,app,lambda,literal,
+>              wildCard,case',letrec,typed), _ ) = f
+>        where 
+>           f (Var a     ) = var a
+>           f (Con a     ) = con a
+>           f (a :@: b   ) = app (f a) (f b)
+>           f (Lambda a b) = lambda (f a) (f b)
+>           f (Literal a ) = literal a
+>           f (WildCard  ) = wildCard
+>           f (Case a b  ) = case' (f a) (map (mapBoth f) b)
+>           f (Letrec a b) = letrec (map (map (cataEqn t)) a) (f b)
+>           f (Typed a b ) = typed (f a) b
+>           mapBoth g (a,b) = (g a, g b) 
+> 
+>     cataEqn t@( _ , (varBind, dataDef, polyTypic, explType) ) = f
+>        where
+>           f (VarBind a mt b c ) = varBind a mt (map fet b) (fet c)
+>           f (DataDef a b c d  ) = dataDef a b c d
+>           f (Polytypic a b c d) = polyTypic a b c (map (mapSnd fet) d)
+>           f (ExplType vs ty)    = explType vs ty
+>           f (TypeSyn  _ _ _)    = error "Folding.cataEqn: TypeSyn not allowed"
+>           f (Class    _ _ _)    = error "Folding.cataEqn: Class not allowed"
+>           f (Instance _ _ _)    = error "Folding.cataEqn: Instance not allowed"
+>           fet = cataExpr t               
+>           mapSnd f (a,b) = (a,f b)
 
 > prExpr (Typed e t) 
 >   = sep [prPat e <> text " ::", nest 2 (pretty t)]

@@ -1,22 +1,24 @@
-module Propagate(propagate,fprop,sumprop,prodprop,mapMaybe) where
-import Base(cata,inn,pmap)
+module Propagate(propagate,fprop,sumprop,prodprop) where
+import Base(cata,pmap)
+
 propagate  :: Regular d => d (Maybe a) -> Maybe (d a)
-propagate  =  cata (mapMaybe inn . fprop)
+propagate  =  cata (fmap inn . fprop)
+
+c21 f g x y = f (g x) (g y)
 
 polytypic fprop :: f (Maybe a) (Maybe b) -> Maybe (f a b)
   = case f of
-      g + h     ->  sumprop   . (fprop -+- fprop)
-      g * h     ->  prodprop  . (fprop -*- fprop)
-      Empty     ->  Just
-      Par       ->  id
-      Rec       ->  id
-      d @ g     ->  propagate . (pmap fprop)
-      Const t   ->  Just
-sumprop  :: Either (Maybe a) (Maybe b) -> Maybe (Either a b)
-sumprop  =  mapMaybe Left `either` mapMaybe Right
-prodprop :: (Maybe a,Maybe b)  -> Maybe (a,b)
+      g + h     ->  sumprop . (fprop -++- fprop)
+      g * h     ->  prodprop . (fprop -**- fprop)
+      Empty     ->  \EmptyF -> Just EmptyF
+      Par       ->  fmap ParF . unParF
+      Rec       ->  fmap RecF . unRecF
+      d @ g     ->  fmap CompF . propagate . (pmap fprop) . unCompF
+      Const t   ->  fmap ConstF . Just . unConstF
+
+sumprop = either (fmap InL) (fmap InR)
+
 prodprop p = case p of
-               (Just x,Just y) ->  Just (x,y)
-               _               ->  Nothing
-mapMaybe :: (a->b) -> Maybe a -> Maybe b
-mapMaybe f = maybe Nothing (Just . f)
+   (Just x, Just y) -> Just (x:*:y)
+   _                -> Nothing
+

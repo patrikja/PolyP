@@ -1,13 +1,16 @@
-module Zip(pzip,fzip,pzipWith,pzipWith',fzipWith,fzipWith) where
-import Base(pmap,fmap2,(-+-),(-*-))
-import Propagate(fprop,sumprop,prodprop,propagate,mapMaybe)
+module Zip(pzip,fzip,pzipWith,pzipWith',fzipWith,fzipWith,punzip) where
+
+import Base(pmap,fmap2)
+import Propagate(fprop,propagate,sumprop,prodprop)
+
 punzip :: Regular d => d (a,b) -> (d a,d b)
 punzip x = (pmap fst x, pmap snd x)
 
 funzip :: Bifunctor f => f (a,c) (b,d) -> (f a b,f c d)
 funzip x = (fmap2 fst fst x, fmap2 snd snd x)
+
 pzip :: Regular d => (d a,d b) -> Maybe (d (a,b))
-pzip  = (innM @@ (fprop.fmap2 returnM pzip) @@ fzip ) . (out -*- out)
+pzip  = (innM @@ (fprop.fmap2 return pzip) @@ fzip ) . (out `mapPair` out)
 
 pzipWith' :: Regular d => (FunctorOf d c e -> e) -> 
                           ((d a,d b)->e) -> 
@@ -15,39 +18,42 @@ pzipWith' :: Regular d => (FunctorOf d c e -> e) ->
 pzipWith' ins fail op (x,y)  =
   maybe (fail (x,y)) (ins . fmap2 op (pzipWith' ins fail op)) 
         (fzip (out x, out y))
+
 pzipWith :: Regular d => ((a, b) -> Maybe c) -> (d a, d b) -> Maybe (d c)
-pzipWith  = pzipWith' (mapMaybe inn.fprop) (const zeroM)
+pzipWith  = pzipWith' (fmap inn.fprop) (const zeroM)
+
 fzipWith :: ((a,a')->c) -> ((b,b')->d) -> (f a b, f a' b') -> Maybe (f c d)
-fzipWith f g = mapMaybe (fmap2 f g) . fzip 
+fzipWith f g = fmap (fmap2 f g) . fzip 
 
 polytypic fzip  :: (f a b,f c d) -> Maybe (f (a,c) (b,d))
   = case f of   
-      g + h     ->  (sumprop   . (fzip -+- fzip)) @@ sumzip
-      g * h     ->  (prodprop  . (fzip -*- fzip)) @@ prodzip
-      Empty     ->  const (returnM ())
-      Par       ->  returnM
-      Rec       ->  returnM
-      d @ g     ->  (propagate . (pmap fzip)    ) @@ pzip
-      Const t   ->  constzip
-sumzip :: (Either a b,Either c d) -> Maybe (Either (a,c) (b,d))
-sumzip p = case p of
-             (Left s ,Left t )    -> returnM (Left (s,t))
-             (Right s,Right t)    -> returnM (Right (s,t))
-             _                    -> zeroM
-prodzip :: ((a,b),(c,d)) -> Maybe ((a,c),(b,d))
-prodzip ((a,b),(c,d))  =  returnM ((a,c),(b,d))
-constzip :: Eq t => (t,t) -> Maybe t
-constzip (x,y) = if x==y then returnM x else zeroM
-returnM  :: a -> Maybe a
-returnM x  =  Just x
+      g + h     ->  (sumprop  . ((Left . fzip) `either` (Right . fzip))) @@ sumzip
+      g * h     ->  (prodprop . (fzip `mapPair` fzip)) @@ prodzip
+      Empty     ->  const (return EmptyF)
+      Par       ->  \(ParF x,ParF y) -> return $ ParF (x,y)
+      Rec       ->  \(RecF x,RecF y) -> return $ RecF (x,y)
+      d @ g     ->  (fmap CompF . propagate . (pmap fzip)) @@ (pzip . mapPair unCompF unCompF)
+      Const t   ->  fmap ConstF . constzip . mapPair unConstF unConstF
 
-bindM    :: Maybe a -> (a -> Maybe b) -> Maybe b
-bindM x f  =  maybe Nothing f x
+sumzip p = case p of
+             (InL s, InL t) -> return (Left (s,t))
+             (InR s, InR t) -> return (Right (s,t))
+             _              -> zeroM
+
+mapPair :: (a -> c) -> (b -> d) -> (a,b) -> (c,d)
+mapPair f g (x,y) = (f x,g y)
+
+prodzip ((a:*:b),(c:*:d))  =  Just ((a,c),(b,d))
+
+constzip :: Eq t => (t,t) -> Maybe t
+constzip (x,y) = if x==y then return x else zeroM
 
 (@@)     :: (a -> Maybe b) -> (c -> Maybe a) -> c -> Maybe b
-g @@ f = \a-> f a `bindM` g
+g @@ f = \a -> f a >>= g
+
 zeroM :: Maybe a
 zeroM = Nothing
 
 innM :: Regular d => FunctorOf d a (d a) -> Maybe (d a)
-innM  =  returnM . inn
+innM  =  return . inn
+

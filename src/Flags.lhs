@@ -6,19 +6,29 @@
 >		      help	       :: Bool,
 >		      requests         :: [String],
 >		      preludeFileNames :: [String],
+>                     polypDir         :: String,
 >		      fileargs	       :: [String]}
 >   deriving Show
 
 > defaultPreludeFileName :: String
 
+#ifdef __POLYPDIR__
+> defaultPolyPDir = __POLYPDIR__
+#else
+> defaultPolyPDir = ""
+#endif
+
 #ifdef __POLYPPRELUDE__
 > defaultPreludeFileName = __POLYPPRELUDE__
 #else
-> defaultPreludeFileName = "PolyPrel.hs"
+> defaultPreludeFileName = "Prelude.phi"
 #endif
 
 > preludeFileName :: String
 > preludeFileName = unsafeGetEnvDef "POLYPPRELUDE" defaultPreludeFileName
+
+> thePolyPDir :: String
+> thePolyPDir = unsafeGetEnvDef "POLYPDIR" defaultPolyPDir
 
 > defaultflags :: Flags
 > defaultflags = Flags {verbose		 = False, 
@@ -26,6 +36,7 @@
 >			help             = False,
 >			requests	 = [],
 >		        preludeFileNames = [preludeFileName],
+>                       polypDir         = thePolyPDir,
 >			fileargs         = []}
 
 > flags :: Flags

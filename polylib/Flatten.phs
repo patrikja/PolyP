@@ -1,16 +1,16 @@
-module Flatten(flatten,fflatten,fl_par,fl_rec,fl_all,singleton,nil) where
+module Flatten(flatten,fflatten,fl_par,fl_rec,fl_all,singleton,nil,substructures) where
 import Base(pmap,fmap2)
 flatten :: Regular d => d a -> [a]
 flatten  =  fflatten . fmap2 singleton flatten . out
 
 polytypic fflatten ::  f [a] [a] -> [a]
   = case f of
-      g + h        ->  fflatten `either` fflatten
-      g * h        ->  \(x,y) -> fflatten x ++ fflatten y
+      g + h        ->  fflatten `foldSum` fflatten
+      g * h        ->  \(x:*:y) -> fflatten x ++ fflatten y
       Empty        ->  nil
-      Par          ->  id
-      Rec          ->  id
-      d @ g        ->  concat . flatten . pmap fflatten 
+      Par          ->  unParF
+      Rec          ->  unRecF
+      d @ g        ->  concat . flatten . pmap fflatten . unCompF
       Const t      ->  nil
 fl_par :: Bifunctor f => f a b -> [a]
 fl_rec :: Bifunctor f => f a b -> [b]

@@ -4,9 +4,9 @@ Instead of generating instances of each polytypic call as was done in the
 original design, we generate the following:
 
 \begin{itemize}
-	\item A FunctorOf instance for each datatype, defining inn and out.
-	\item A class P\_{\em poly} for each {\tt polytypic} definition {\em poly}.
-	\item Instances to P\_{\em poly} for each functor in the polytypic case expression.
+   \item A FunctorOf instance for each datatype, defining inn and out.
+   \item A class P\_{\em poly} for each {\tt polytypic} definition {\em poly}.
+   \item Instances to P\_{\em poly} for each functor in the polytypic case expression.
 \end{itemize}
 
 Calls to polytypic functions does not change, however the type of polytypic functions
@@ -35,7 +35,7 @@ cata f = f . fmap2 id (cata f) . out
 > import MyPrelude(mapFst,mapSnd,unique,fMap)
 > import PrettyPrinter(pshow,Typelike(..))
 > import TypeBasis(TBasis,FuncEnv,TypeEnv,getFuncEnv,getTypeEnv)
-> import List(union,(\\),mapAccumL)
+> import List(union,(\\),mapAccumL,nub,groupBy,sortBy)
 > import Monad(mplus)
 
 \end{verbatim} 
@@ -52,9 +52,9 @@ Implementation:
 \begin{verbatim}
 
 > instantiateProgram (tbasis,(datadefs,eqnss)) = 
->		datadefs
->		++ functorOfInstances datadefs (getFuncEnv tbasis)
->		++ rewritePolytypicConstructs (getTypeEnv tbasis) (getFuncEnv tbasis) eqnss
+>     datadefs
+>     ++ functorOfInstances datadefs (getFuncEnv tbasis)
+>     ++ rewritePolytypicConstructs (getTypeEnv tbasis) (getFuncEnv tbasis) eqnss
 
 \end{verbatim}
 
@@ -64,91 +64,105 @@ the datatype and its functor.
 \begin{verbatim}
 
 > functorOfInstances :: [Eqn] -> FuncEnv -> [Eqn]
-> functorOfInstances datadefs funcenv = map functorOfInstance datadefs
->	where
->		findFunc conid = maybe err snd $ lookupEnv conid funcenv
->			where err = error $ "PolyInstance.functorOfInstances: No functor for datatype " ++ conid
->		functorOfInstance (DataDef name _ cons _) =
->			Instance [] ("FunctorOf", [func, TCon name]) (innEqn func cons ++ outEqn func cons)
->			where
->				func = realFuncNames (findFunc name)
+> functorOfInstances datadefs funcenv = concatMap functorOfInstance datadefs
+>  where
+>     findFunc conid = maybe [] ((:[]).snd) $ lookupEnv conid funcenv
+>        where err = error $ "PolyInstance.functorOfInstances: No functor for datatype " ++ conid
+>     functorOfInstance (DataDef name _ cons _) = case func of
+>        []       -> []
+>        [func]   -> [ Instance [] ("FunctorOf", [func, TCon name]) (innEqn func cons
+>                                               ++ outEqn func cons
+>                                               ++ dataName name
+>                                               ++ constrName cons
+>                                )]
+>        where
+>           func = map realFuncNames (findFunc name)
 
->				-- Change to real functor names
->				realFuncNames t = case t of
->					TCon "+"			-> TCon "SumF"
->					TCon "*"			-> TCon "ProdF"
->					TCon "Empty"	-> TCon "EmptyF"
->					TCon "Par"		-> TCon "ParF"
->					TCon "Rec"		-> TCon "RecF"
->					TCon "@"			-> TCon "CompF"
->					TCon "Const"	-> TCon "ConstF"
->					f :@@: g			-> realFuncNames f :@@: realFuncNames g
->					_					-> t
+>           -- Change to real functor names
+>           realFuncNames t = case t of
+>              TCon "+"       -> TCon "SumF"
+>              TCon "*"       -> TCon "ProdF"
+>              TCon "Empty"   -> TCon "EmptyF"
+>              TCon "Par"     -> TCon "ParF"
+>              TCon "Rec"     -> TCon "RecF"
+>              TCon "@"       -> TCon "CompF"
+>              TCon "Const"   -> TCon "ConstF"
+>              f :@@: g       -> realFuncNames f :@@: realFuncNames g
+>              _              -> t
 
->				-- Compute equations for inn and out
->				innEqn f c = map (\(p,e) -> VarBind "inn" Nothing [p] e) $ inn f c
->				outEqn f c = map (\(p,e) -> VarBind "out" Nothing [p] e) $ out f c
+>           -- Compute equations for datatypeName and constructorName
+>           dataName name = [VarBind "datatypeName" Nothing [] $ Var "const" :@: Literal (StrLit name)]
+>           constrName cons = map conName cons
+>              where
+>                 conName (conid, ts) = VarBind "constructorName"
+>                                               Nothing
+>                                               [foldl (\p _ -> p :@: WildCard) (Con conid) ts]
+>                                               $ Literal (StrLit conid)
 
->				-- Pattern/result pairs for inn
->				inn _ []				= []
->				inn func (c:cs)	= case func of
->					TCon "SumF" :@@: f :@@: g	-> mapFst inLeft (inn' (prodSpineWalk f) c) : map (mapFst inRight) (inn g cs)
->					_									-> [inn' (prodSpineWalk func) c]
+>           -- Compute equations for inn and out
+>           innEqn f c = map (\(p,e) -> VarBind "inn" Nothing [p] e) $ inn f c
+>           outEqn f c = map (\(p,e) -> VarBind "out" Nothing [p] e) $ out f c
 
->				-- Pattern and result for one constructor case
->				inn' fs (con, _)	=	let (ps,es) = inn'' fs varNames in
->											(foldr1 (\f g -> (Con ":*:" :@: f) :@: g) ps, foldl1 (:@:) $ Con con:es)
+>           -- Pattern/result pairs for inn
+>           inn _ []          = []
+>           inn func (c:cs)   = case func of
+>              TCon "SumF" :@@: f :@@: g  -> mapFst inLeft (inn' (prodSpineWalk f) c) : map (mapFst inRight) (inn g cs)
+>              _                          -> [inn' (prodSpineWalk func) c]
 
->				-- Takes a list of constructor arguments and computes pattern and result arguments
->				inn'' (TCon "EmptyF":fs) names	= addP (Con "EmptyF") $ inn'' fs names
->				inn'' (TCon "ParF":fs) (n:names)	= addPE (Con "ParF" :@: Var n) (Var n) $ inn'' fs names
->				inn'' (TCon "RecF":fs) (n:names)	= addPE (Con "RecF" :@: Var n) (Var n) $ inn'' fs names
->				inn'' ((TCon "CompF" :@@: d :@@: g):fs) (n:names)
->					= addPE (Con "CompF" :@: Var n) (Var "gmap" :@: unF g :@: Var n) $ inn'' fs names
->				inn'' ((TCon "ConstF" :@@: t):fs) (n:names)
->					= addPE (Con "ConstF" :@: Var n) (Var n) $ inn'' fs names
->				inn'' []	_ = ([],[])
+>           -- Pattern and result for one constructor case
+>           inn' fs (con, _)  =  let (ps,es) = inn'' fs varNames in
+>                                (foldr1 (\f g -> (Con ":*:" :@: f) :@: g) ps, foldl1 (:@:) $ Con con:es)
 
->				-- Pattern/result pairs for out
->				out _ []				= []
->				out func (c:cs)	= case func of
->					TCon "SumF" :@@: f :@@: g	-> mapSnd inLeft (out' (prodSpineWalk f) c) : map (mapSnd inRight) (out g cs)
->					_									-> [out' (prodSpineWalk func) c]
+>           -- Takes a list of constructor arguments and computes pattern and result arguments
+>           inn'' (TCon "EmptyF":fs) names   = addP (Con "EmptyF") $ inn'' fs names
+>           inn'' (TCon "ParF":fs) (n:names) = addPE (Con "ParF" :@: Var n) (Var n) $ inn'' fs names
+>           inn'' (TCon "RecF":fs) (n:names) = addPE (Con "RecF" :@: Var n) (Var n) $ inn'' fs names
+>           inn'' ((TCon "CompF" :@@: d :@@: g):fs) (n:names)
+>              = addPE (Con "CompF" :@: Var n) (Var "gmap" :@: unF g :@: Var n) $ inn'' fs names
+>           inn'' ((TCon "ConstF" :@@: t):fs) (n:names)
+>              = addPE (Con "ConstF" :@: Var n) (Var n) $ inn'' fs names
+>           inn'' [] _ = ([],[])
 
->				-- Pattern and result for one constructor case
->				out' fs (con, _)	=	let (ps,es) = out'' fs varNames in
->											(foldl1 (:@:) $ Con con:ps, foldr1 (\f g -> (Con ":*:" :@: f) :@: g) es)
+>           -- Pattern/result pairs for out
+>           out _ []          = []
+>           out func (c:cs)   = case func of
+>              TCon "SumF" :@@: f :@@: g  -> mapSnd inLeft (out' (prodSpineWalk f) c) : map (mapSnd inRight) (out g cs)
+>              _                          -> [out' (prodSpineWalk func) c]
 
->				-- Takes a list of constructor arguments and computes pattern and result arguments
->				out'' (TCon "EmptyF":fs) names	= addE (Con "EmptyF") $ out'' fs names
->				out'' (TCon "ParF":fs) (n:names)	= addPE (Var n) (Con "ParF" :@: Var n) $ out'' fs names
->				out'' (TCon "RecF":fs) (n:names)	= addPE (Var n) (Con "RecF" :@: Var n) $ out'' fs names
->				out'' ((TCon "CompF" :@@: d :@@: g):fs) (n:names)
->					= addPE (Var n) (Con "CompF" :@: (Var "gmap" :@: nuF g :@: Var n)) $ out'' fs names
->				out'' ((TCon "ConstF" :@@: t):fs) (n:names)
->					= addPE (Var n) (Con "ConstF" :@: Var n) $ out'' fs names
->				out'' []	_ = ([],[])
+>           -- Pattern and result for one constructor case
+>           out' fs (con, _)  =  let (ps,es) = out'' fs varNames in
+>                                (foldl1 (:@:) $ Con con:ps, foldr1 (\f g -> (Con ":*:" :@: f) :@: g) es)
 
->				-- Helpers
->				unF (TCon "ParF") = Var "unParF"
->				unF (TCon "RecF") = Var "unRecF"
->				unF (TCon "ConstF") = Var "unConstF"
->				unF (TCon "CompF" :@@: d :@@: g) = Var "." :@: (Var "gmap" :@: unF g) :@: Var "unCompF"
+>           -- Takes a list of constructor arguments and computes pattern and result arguments
+>           out'' (TCon "EmptyF":fs) names   = addE (Con "EmptyF") $ out'' fs names
+>           out'' (TCon "ParF":fs) (n:names) = addPE (Var n) (Con "ParF" :@: Var n) $ out'' fs names
+>           out'' (TCon "RecF":fs) (n:names) = addPE (Var n) (Con "RecF" :@: Var n) $ out'' fs names
+>           out'' ((TCon "CompF" :@@: d :@@: g):fs) (n:names)
+>              = addPE (Var n) (Con "CompF" :@: (Var "gmap" :@: nuF g :@: Var n)) $ out'' fs names
+>           out'' ((TCon "ConstF" :@@: t):fs) (n:names)
+>              = addPE (Var n) (Con "ConstF" :@: Var n) $ out'' fs names
+>           out'' [] _ = ([],[])
 
->				nuF (TCon "ParF") = Con "ParF"
->				nuF (TCon "RecF") = Con "RecF"
->				nuF (TCon "ConstF") = Con "ConstF"
->				nuF (TCon "CompF" :@@: d :@@: g) = Var "." :@: Con "CompF" :@: (Var "gmap" :@: nuF g)
+>           -- Helpers
+>           unF (TCon "ParF") = Var "unParF"
+>           unF (TCon "RecF") = Var "unRecF"
+>           unF (TCon "ConstF") = Var "unConstF"
+>           unF (TCon "CompF" :@@: d :@@: g) = Var "." :@: (Var "gmap" :@: unF g) :@: Var "unCompF"
 
->				addP p = mapFst (p:)
->				addE e = mapSnd (e:)
->				addPE p e = (p:) -*- (e:)
+>           nuF (TCon "ParF") = Con "ParF"
+>           nuF (TCon "RecF") = Con "RecF"
+>           nuF (TCon "ConstF") = Con "ConstF"
+>           nuF (TCon "CompF" :@@: d :@@: g) = Var "." :@: Con "CompF" :@: (Var "gmap" :@: nuF g)
 
->				inLeft = (Con "InL" :@:)
->				inRight = (Con "InR" :@:)
+>           addP p = mapFst (p:)
+>           addE e = mapSnd (e:)
+>           addPE p e = (p:) -*- (e:)
 
->				prodSpineWalk (TCon "ProdF" :@@: f :@@: g) = f : prodSpineWalk g
->				prodSpineWalk f = [f]
+>           inLeft = (Con "InL" :@:)
+>           inRight = (Con "InR" :@:)
+
+>           prodSpineWalk (TCon "ProdF" :@@: f :@@: g) = f : prodSpineWalk g
+>           prodSpineWalk f = [f]
 
 > -- Should be in this file but I didn't want to change the other files.
 > (f -*- g) (a,b) = (f a, g b)
@@ -168,78 +182,81 @@ the correct types and constraints for polytypic functions.
 
 > rewritePolytypicConstructs :: TypeEnv -> FuncEnv -> [[TEqn]] -> [Eqn]
 > rewritePolytypicConstructs typeenv funcenv teq
->		= evalContexts funcenv $ concatMap (rewrite polyenv) (concat treqs)
->	where
+>     = evalContexts funcenv $ concatMap (rewrite polyenv) (concat treqs)
+>  where
 
->		-- Calculate the types of polytypic functions (polyenv) and a correctly
->		-- annotaded set of equations (treqs)
->		(polyenv, treqs) = mapAccumL	(curry contextify)
->												(createPolyEnv (findPolys $ concat teq) typeenv)
->												(map translateEqns teq)
->		contextify (env, eqns)
->			| env == env'	= (env', eqns')
->			| otherwise		= contextify (env', eqns')
->			where
->				(env', eqns') = mapAccumL annotate env eqns
+>     -- Calculate the types of polytypic functions (polyenv) and a correctly
+>     -- annotaded set of equations (treqs)
+>     (polyenv, treqs) = mapAccumL  (curry contextify)
+>                                   (createPolyEnv (findPolys $ concat teq) typeenv)
+>                                   (map translateEqns teq)
+>     contextify (env, eqns)
+>        | env == env'  = (env', eqns')
+>        | otherwise    = contextify (env', eqns')
+>        where
+>           (env', eqns') = mapAccumL annotate env eqns
 
->		-- Pick out the name of all polytypic constructs
->		findPolys (eqn:eqns) = case eqn of
->			Polytypic name _ _ _	-> name : findPolys eqns
->			_							-> findPolys eqns
->		findPolys [] = []
+>     -- Pick out the name of all polytypic constructs
+>     findPolys (eqn:eqns) = case eqn of
+>        Polytypic name _ _ _ -> name : findPolys eqns
+>        _                    -> findPolys eqns
+>     findPolys [] = []
 
->		-- Equation simplification
->		simp = simplifyTEqn funcenv . stripTEqn
+>     -- Equation simplification
+>     simp = simplifyTEqn funcenv . stripTEqn
 
->		-- Rewrite an equation
->		rewrite polyenv (Polytypic name tipe@(_ :=> tipe') (_ :=> var) alts) = classdef : instances
->			where
+>     -- Rewrite an equation
+>     rewrite polyenv (Polytypic name tipe@(_ :=> tipe') (_ :=> var) alts) = classdef : instances
+>        where
 
->				-- Doesn't work if it is a polytypic operator
->				className = "P_" ++ name
+>           -- Doesn't work if it is a polytypic operator
+>           className = "P_" ++ name
 
->				-- The class definition
->				classdef = Class [] (className, [var]) [ExplType [name] $ removeThisClass tipe]
+>           -- The class definition
+>           classdef = Class [] (className, [var]) [ExplType [name] $ removeThisClass tipe]
 
->				-- We don't want this class to be in the constraints (I guess it doesn't
->				-- really matter but for aestethical reasons).
->				removeThisClass (qs :=> t) = filter ((/=className).fst) qs :=> t
+>           -- We don't want this class to be in the constraints (I guess it doesn't
+>           -- really matter but for aestethical reasons).
+>           removeThisClass (qs :=> t) = filter ((/=className).fst) qs :=> t
 
->				-- The instances
->				instances = map buildInstance alts
+>           -- The instances
+>           instances = map buildInstance $ expandBranches alts
 
->				-- Build an instance from a polytypic case branch
->				buildInstance (c :=> t, e) = let c :=> _ = inferQType polyenv e in
->					case t of
->						TCon "+"	:@@: f :@@: g ->
->							Instance c
->										(className, [TCon "SumF" :@@: f :@@: g])
->										[simp $ VarBind name Nothing [] e]
->						TCon "*"	:@@: f :@@: g ->
->							Instance c
->										(className, [TCon "ProdF" :@@: f :@@: g])
->										[simp $ VarBind name Nothing [] e]
->						TCon "Empty" ->
->							Instance c
->										(className, [TCon "EmptyF"])
->										[simp $ VarBind name Nothing [] e]
->						TCon "Par" ->
->							Instance c
->										(className, [TCon "ParF"])
->										[simp $ VarBind name Nothing [] e]
->						TCon "Rec" ->
->							Instance c
->										(className, [TCon "RecF"])
->										[simp $ VarBind name Nothing [] e]
->						TCon "@" :@@: d :@@: g ->
->							Instance c
->										(className, [TCon "CompF" :@@: d :@@: g])
->										[simp $ VarBind name Nothing [] e]
->						TCon "Const" :@@: t ->
->							Instance c
->										(className, [TCon "ConstF" :@@: t])
->										[simp $ VarBind name Nothing [] e]
->						_	-> error ("PolyInstance.rewrite: " ++ pshow e ++ ":: " ++ pshow (c :=> t))
+>           -- Expand default alternatives (not implemented)
+>           expandBranches = id
+
+>           -- Build an instance from a polytypic case branch
+>           buildInstance (c :=> t, e) = let c :=> _ = inferQType polyenv e in
+>              case t of
+>                 TCon "+" :@@: f :@@: g ->
+>                    Instance c
+>                             (className, [TCon "SumF" :@@: f :@@: g])
+>                             [simp $ VarBind name Nothing [] e]
+>                 TCon "*" :@@: f :@@: g ->
+>                    Instance c
+>                             (className, [TCon "ProdF" :@@: f :@@: g])
+>                             [simp $ VarBind name Nothing [] e]
+>                 TCon "Empty" ->
+>                    Instance c
+>                             (className, [TCon "EmptyF"])
+>                             [simp $ VarBind name Nothing [] e]
+>                 TCon "Par" ->
+>                    Instance c
+>                             (className, [TCon "ParF"])
+>                             [simp $ VarBind name Nothing [] e]
+>                 TCon "Rec" ->
+>                    Instance c
+>                             (className, [TCon "RecF"])
+>                             [simp $ VarBind name Nothing [] e]
+>                 TCon "@" :@@: d :@@: g ->
+>                    Instance c
+>                             (className, [TCon "CompF" :@@: d :@@: g])
+>                             [simp $ VarBind name Nothing [] e]
+>                 TCon "Const" :@@: t ->
+>                    Instance c
+>                             (className, [TCon "ConstF" :@@: t])
+>                             [simp $ VarBind name Nothing [] e]
+>                 _  -> error ("PolyInstance.rewrite: " ++ pshow e ++ ":: " ++ pshow (c :=> t))
 
 \end{verbatim}
 
@@ -250,16 +267,16 @@ ParF}) we have to transform the branch body so that it gets the right type.
 
 \begin{verbatim}
 
->				convert t var ep = case t of
->					TCon "->" :@@: f :@@: g
->							-> case (convert f var ep, convert g var ep) of
->									(Var "idEP", Var "idEP")	-> Var "idEP"
->									(epF, epG)						-> Var "funEP" :@: epF :@: epG
->					f :@@: _ :@@: _ | f == var
->							-> ep
->					_		-> Var "idEP"
+>           convert t var ep = case t of
+>              TCon "->" :@@: f :@@: g
+>                    -> case (convert f var ep, convert g var ep) of
+>                          (Var "idEP", Var "idEP")   -> Var "idEP"
+>                          (epF, epG)                 -> Var "funEP" :@: epF :@: epG
+>              f :@@: _ :@@: _ | f == var
+>                    -> ep
+>              _     -> Var "idEP"
 
->		rewrite _ eq = [simp eq]
+>     rewrite _ eq = [simp eq]
 
 \end{verbatim}
 
@@ -282,79 +299,82 @@ generate a variable name from the type {\tt d} that is unique in every case.
 
 > createPolyEnv :: [VarID] -> TypeEnv -> PolyEnv
 > createPolyEnv polys = foldr contextEnv []
->	where
->		contextEnv (v,t) env
->			| isPoly t	= (v, translateQType polys v t) : env
->			| otherwise	= env
->		isPoly (c :=> _) = any ((=="Poly").fst) c
+>  where
+>     contextEnv (v,t) env
+>        | isPoly t  = (v, translateQType polys v t) : env
+>        | otherwise = env
+>     isPoly (c :=> _) = any ((=="Poly").fst) c
 
 > -- Translate a qualified type
 > translateQType polys v (c :=> t) = translateContext polys v c :=> translateType t
 
 > -- Translate a type context
-> translateContext polys v = concatMap (translateQ polys v)
+> translateContext polys v = map translateQ' . concatMap (translateQ polys v)
+
+> -- Translate FunctorOf a => functorOf_a in contexts
+> translateQ' (c, ts) = (c, map translateType ts)
 
 > -- Translate a constraint
 > translateQ polys v ("Poly", [f]) = case checkFOf f of
->		Just d						-> [("FunctorOf", [fOfVar d, d])]
->		Nothing	| elem v polys	-> [("P_" ++ v, [f])]
->					| otherwise		-> []
+>     Just d                  -> [("FunctorOf", [fOfVar d, d])]
+>     Nothing  | elem v polys -> [("P_" ++ v, [f])]
+>              | otherwise    -> []
 > translateQ _ v q = [q]
 
 > -- Translate a type
 > translateType t = case t of
->		TCon "FunctorOf" :@@: d	-> fOfVar d
->		a :@@: b						-> translateType a :@@: translateType b
->		_								-> t
+>     TCon "FunctorOf" :@@: d -> fOfVar d
+>     a :@@: b                -> translateType a :@@: translateType b
+>     _                       -> t
 
 > -- The variable name for FunctorOf d
 > fOfVar d = TVar $ "functorOf_" ++ encode d
 
 > -- Encode a type using only alpha numerics, _ and '
 > encode t = case t of
->		TVar v			-> v
->		TCon "[]"		-> "List"
->		TCon ('(':xs)	-> "Tuple" ++ show (length xs)
->		TCon "->"		-> "Fun"
->		TCon c			-> c
->		f :@@: g			-> "'" ++ encode f ++ "_" ++ encode g ++ "'"
+>     TVar v         -> v
+>     TCon "[]"      -> "List"
+>     TCon ('(':xs)  -> "Tuple" ++ show (length xs)
+>     TCon "->"      -> "Fun"
+>     TCon c         -> c
+>     f :@@: g       -> "'" ++ encode f ++ "_" ++ encode g ++ "'"
 
 > -- Translate a list of equations
 > translateEqns :: [Eqn] -> [Eqn]
 > translateEqns = concatMap translateEqn
->	where
+>  where
 
->		-- Translate an equation
->		translateEqn eqn = case eqn of
->			VarBind name mt ps e			-> [VarBind
->														name
->														(fmap (translateQType [] name) mt)
->														(map translateExpr ps)
->														(translateExpr e)]
->			Polytypic name t var alts	-> [Polytypic
->														name
->														(translateQType [] name t)
->														var
->														(map (mapSnd translateExpr) alts)]
->			ExplType vs t					-> map (\v -> ExplType [v] (translateQType [] v t)) vs
->			Class ctx cls eqns			-> [Class
->														(translateContext [] "Error" ctx)
->														cls
->														(translateEqns eqns)]
->			Instance ctx cls eqns		-> [Instance
->														(translateContext [] "Error" ctx)
->														cls
->														(translateEqns eqns)]
->			_									-> [eqn]
+>     -- Translate an equation
+>     translateEqn eqn = case eqn of
+>        VarBind name mt ps e       -> [VarBind
+>                                         name
+>                                         (fmap (translateQType [] name) mt)
+>                                         (map translateExpr ps)
+>                                         (translateExpr e)]
+>        Polytypic name t var alts  -> [Polytypic
+>                                         name
+>                                         (translateQType [] name t)
+>                                         var
+>                                         (map (mapSnd translateExpr) alts)]
+>        ExplType vs t              -> map (\v -> ExplType [v] (translateQType [] v t)) vs
+>        Class ctx cls eqns         -> [Class
+>                                         (translateContext [] "Error" ctx)
+>                                         cls
+>                                         (translateEqns eqns)]
+>        Instance ctx cls eqns      -> [Instance
+>                                         (translateContext [] "Error" ctx)
+>                                         cls
+>                                         (translateEqns eqns)]
+>        _                          -> [eqn]
 
->		-- Translate an expression
->		translateExpr expr = case expr of
->			Typed (Var v) t		-> Typed (Var v) (translateQType [] v t)
->			f :@: e					-> translateExpr f :@: translateExpr e
->			Lambda e e'				-> Lambda (translateExpr e) (translateExpr e')
->			Case e alts				-> Case (translateExpr e) (map (translateExpr -*- translateExpr) alts)
->			Letrec eqnss e			-> Letrec (map translateEqns eqnss) (translateExpr e)
->			_							-> expr
+>     -- Translate an expression
+>     translateExpr expr = case expr of
+>        Typed (Var v) t      -> Typed (Var v) (translateQType [] v t)
+>        f :@: e              -> translateExpr f :@: translateExpr e
+>        Lambda e e'          -> Lambda (translateExpr e) (translateExpr e')
+>        Case e alts          -> Case (translateExpr e) (map (translateExpr -*- translateExpr) alts)
+>        Letrec eqnss e       -> Letrec (map translateEqns eqnss) (translateExpr e)
+>        _                    -> expr
 
 \end{verbatim}
 
@@ -372,75 +392,77 @@ PolyEnv.
 
 > -- Update types of variable bindings and PolyEnv
 > annotate env eqn = case eqn of
->		VarBind v _ p e		-> let t = inferQType env $ foldr Lambda e p
->										in (update v t env, VarBind v (Just t) p e)
->		_							-> (env, eqn)
->	where
->		update v t ((v',t'):env)
->			| v == v'	= (v',t):env
->			| otherwise	= (v',t'):update v t env
->		update _ _ [] = []
+>     VarBind v _ p e      -> let t = inferQType env $ foldr Lambda e p
+>                             in (update v t env, VarBind v (Just t) p e)
+>     _                    -> (env, eqn)
+>  where
+>     update v t ((v',t'):env)
+>        | v == v'   = (v',t):env
+>        | otherwise = (v',t'):update v t env
+>     update _ _ [] = []
 
 > -- Infer the type of an expression
 > inferQType :: PolyEnv -> Expr' QType -> QType
 > inferQType env t = case t of
->		Typed (Var v) t		-> maybe t (\t' -> mergeContexts t' t) $ lookupEnv v env
->		Typed _ t				-> t
->		f :@: e					-> case (inferQType env f, inferQType env e) of
->			(c1 :=> (TCon "->" :@@: a :@@: b), c2 :=> a') -- | a == a'
->												-> union c1 c2 :=> b
->				-- | otherwise					-> error $ pshow (f:@:e) ++ pshow a ++ " != " ++ pshow a'
->		Lambda e e'				-> case (inferQType env e, inferQType env e') of
->			(_ :=> a, c :=> b)			-> c :=> TCon "->" :@@: a :@@: b
->		Literal (IntLit _)	-> [] :=> TCon "Int"
->		Literal (FloatLit _)	-> [] :=> TCon "Float"
->		Literal (BoolLit _)	-> [] :=> TCon "Bool"
->		Literal (CharLit _)	-> [] :=> TCon "Char"
->		Literal (StrLit _)	-> [] :=> TCon "String"
->		Letrec eqnss e			-> case inferQType env e of
->			c :=> t							-> union c
->													(	foldr union []
->														$ map (inferContextEqn env)
->														$ concat eqnss
->													) :=> t
->		Case e alts				-> foldr1 (\(c1 :=> t) (c2 :=> _) -> c1 `union` c2 :=> t)
->										$ map (inferQType env . snd) alts
->		-- Should be a fresh type variable
->		WildCard					-> [] :=> TVar "dummy"
->		_							-> error $ "Cannot infer type of " ++ pshow t
+>     Typed (Var v) t      -> maybe t (\t' -> mergeContexts t' t) $ lookupEnv v env
+>     Typed _ t            -> t
+>     f :@: e              -> case (inferQType env f, inferQType env e) of
+>        (c1 :=> (TCon "->" :@@: a :@@: b), c2 :=> a') -- | a == a'
+>                                   -> union c1 c2 :=> b
+>           -- | otherwise             -> error $ pshow (f:@:e) ++ pshow a ++ " != " ++ pshow a'
+>     Lambda e e'          -> case (inferQType env e, inferQType env e') of
+>        (_ :=> a, c :=> b)         -> c :=> TCon "->" :@@: a :@@: b
+>     Literal (IntLit _)   -> [] :=> TCon "Int"
+>     Literal (FloatLit _) -> [] :=> TCon "Float"
+>     Literal (BoolLit _)  -> [] :=> TCon "Bool"
+>     Literal (CharLit _)  -> [] :=> TCon "Char"
+>     Literal (StrLit _)   -> [] :=> TCon "String"
+>     Letrec eqnss e       -> case inferQType env e of
+>        c :=> t                    -> union c
+>                                      (  foldr union []
+>                                         $ map (inferContextEqn env)
+>                                         $ concat eqnss
+>                                      ) :=> t
+>     Case e alts          -> foldr (\(c1 :=> t) (c2 :=> _) -> c1 `union` c2 :=> t)
+>                             (inferQType env e)
+>                             $ map (inferQType env . snd) alts
+>     -- Should be a fresh type variable
+>     WildCard             -> [] :=> TVar "dummy"
+>     _                    -> error $ "Cannot infer type of " ++ pshow t
 
 > -- Infer constraints arising from let bindings (not implemented)
 > inferContextEqn :: PolyEnv -> Eqn' QType -> [Qualifier Type]
 > inferContextEqn env eqn = case eqn of
->		_		-> []
+>     VarBind name _ _ e   -> let c :=> _ = inferQType env e in c
+>     _                    -> []
 
 > -- Merge the explicit type and type found in the PolyEnv for a polytypic
 > -- function.
 > mergeContexts :: QType -> QType -> QType
 > mergeContexts g@(gc :=> gt) s@(sc :=> st) = c :=> st
->	where
->		c = union sc (map spec gc)
->		spec (cls, ts) = (cls, map lookupT ts)
->		lookupT t = maybe (fOfLookup t) id $ lookupT' gt st t
->		lookupT' gt st t
->			| t == gt	= case checkFOf st of
->				Nothing	-> Just st
->				_			-> error "Panic"
->			| otherwise	= case (gt, st) of
->				(t1 :@@: t1', t2 :@@: t2')	-> lookupT' t1 t2 t `mplus` lookupT' t1' t2' t
->				_									-> Nothing
->		fOfLookup f = maybe (error $ "Panic2:\n" ++ show g ++ show s ++ show f) id $ do
->			d	<- findFOf gc f
->			d'	<- lookupT' gt st d
->			fOfFind sc d'
->		findFOf (("FunctorOf", [f', d]):_) f
->			| f == f'		= Just d
->		findFOf (q:c) f	= findFOf c f
->		findFOf [] _		= Nothing
->		fOfFind (("FunctorOf", [f, d']):_) d
->			| d == d'		= Just f
->		fOfFind (q:c) d	= fOfFind c d
->		fOfFind [] _		= Nothing
+>  where
+>     c = union sc (map spec gc)
+>     spec (cls, ts) = (cls, map lookupT ts)
+>     lookupT t = maybe (fOfLookup t) id $ lookupT' gt st t
+>     lookupT' gt st t
+>        | t == gt   = case checkFOf st of
+>           Nothing  -> Just st
+>           _        -> error "Panic"
+>        | otherwise = case (gt, st) of
+>           (t1 :@@: t1', t2 :@@: t2') -> lookupT' t1 t2 t `mplus` lookupT' t1' t2' t
+>           _                          -> Nothing
+>     fOfLookup f = maybe (error $ "Panic2:\n" ++ show g ++ "\n" ++ show s ++ "\n" ++ show f) id $ do
+>        d  <- findFOf gc f
+>        d' <- lookupT' gt st d
+>        fOfFind sc d'
+>     findFOf (("FunctorOf", [f', d]):_) f
+>        | f == f'      = Just d
+>     findFOf (q:c) f   = findFOf c f
+>     findFOf [] _      = Nothing
+>     fOfFind (("FunctorOf", [f, d']):_) d
+>        | d == d'      = Just f
+>     fOfFind (q:c) d   = fOfFind c d
+>     fOfFind [] _      = Nothing
 
 \end{verbatim}
 
@@ -455,17 +477,49 @@ dependency to remove unneccessary type variables from contexts.
 
 > evalContexts :: FuncEnv -> [Eqn] -> [Eqn]
 > evalContexts funcenv = map evalContextEqn
->	where
->		evalContextEqn eqn = case eqn of
->			VarBind name (Just t) ps e -> simplifyTEqn funcenv $ VarBind name (Just $ evalContextType t) ps e
->			_									-> eqn
->		evalContextType (c :=> t) = substQType (findSubsts c) (c :=> t)
->			where
->				findSubsts (("FunctorOf", [TVar f,TCon d]):c) = case lookupEnv d funcenv of
->					Just (_,f')	-> (f,f'):findSubsts c
->					Nothing		-> findSubsts c
->				findSubsts (q:c) = findSubsts c
->				findSubsts [] = []
+>  where
+>     evalContextEqn eqn = case eqn of
+>        VarBind name (Just t) ps e -> simplifyTEqn funcenv $ VarBind name (Just $ simplifyQType $ evalContextType t) ps e
+>        Instance cs c eqns         -> Instance (simplifyContext $ concat $ filter (occursIn c) $ groupCtxs cs) c eqns
+>        _                          -> eqn
+>     evalContextType (c :=> t) = substQType (findSubsts c) (c :=> t)
+>        where
+>           findSubsts (("FunctorOf", [TVar f,TCon d]):c) = case lookupEnv d funcenv of
+>              Just (_,f') -> (f,f'):findSubsts c
+>              Nothing     -> findSubsts c
+>           findSubsts (q:c) = findSubsts c
+>           findSubsts [] = []
+>     simplifyContext c = let c' :=> _ = simplifyQType (c :=> undefined) in c'
+>     simplifyQType q@(c :=> _) = nub c' :=> t'
+>       where
+>           fOfs =  concatMap mkSubst
+>                   $ filter (\x -> length x > 1)
+>                   $ map (nub . map fOf)
+>                   $ groupBy eq
+>                   $ sortBy cmp
+>                   $ filter isFOf c
+>           mkSubst (x:xs) = map (\(TVar v) -> (v,x)) xs
+>           c' :=> t' = substQType fOfs q
+>           fOf ("FunctorOf", [f,_]) = f
+>           cmp ("FunctorOf", [_,d1]) ("FunctorOf", [_,d2]) = d1 `compare` d2
+>           eq ("FunctorOf", [_,d1]) ("FunctorOf", [_,d2]) = d1 == d2
+>           isFOf ("FunctorOf", [_,_]) = True
+>           isFOf _                    = False
+>     groupCtxs cs   = grp $ map (:[]) cs
+>     grp []         = []
+>     grp (cs:css)   = case ins cs css of
+>           Just css'   -> grp css'
+>           Nothing     -> cs : grp css
+>        where
+>           ins cs [] = Nothing
+>           ins cs (cs':css)
+>              | any (`elem` concatMap vars cs) $ concatMap vars cs' = Just $ (cs++cs'):css
+>              | otherwise = do css' <- ins cs css; return $ cs':css'
+>     occursIn c cs = any (`elem` vars c) $ concatMap vars cs
+>     vars (conid, ts)     = concatMap tvars ts
+>     tvars (TVar v)       = [v]
+>     tvars (t1 :@@: t2)   = tvars t1 ++ tvars t2
+>     tvars _              = []
 
 \end{verbatim}
 

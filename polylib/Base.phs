@@ -2,15 +2,16 @@ module Base(pmap,fmap2,cata,ana,hylo,para,(-*-),(-+-)) where
 pmap :: Regular d => (a -> b) -> d a -> d b
 pmap f   = inn . fmap2 f  (pmap f)   . out
 
-polytypic fmap2 :: (a->c) -> (b->d) -> f a b -> f c d
-  = \p r -> case f of                             
-              g + h    ->  (fmap2 p r) -+- (fmap2 p r)
-              g * h    ->  (fmap2 p r) -*- (fmap2 p r)
-              Empty    ->  id :: () -> ()               
-              Par      ->  p                     
-              Rec      ->  r                     
-              d @ g    ->  pmap (fmap2 p r)       
-              Const t  ->  id                    
+polytypic fmap2 :: (a -> c) -> (b -> d) -> f a b -> f c d
+  = \p r -> case f of
+      	      g + h   ->  (fmap2 p r) -+- (fmap2 p r)
+      	      g * h   ->  (fmap2 p r) -*- (fmap2 p r)
+      	      Empty   ->  \EmptyF -> EmptyF
+      	      Par     ->  ParF . p . unParF
+      	      Rec     ->  RecF . r . unRecF
+      	      d @ g   ->  CompF . pmap (fmap2 p r) . unCompF
+      	      Const t ->  ConstF . unConstF
+
 cata     :: Regular d => (FunctorOf d a b -> b) -> (d a -> b)
 cata i   =  i   . fmap2 id (cata i  ) . out
 ana      :: Regular d => (b -> FunctorOf d a b) -> (b -> d a)
@@ -19,8 +20,4 @@ hylo     :: Bifunctor f => (f a b -> b) -> (c -> f a c) -> c -> b
 hylo i o =  i   . fmap2 id (hylo i o) . o
 para     :: Regular d => (d a -> FunctorOf d a b -> b) -> d a -> b
 para i x =  i x (fmap2 id (para i) (out x))
-(-*-)    :: (a -> c) -> (b -> d) -> ((a,b) -> (c,d))
-(-+-)    :: (a -> c) -> (b -> d) -> (Either a b -> Either c d)
 
-f -*- g  =  \(x,y) -> (f x, g y)
-f -+- g  =  either (Left . f) (Right . g)

@@ -33,14 +33,14 @@
 > import TypeGraph
 > import UnifyTypes
 > import System(getProgName)
-> import List(intersperse)
+> import List
 #else
 > import DependencyAnalysis(dependencyProgram)
-> import Grammar(Eqn'(..),Eqn,PrgEqns,PrgTEqns,getHeadOfEqn)
-> import List(intersperse)
+> import Grammar(Module'(..),Module,ImpExp(..),Import,Export,Eqn'(..),Eqn,PrgEqns,PrgTEqns,TEqn,ConID,QType,Qualified(..),Qualifier,Type,VarID,getHeadOfEqn)
+> import List(intersperse,nubBy,isPrefixOf,nub,nubBy,deleteBy,(\\))
 > import LabelType(labelProgram)
 > import MonadLibrary(handleError, LErr, showLErr, mapLErr)
-> import MyPrelude(putErrStr,putErrStrLn,fatalError,fMap,stopNow,flushErr)
+> import MyPrelude(putErrStr,putErrStrLn,fatalError,fMap,stopNow,flushErr,mapSnd)
 > import Parser(parse,pModule)
 > import PolyInstance(instantiateProgram)
 > import PrettyPrinter(Pretty(..),($$),(<>),text,pshow,Doc)
@@ -48,8 +48,9 @@
 > import StateFix -- [(runST [,RunST])] in hugs, ghc, hbc
 > import System(getProgName)
 > import qualified IO(stderr)
-> import TypeBasis(TBasis,getFuncEnv)
+> import TypeBasis(TBasis,TypeEnv,getTypeEnv,getFuncEnv)
 > import Flags(Flags(..),flags)
+> import StartTBasis (setImportFileNames)
 #endif
 
 \end{verbatim}
@@ -71,7 +72,9 @@
 >                    )
 >          . labelProgram 
 >          . dependencyProgram 
+>          . moduleEqns
 >          . parseProgram
+>   where moduleEqns (Module _ _ _ qs) = qs
 
 #endif
 
@@ -94,15 +97,15 @@ In verbose mode every stage of the program generation presents a summary:
 
 > handleArgs :: IO String
 > handleArgs = if version flags 
->	       then showVersion >> stopNow
->	       else if help flags 
->	       then showUsage
->	       else if null (fileargs flags) 
->	       then putStr "Filename: " >> getLine
->	       else if length (fileargs flags) > 1 
->	       then fatalError "too many file arguments"
->	       else foldr (>>) (return (head (fileargs flags)))
->		    (map checkExists (preludeFileNames flags))
+>         then showVersion >> stopNow
+>         else if help flags 
+>         then showUsage
+>         else if null (fileargs flags) 
+>         then putStr "Filename: " >> getLine
+>         else if length (fileargs flags) > 1 
+>         then fatalError "too many file arguments"
+>         else foldr (>>) (return (head (fileargs flags)))
+>         (map checkExists (preludeFileNames flags))
 
 
 > checkExists :: String -> IO ()
@@ -111,27 +114,34 @@ In verbose mode every stage of the program generation presents a summary:
 >                  flushErr
 
 > report' :: PrgName -> IO ()
-> report' n = readFile n >>= report''
+> report' n = readFile n >>= report'' n
 
-> report'' :: PrgText -> IO ()
-> report'' p = r1 >> r2 >> r3 >> putErrStrLn "-}" >> r4 >> flush
+> report'' :: PrgName -> PrgText -> IO ()
+> report'' n p = r0 >> r1 >> r2 >> r3 >> putErrStrLn "-}" >> r4 >> r5 >> flush
 >   where r4 = putStr sp >> putErrStr (handleError id (fMap (\_->"") err))
->         (sp,err) = mapLErr showEqns ip
+>         r5 = writeFile (hiFile n) hi >> putErrStr (handleError id (fMap (\_ -> "") err2))
+>         (hi,err2) = mapLErr (showInterface $ fst lp) im
+>         (sp,err) = mapLErr pshow im
+>         im = mapLErr (addClasses $ getTypeEnv $ fst $ fst lp) im0
+>         im0 = mapLErr (Module name exps (("PolyPrelude",[]):imps)) ip
 >         ip = mapLErr instantiateProgram lp
 >         r3 = typeReport lp
->         lp = labelProgram pqs 
->         r2 = dependencyReport pqs 
->         pqs= dependencyProgram qs 
+>         lp = labelProgram pqs
+>         r2 = dependencyReport pqs
+>         pqs= dependencyProgram qs
 >         r1 = parserReport qs
->         qs = parseProgram p
->	  flush = putErrStrLn "" >> flushErr
+>         r0 = setImportFileNames $ map ((++".phi") . fst) imps
+>         Module name exps imps qs = m
+>         m  = parseProgram p
+>         flush = putErrStrLn "" >> flushErr
+>         getExps (Module _ exps _ _) = exps
 
 > showVersion :: IO ()
 > showVersion = putStrLn versionText
 
 > versionText :: String
 > versionText = "PolyP version " ++ __POLYP_VERSION__ ++ 
->		" (built "++ __DATE__ ++
+>     " (built "++ __DATE__ ++
 >                  " with " ++ __POLYP_COMPILER__ ++ ")"
 
 > showUsage :: IO a
@@ -185,7 +195,7 @@ The program doesn't handle mutual recursive datatypes.
 >         getEqnType (Polytypic n t _ _)      = ExplType [n] t
 >         getEqnType (VarBind n (Just t) _ _) = ExplType [n] t
 >         getEqnType (VarBind n _ _ _) = error ("getEqnType: untyped eqn: "++n)
->	  getEqnType _ = error "Main.typeReport': impossible: not a binding"
+>         getEqnType _ = error "Main.typeReport': impossible: not a binding"
 >         stack  [] = text ""
 >         stack  ds = foldr1 ($$) ds
 >         stack' [] = text "Error: typeReport: Empty binding group."
@@ -207,7 +217,7 @@ These are still preliminary versions.
 > type PrgName = String
 > type PrgText = String
 
-> parseProgram :: PrgText -> [Eqn]
+> parseProgram :: PrgText -> Module --[Eqn]
 > parseProgram = handleError err . parse pModule
 >   where
 >     err = error . ("Main.parseProgram: "++)
@@ -244,6 +254,72 @@ These are still preliminary versions.
 
 > showEqns :: Pretty a => [a] -> String
 > showEqns = concat . map pshow
+
+> definedFunctions :: [TEqn] -> [(VarID,QType)]
+> definedFunctions eqns = concatMap def eqns
+>     where
+>        def (ExplType vs t)          = zip vs $ repeat t 
+>        def (VarBind n (Just t) _ _) = [(n,t)]
+>        def (Class _ ctx eqns)       = map (addCtx ctx) $ definedFunctions eqns
+>        def _                        = []
+>        addCtx c (n,cs :=> t)        = (n, (c:cs) :=> t)
+
+> getPClasses :: [Eqn] -> [ConID]
+> getPClasses = nub . concatMap pcls
+>   where
+>       pcls (ExplType (n:_) (c:=>_))       = pClasses c
+>       pcls (VarBind n (Just (c:=>_)) _ _) = pClasses c
+>       pcls _                              = []
+
+> pClasses :: [Qualifier Type] -> [ConID]
+> pClasses = filter (isPrefixOf "P_") . map fst
+
+> externalFunctions :: TypeEnv -> [(VarID,QType)] -> [(VarID,QType)]
+> externalFunctions allfuns internal = foldr (deleteBy fstEq) allfuns internal
+>   where fstEq (x,_) (y,_) = x == y
+
+> addClasses :: TypeEnv -> Module -> Module
+> addClasses tenv (Module name exps imps eqns) = Module name exps' imps' eqns
+>   where expcls  = getPClasses eqns
+>         exps' | null exps = []
+>               | otherwise = exps ++ map Plain expcls
+>         ext     = externalFunctions tenv $ definedFunctions eqns
+>         cenv    = concatMap (\(n,c:=>_) -> zip (repeat n) (pClasses c)) ext
+>         imps0   = map (mapSnd (map unPlain . filter isPlain)) imps
+>         impEnv  = nubb $ map (mapSnd findClasses) imps0
+>         findClasses   = nub . concatMap (lUp cenv)
+>         lUp cenv n    = nub $ map snd $ filter ((==n) . fst) cenv
+>         imps'         = zipWith (\(i,is) cs -> (i,is ++ map Plain cs)) imps (map snd impEnv)
+>         nubb ((i,cs):is) = (i,cs) : nubb (map (mapSnd (\\cs)) is)
+>         nubb []          = []
+>         unPlain (Plain s) = s
+>         isPlain (Plain _) = True
+>         isPlain _         = False
+
+> showInterface :: (TBasis, PrgTEqns) -> Module -> String
+> showInterface (((tenv,_),_), (datadefs,_)) (Module _ exps _ eqns) =
+>     "-- Functions\n" ++
+>     concatMap pshow (concatMap toExplType allFuns) ++
+>     "-- Datatypes\n" ++
+>     concatMap pshow datadefs
+>   where
+>     allFuns = nubBy (\x y -> fst x == fst y) $ defs ++ tenv
+>     toExplType (f,t)
+>        | f `elem` explist   = [ExplType [f] t]
+>        | otherwise          = []
+>     defs = definedFunctions eqns
+>     explist
+>        | null exps  = map fst defs
+>        | otherwise  = map name exps
+>     name (Plain n)  = n
+>     name (Mod m)    = m
+>     name (Subs n _) = n
+
+> hiFile :: PrgName -> PrgName
+> hiFile ('.':s)
+>  | '.' `notElem` s = ".phi"
+> hiFile (c:s)       = c:hiFile s
+> hiFile []          = ".phi"
 
 \end{verbatim}
 \section{Code generation}

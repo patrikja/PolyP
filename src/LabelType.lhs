@@ -96,7 +96,9 @@ the other is used on the top level.
 >      tbasiss  = scanl (flip extendTypeTBasis) starttbasis tenvs
 >      finaltbasis = extendTypeAfterTBasis (concat tenvs) 
 >                                          starttbasis
->      err = last errresults <@- ()
+>      err = case errresults of
+>         []   -> Done ()
+>         _    -> last errresults <@- ()
 >      ok (Done _) = True
 >      ok _        = False
 

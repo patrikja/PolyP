@@ -5,19 +5,20 @@
 >                    innType,outType,charType,intType,floatType,
 >                    eitherType,fcnameType,dnameType,boolType,strType,
 >                    sumtypename,leftname,rightname,
->                    preludedatadefs,sumdatadef) where
+>                    preludedatadefs,sumdatadef,setImportFileNames) where
 > import Parser(pType0,pType1,pTypeFile)
 > import ParseLibrary(parse)
 > import MyPrelude(mapSnd,splitUp,variablename,putErrStr)
 > import Grammar(Eqn,Eqn'(..),Qualified(..),Type(..),VarID,Func,ConID,
 >                (-=>),QType,Kind,qualify,deQualify,isDataDef,isExplType,
 >                tupleConstructor,listConstructor,functionConstructor,
->		 getNameOfDataDef)
+>                getNameOfDataDef)
 > import MonadLibrary(unDone,(<@),(<@-),unLErr)
 > import TypeBasis(TBasis,extendTypeTBasis,extendKindTBasis,emptyTBasis)
 > import InferKind(inferDataDefs)
 > import NonStdTrace(unsafePerformIO)
 > import Flags(Flags(..),flags)
+> import IOExts
 
 \end{verbatim}
 We could need three versions of the prelude:
@@ -35,8 +36,8 @@ For the PolyP version - see \verb|../lib/PolyPrel.hs|.
 > typeass = polypass ++ haskellass
 > polypass :: [(VarID,QType)] 
 > polypass = [("inn",innType),("out",outType),
->             ("fconstructorName",fcnameType),
->	      ("datatypeName",dnameType)]
+>             ("constructorName",fcnameType),
+>             ("datatypeName",dnameType)]
 
 > preludeFuns :: [VarID]
 > preludeFuns = map fst haskellass
@@ -52,6 +53,15 @@ Second try: added data-declarations also.
 
 \begin{verbatim}
 
+> importFileNames :: [String]
+> importFileNames = unsafePerformIO $ readIORef importFileNames'
+
+> importFileNames' :: IORef [String]
+> importFileNames' = unsafePerformIO $ newIORef []
+
+> setImportFileNames :: [String] -> IO ()
+> setImportFileNames xs = writeIORef importFileNames' xs
+
 > preludeAssocs :: [(String,QType)]
 > preludeAssocs = concatMap convExplType explTypes
 
@@ -65,14 +75,20 @@ Second try: added data-declarations also.
 > preludeEqns = unDone . parse pTypeFile . unsafePerformIO $ prelfileIO
 
 > prelfileIO :: IO String
-> prelfileIO = mapM (readFileDef "") (preludeFileNames flags) <@ unlines
+> prelfileIO = mapM (readFileDef "") (preludeFileNames flags ++ importFileNames) <@ unlines
 
 > readFileDef :: String -> FilePath -> IO String
-> readFileDef d n = (readFile n >>= \s -> 
->                    putErrStr readOk <@- s) `catch` \_ -> 
->                   putErrStr readFailed >> (return d)
->   where readOk     = "{- Prelude file '" ++ n ++ "' read OK. -}\n"
->         readFailed = "{- ERROR: Prelude file '" ++ n ++ "' not found. -}\n"
+> readFileDef d n = (((readFile n >>= \s -> 
+>                     putErrStr readOk <@- s) `catch` \_ ->
+>                     readFile altFile >>= \s ->
+>                     putErrStr readOk <@- s) `catch` \_ ->
+>                     readFile altFile2 >>= \s ->
+>                     putErrStr readOk <@- s) `catch` \_ ->
+>                     putErrStr readFailed >> (return d)
+>   where readOk     = "{- Interface file '" ++ n ++ "' read OK. -}\n"
+>         readFailed = "{- ERROR: Interface file '" ++ altFile2 ++ "' not found. -}\n"
+>         altFile    = polypDir flags ++ "lib/" ++ n
+>         altFile2   = polypDir flags ++ "polylib/" ++ n
 
 > haskellass :: [(String,QType)]
 > haskellass = haskellConstructorAssoc ++ preludeAssocs
@@ -104,7 +120,7 @@ Gofer's {\tt cc.prelude}.
 > startTBasis :: TBasis
 > startTBasis = unLErr $ inferDataDefs 
 >                          (extendTypeTBasis typeass . 
->			    extendKindTBasis kindass $
+>                           extendKindTBasis kindass $
 >                           emptyTBasis)
 >                          preludedatadefs 
 >   where 
@@ -146,7 +162,7 @@ Gofer's {\tt cc.prelude}.
 > charType= [] :=> TCon "Char"
 > boolType= [] :=> TCon "Bool"
 > strType = [] :=> TCon listConstructor :@@: TCon "Char"
-> fcnameType= bifun   :=> fab -=> deQualify strType
+> fcnameType= regular :=> da  -=> deQualify strType
 > dnameType = regular :=> da  -=> deQualify strType
 
 > fab, da, fada, fofd :: Type

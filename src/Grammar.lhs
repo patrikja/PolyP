@@ -28,6 +28,19 @@ There are seven kinds of equations:
 (Currently, the three last constructs are not parsed, nor handled in
 the type inference algorithm)
 
+Modules
+
+> data Module' t
+>     = Module ConID [Export] [(ConID, [Import])] [Eqn' t]
+>
+> type Module = Module' QType
+
+> data ImpExp = Plain ConID
+>             | Mod ConID
+>             | Subs ConID [ConID]
+> type Export = ImpExp
+> type Import = ImpExp
+
 The datatype \verb|Eqn'| is mutually recursive with the type for
 expressions as the expressions in the variable bindings can contain
 let-expressions which in turn contains equations. The type parameter
@@ -93,7 +106,7 @@ variables, constants, applications, literals and wildcards. )
 >    = TVar VarID
 >    | TCon ConID
 >    | Type :@@: Type    
->    deriving (Eq)
+>    deriving (Eq,Ord)
 
 > type Kind = Type
 

@@ -9,7 +9,7 @@ default:	ghc
 .SUFFIXES:
 
 POLYPDIR = $(dir $(shell pwd))
-POLYPPRELUDE = $(POLYPDIR)lib/PolyPrel.hs
+POLYPPRELUDE = $(POLYPDIR)lib/Prelude.phi
 # The C-preprocessor
 CPP = gcc -E -C -P -traditional -x c-header
 #CPP = cpp -P -C -traditional
@@ -28,6 +28,7 @@ endif
 # This line is needed to compile the prelude path into the executable.
 #   (if not set correctly, the environment variable POLYPPRELUDE can be set later)
 CPPFLAGS += -D__POLYPPRELUDE__=\"$(POLYPPRELUDE)\"
+CPPFLAGS += -D__POLYPDIR__=\"$(POLYPDIR)\"
 
 ifdef DEBUG
 CPPFLAGS += -D__DEBUG__

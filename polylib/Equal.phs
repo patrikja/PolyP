@@ -1,23 +1,25 @@
 module Equal(pequal,fequal,peq) where
+
 peq :: (Regular d, Eq a) => d a -> d a -> Bool
 peq = pequal (==)
+
 pequal :: Regular d => (a->b->Bool) -> d a -> d b -> Bool
 pequal eq x y = fequal eq (pequal eq) (out x) (out y)
+
 polytypic fequal :: (a->b->Bool) -> (c->d->Bool) -> 
                     f a c -> f b d -> Bool
   = \p r -> case f of
               g + h     ->  sumequal  (fequal p r) (fequal p r)
               g * h     ->  prodequal (fequal p r) (fequal p r)
               Empty     ->  \_ _ -> True
-              Par       ->  p
-              Rec       ->  r
-              d @ g     ->  pequal (fequal p r)
-              Const t   ->  (==) 
-sumequal :: (a->b->Bool) -> (c->d->Bool) -> 
-            Either a c -> Either b d -> Bool
+              Par       ->  \x y -> p (unParF x) (unParF y)
+              Rec       ->  \x y -> r (unRecF x) (unRecF y)
+              d @ g     ->  \x y -> pequal (fequal p r) (unCompF x) (unCompF y)
+              Const t   ->  \x y -> unConstF x == unConstF y
+
 sumequal f g a b = case (a,b) of
-                     (Left  x, Left  v)   ->  f x v
-                     (Right y, Right w)   ->  g y w
-                     _                    ->  False
-prodequal :: (a->b->Bool) -> (c->d->Bool) -> (a,c)->(b,d) -> Bool
-prodequal f g p q = f (fst p) (fst q) && g (snd p) (snd q)
+                     (InL  x, InL  v) ->  f x v
+                     (InR y, InR w)   ->  g y w
+                     _                ->  False
+
+prodequal f g (p:*:p') (q:*:q') = f p q && g p' q'

@@ -1,22 +1,24 @@
 module Thread(thread,pmapM,fthread,fmap2M) where
-import Base(cata,inn,pmap)
+import Monad
+import Base(cata,pmap)
 import BaseM(pmapM,fmap2M,(@@))
+
 thread :: (Regular d, Monad m) => d (m a) -> m (d a)
 thread  =  cata (liftM inn . fthread)
 
 polytypic fthread :: Monad m => f (m a) (m b) -> m (f a b)
   = case f of
-      g + h       ->  sumthread  . (fthread -+- fthread)
-      g * h       ->  prodthread . (fthread -*- fthread)
-      Empty       ->  return
-      Par         ->  id
-      Rec         ->  id
-      d @ g       ->  thread     . (pmap fthread)
-      Const t     ->  return
-sumthread  :: Monad m => Either (m a) (m b) -> m (Either a b)
-sumthread  =  liftM Left `either` liftM Right
+      g + h       ->  sumthread . (fthread -++- fthread)
+      g * h       ->  prodthread . (fthread -**- fthread)
+      Empty       ->  \EmptyF -> return EmptyF
+      Par         ->  liftM ParF . unParF
+      Rec         ->  liftM RecF . unRecF
+      d @ g       ->  liftM CompF . thread . (pmap fthread) . unCompF
+      Const t     ->  return . ConstF . unConstF
 
-prodthread :: Monad m => (m a,m b) -> m (a,b)
-prodthread (mx,my) = mx >>= \x-> my >>= \y-> return (x,y)
-liftM :: Monad m => (a->b) -> m a -> m b
-liftM f mx = mx >>= \x -> return (f x)
+--sumthread  :: Monad m => Either (m a) (m b) -> m (Either a b)
+sumthread  =  liftM InL `either` liftM InR
+
+--prodthread :: Monad m => (m a,m b) -> m (a,b)
+prodthread (mx,my) = mx >>= \x-> my >>= \y-> return (x:*:y)
+

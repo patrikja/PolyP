@@ -8,7 +8,23 @@ they receive be non-space.
 
 \begin{verbatim}
 
+#ifdef __DEBUG__
 > module Parser (parse,pModule,pType0,pType1,pTypeFile) where
+#else
+> module Parser (parse,pModule,pType0,pType1,pTypeFile) where
+#endif
+
+#ifdef __DEBUG__
+
+> import Char
+> import MyPrelude
+> import MonadLibrary
+> import ParseLibrary
+> import Grammar
+> import PrettyPrinter
+> import qualified Maybe
+
+#else
 
 > import Char(isUpper,isLower,isAlpha,isDigit)
 > import MyPrelude(mapSnd,fMap)
@@ -18,12 +34,15 @@ they receive be non-space.
 >                     some_offside,mustbe,symbol,sepby,string,
 >                     chainl,chainr,
 >                     many,some,strip, parse)
-> import Grammar(Expr'(..),Eqn'(..),Type(..),Qualified(..),Literal(..),
->                Expr,Eqn,Func,QType,Qualifier,VarID,ConID,
+> import Grammar(Expr'(..),Eqn'(..),Type(..),Qualified(..),Literal(..),ImpExp(..),
+>                Import,Export,
+>                Expr,Eqn,Func,QType,Qualifier,VarID,ConID,Module'(..),Module,
 >                qualify,noType,spineWalk,spineWalkType,(-=>),
 >                tupleConstructor,listConstructor,isTupleCon,
 >                functionConstructor)
 > import qualified Maybe(catMaybes)
+
+#endif
 #ifdef __HBC__
 > import Monad() -- hbc does not import instance declarations correctly
 #endif
@@ -37,46 +56,47 @@ The module parser accepts but ignores the module head, exports and imports.
 
 \begin{verbatim}
 
-> pModule :: Parser [Eqn]
+> pModule :: Parser Module --[Eqn]
 > pModule = pModule'
 
-> pModule' :: Parser [Eqn]
-> pModule' = pModuleHead >> 
->            pImpDecls >> 
->            pEqns
+> pModule' :: Parser Module --[Eqn]
+> pModule' = pModuleHead >>= \(name, exps) ->
+>            pImpDecls >>= \imps ->
+>            pEqns >>= \eqns ->
+>				 return $ Module name exps imps eqns
 
-> pModuleHead :: Parser (ConID, [ConID])
+> pModuleHead :: Parser (ConID, [Export])
 > pModuleHead = (   (symbol "module" >> pConID)
->                <*> pExports << mustbe "where") `opt` ("Main",["main"])
+>                <*> pExports << mustbe "where") `opt` ("Main",[])
 
-> pExports :: Parser [ConID]
+> pExports :: Parser [Export]
 > pExports = pParenTuple pExport `opt` []
-> pExport :: Parser ConID
+> pExport :: Parser Export
 > pExport =  pImport
->        +++ (symbol "module" >> pConID)
+>        +++ (symbol "module" >> pConID <@ Mod)
 
-> pImpDecls :: Parser [(ConID,[ConID])] 
+> pImpDecls :: Parser [(ConID,[Import])] 
 > pImpDecls = some_offside pImpDecl `opt` []
-> pImpDecl :: Parser (ConID,[ConID])
+> pImpDecl :: Parser (ConID,[Import])
 > pImpDecl =   (symbol "import" >> may (symbol "qualified") >> pConID)  
 >         <*> (may (symbol "as" >> pConID) >> pImpSpec)
 
-> pImpSpec :: Parser [ConID]
+> pImpSpec :: Parser [Import]
 > pImpSpec = (pImpTuple+++ ((symbol "hiding") >> pImpTuple)
 >            ) `opt` []
 
-> pImpTuple :: Parser [ConID]
+> pImpTuple :: Parser [Import]
 > pImpTuple = pParenTuple pImport
 
-> pImport :: Parser ConID
-> pImport =   pVarID 
->        +++ (pConID << 
->                  (pParenthesized 
->                     (   symbol ".." <@- []
->                     +++ pCommaList (pConID+++pVarID)
->                     )
->                  ) `opt` []
->            )
+> pImport :: Parser Import
+> pImport =   pVarID <@ Plain
+>        +++ (pConID <*> pParenthesized 
+>                          (   symbol ".." <@- []
+>                          +++ pCommaList (pConID+++pVarID)
+>                          )
+>            ) <@ uncurry Subs
+>			+++ (pParenthesized infixcon) <@ Plain
+>			+++ (pParenthesized infixop) <@ Plain
 
 > pParenTuple :: Parser a -> Parser [a]
 > pParenTuple p = pParenthesized (pCommaList p `opt` [])
@@ -115,7 +135,7 @@ side.
 
 > pDataDef :: Parser Eqn
 > pDataDef 
->   = symbol "data" >> pConID >>= \tyCon -> 
+>   = (symbol "data" +++ symbol "newtype") >> pConID >>= \tyCon -> 
 >     many pVarID             >>= \vars  -> 
 >     mustbe "=" >> 
 >        (pDataDefAlt `sepby` symbol "|") >>= \alts -> 
@@ -145,6 +165,14 @@ side.
 >     mustbe "::"        >> pType0    >>= \tp   -> 
 >     mustbe "="         >> pPolyBody >>= \(fvar,alts) ->
 >     return (Polytypic name tp fvar alts)
+
+Work in progress
+
+> pClass :: Parser Eqn
+> pClass = do
+>		symbol "class"
+>		let ctx = ("Foo", [TVar "t"])
+>		return $ Class [] ctx []
 
 \end{verbatim}
 Some simple hungry expressions should be allowed before the case
@@ -527,7 +555,8 @@ From the Haskell report:
  
 > keywords :: [VarID]
 > keywords = [ "case", "of", "let", "in", "if", "then", "else",
->              "data", "polytypic", "deriving"]
+>              "data", "polytypic", "deriving", "where", "class",
+>					"instance"]
 
 \end{verbatim}
 ***

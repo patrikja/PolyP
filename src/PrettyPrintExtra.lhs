@@ -25,8 +25,9 @@
 >   = foldr (<>) (text "") . map pretty
 
 > ppVerticalList :: Pretty a => [a] -> Doc
-> ppVerticalList 
->   = foldr1 ($$) . map pretty
+> ppVerticalList [] = text ""
+> ppVerticalList xs
+>   = foldr1 ($$) $ map pretty xs
 
 > ppSepby :: (Pretty a,Pretty b) => [a] -> b -> Doc
 > ppSepby [] _ = text ""
