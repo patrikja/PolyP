@@ -9,7 +9,7 @@ import ConstructorName(constructorName,constructors)
 -- pshow :: (a->[Char]) -> d a -> [Char]
 pshow sh x = cata (fshow (cnames x)) (pmap sh x)
 
-cnames x = map constructorName (constructors `astypeof` [x])
+cnames x = map constructorName (constructors `asTypeOf` [x])
 
 x +++ y = [] ++ x ++ y  -- trick to get the restricted type
 
@@ -40,7 +40,7 @@ data Expr a = Constr [Char] [Expr a]
             | Par a
         deriving Show
 
-ppretty :: d a -> Expr a
+ppretty :: Regular d => d a -> Expr a
 ppretty x = cata (fpretty (cnames x)) x
 
 polytypic fpretty :: [[Char]] -> f a (Expr a) -> Expr a
@@ -73,7 +73,3 @@ joinExpr e = case e of
    (Constr c l) -> Constr c (map joinExpr l)
 
 singleton x = [x]
-
-astypeof :: a -> a -> a
-astypeof = const
-

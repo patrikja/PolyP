@@ -4,13 +4,13 @@
 > module InferType where
 > import InferKind(inferDataDefs)
 > import UnifyTypes(unify,checkInstance)
-> import TypeGraph(HpType,HpKind,NodePtr,HpNode(..),HpQType,
+> import TypeGraph(HpType,HpKind,NodePtr,HpNode(..),HpQType,NonGenerics,
 >                  mkFun,mkCon,mkVar,mkFOfd,mkQFun,
 >                  (==>),fetchNode,checkCon,
->                  qtypeIntoHeap,qtypeOutOfHeap,
+>                  qtypeIntoHeap,qtypeOutOfHeap,allGeneric,
 >                  spineWalkHpType,getChild, (##))
-> import TypeBasis(Basis,TBasis,KindBasis,
->                  extendTypeTBasis,extendTypeAfterTBasis,
+> import TypeBasis(Basis,TBasis,
+>                  tBasis2Basis,extendTypeTBasis,extendTypeAfterTBasis,
 >                  getNonGenerics,makeNonGeneric,lookupType,ramTypeToRom,
 >                  extendTypeEnv,ramKindToRom,getKindEnv,instantiate,
 >                  extendKindEnv,extendKindTBasis,inventTypes)
@@ -115,12 +115,7 @@ way that they can be lazily pulled out of it one group at a time.
 > mInferGroup :: [Eqn] -> TBasis -> STErr s [(String,QType)]
 > mInferGroup eqns tbasis = inferBlock basis eqns   >>= \basis' ->
 >                           mliftErr (ramTypeToRom basis')
->   where basis = (tbasis,(newEnv,[]))
-
-   where m ::  STErr s [(String,QType)]
-         m = inferBlock basis eqns   >>= \basis' ->
-             mliftErr (ramTypeToRom basis')
-         basis = (tbasis,(newEnv,[]))
+>   where basis = tBasis2Basis tbasis
 
 \end{verbatim}
 \section{Expressions}
@@ -347,9 +342,9 @@ in the context list.
 > tevalAndSubst :: HpQType s -> HpQType s -> -- type, functor
 >                  ST s (HpQType s)          -- evaluated type
 > tevalAndSubst hpty' (_:=>hpfi) = 
->   instantiate [] hpty' >>= \hpty@((_,pf:_):_:=>pt) ->
->   pf ==> hpfi          >> -- substitution by destructive update
->   hpQTypeEval hpty     >> -- type evaluation  
+>   instantiate allGeneric hpty' >>= \hpty@((_,pf:_):_:=>pt) ->
+>   pf ==> hpfi                  >> -- substitution by destructive update
+>   hpQTypeEval hpty             >> -- type evaluation  
 >   return hpty
 
 \end{verbatim}
@@ -376,7 +371,15 @@ hpQTypeEval (Poly Par => (Par) a b -> b) =
 >    runST         mqt
 #endif /* __HBC__ */
 >   where mqt :: ST s QType
->         mqt = qtypeIntoHeap qt >>= hpQTypeEval >>= qtypeOutOfHeap []
+>         mqt = qtypeIntoHeap qt >>= hpQTypeEval >>= qtypeOutOfHeap allGeneric
+
+typeEval :: Type -> Type
+typeEval t = runST m
+  where m :: ST s Type
+        m = typeIntoHeap t >>= \hpt ->
+            hpTypeEval hpt >>
+            typeOutOfHeap [] hpt
+               
 
 > hpQTypeEval :: HpQType s -> ST s (HpQType s)
 > hpQTypeEval (l :=> t) = (map concat (mapl tevalC l)) >>= \l' ->
@@ -391,6 +394,11 @@ hpQTypeEval (Poly Par => (Par) a b -> b) =
 
 > funEval :: HpType s -> ST s [HpType s] -- functors
 > funEval = funEval' @@ spineWalkHpType 
+
+> checkTypedInstance :: NonGenerics s -> HpQType s -> HpQType s -> STErr s ()
+> checkTypedInstance ngs small big 
+>   = mliftErr (hpQTypeEval small) >>= \small' ->
+>     checkInstance ngs small' big
 
 \end{verbatim}
 

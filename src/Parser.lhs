@@ -430,16 +430,20 @@ arrow --- transform it to a context and parse the rest.
 >                       (TCon tup:ts) | isTupleCon tup -> ts
 >                       _                              -> [t]
 
+> pType0 :: Parser QType
 > pType0 = pType1 >>= \t->
 >          (symbol "=>" >> 
 >           liftop (:=>) (type2context t) pType1) `opt` qualify t 
 
 liftop (:=>) pContext pType1
 
+> pType1 :: Parser Type
 > pType1 = pType2 `chainr` (symbol "->" <@- (-=>))
  
+> pType2 :: Parser Type
 > pType2 = pType3 `chainl` return (:@@:)
  
+> pType3 :: Parser Type
 > pType3 = pTypeVar
 >       ++ pTypeCon
 >       ++ pBracketed pTypeList
@@ -447,6 +451,7 @@ liftop (:=>) pContext pType1
  
 ***Hack addition to allow _parsing_ of existential types. (No type checking.)
 
+> pTypeVar :: Parser Type
 > pTypeVar = map TVar (pVarID ++ sat (=='?') <:*> pVarID)
 
 From the Haskell report:
@@ -456,6 +461,7 @@ From the Haskell report:
           | (->) (function constructor)
           | (,{,}) (tupling constructors)
 
+> pTypeCon :: Parser Type
 > pTypeCon = map (expandTypeSynonyms . TCon) $
 >              pConID 
 >           ++ symbol listConstructor 
@@ -485,13 +491,17 @@ From the Haskell report:
 \section{Variable and constructor names}
 \begin{verbatim}
 
+> pConID :: Parser ConID
 > pConID = strip (sat isUpper <:*> many (sat isVarChar))
 
+> pVarID :: Parser VarID
 > pVarID = strip (sat isLower <:*> many (sat isVarChar)) 
 >              <| (`notElem` keywords)
  
+> isVarChar :: Char -> Bool
 > isVarChar c = isAlphanum c || c `elem` "_'"
  
+> keywords :: [VarID]
 > keywords = [ "case", "of", "let", "in", "if", "then", "else",
 >              "data", "polytypic", "deriving"]
 

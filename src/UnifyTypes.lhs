@@ -4,8 +4,9 @@
 > module UnifyTypes(unify,checkInstance,  unifyVar) where
 > import TypeGraph(HpType,fetchNode,occursInType,
 >                  typeIntoHeap, flattenNgs,
->                  flattenHpType,mkCon,mkApp,mkFOfd,
->                  HpNode(..),HpQType,NonGenerics,(==>))
+>                  flattenHpType,mkCon,mkApp,mkFOfd,(==>),
+>                  HpNode(..),HpQType,NonGenerics,isGenericApproximation)
+>                  
 > import TypeError
 > import MonadLibrary(STErr,mliftErr,ErrorMonad(failEM),
 >                     (<@),mIf,liftop,applyM2,
@@ -166,7 +167,7 @@ The algorithm implements the following (successful) cases:
 >               (err "Cyclic types not allowed" t1 t2)
 >               (t1 `instantiateWith` t2)
 >         t1 `instantiateWith` t2 = (t1 ==> t2) >> ok
->         isGen v = not (any (===v) ngs)
+>         isGen v = isGenericApproximation v ngs
 >         ok = return TOk
 >         err msg t1 t2 = return (TBad msg t1 t2)
 >         nongeneric = "A nongeneric type variable can only "

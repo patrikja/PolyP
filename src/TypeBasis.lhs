@@ -13,7 +13,7 @@
 > import TypeGraph(HpType,HpKind,HpQType,NonGenerics,NodePtr,
 >                  mkVar,mkCon,mkApp,cataHpType,
 >                  qtypeOutOfHeap,kindOutOfHeap,qtypeIntoHeap,kindIntoHeap,
->                  flattenNgs)
+>                  flattenNgs,allGeneric,isGenericApproximation,addtoNGS)
 
 \end{verbatim}
 \section{The definition of the basis}
@@ -26,7 +26,7 @@ The basis consists of four subenvironments:
 \end{itemize}
 \begin{verbatim}
 
-> type Basis s     = (TBasis,HpTBasis s)
+> newtype Basis s  = Basis (TBasis,HpTBasis s)
 > type TBasis      = (TypeEnv, KindEnv)
 > type HpTBasis s  = (HpTypeEnv s, NonGenerics s)
 
@@ -45,6 +45,14 @@ environment.
 \end{verbatim}
 
 \section{Interface}
+\begin{verbatim}
+
+> tBasis2Basis :: TBasis -> Basis s
+> tBasis2Basis tbasis = Basis (tbasis,(newEnv,allGeneric))
+
+\end{verbatim}
+
+
 The function {\tt lookupType} looks up a name in the type environment
 and returns the pointer to a copy of the type in the heap. Notice,
 however, that non-generic variables are not copied, but shared.
@@ -81,7 +89,7 @@ must also be changed.)
 \section{Implementation}
 \begin{verbatim}
 
-> lookupType name (rom,ram) =
+> lookupType name (Basis (rom,ram)) =
 >   maybe (failEM ("lookupType: can't find type of [" ++ name ++ "]"))
 >         mliftErr 
 >     (lookinram name ram  ++
@@ -118,8 +126,8 @@ variables are non-generic.
 > getKindEnv :: TBasis -> KindEnv
 > getKindEnv = snd               
 
-> extendTypeEnv bindings (rom,(typeEnv, ngs))
->   = (rom,(extendsEnv bindings typeEnv, ngs))
+> extendTypeEnv bindings (Basis (rom,(typeEnv, ngs)))
+>   = Basis (rom,(extendsEnv bindings typeEnv, ngs))
 
 > extendKindEnv bindings (rom,kindEnv)
 >   = (rom,extendsEnv bindings kindEnv)
@@ -132,10 +140,10 @@ variables are non-generic.
 > extendKindTBasis      l (ts,ks) = (ts,extendsEnv      l ks)
 > extendkindAfterTBasis l (ts,ks) = (ts,extendsAfterEnv l ks)
 
-> makeNonGeneric extraNgs (rom,(typeEnv, ngs))
->   = (rom,(typeEnv, extraNgs ++ ngs))
+> makeNonGeneric extraNgs (Basis (rom,(typeEnv, ngs)))
+>   = Basis (rom,(typeEnv, addtoNGS extraNgs ngs))
 
-> getNonGenerics (_,(_, ngs)) = ngs
+> getNonGenerics (Basis (_,(_, ngs))) = ngs
 
 > inventTypes vars = mliftErr (foreach vars (\_ -> mkVar))
 
@@ -174,7 +182,7 @@ The result type of {\tt fresh} contains three monadic constructions:
 >        -- copies constructors instead of sharing them
 >     app mf mx = mf >>= \f-> mx >>= \x -> 
 >                 mliftSTM (mkApp f x)
->     isGen p = null (filter (===p) ngs)
+>     isGen p = isGenericApproximation p ngs
 >     lookupVar v = fetchSTM <@ lookupEqEnv (===) v
 
 \end{verbatim}
@@ -183,11 +191,11 @@ out of the heap.
 \begin{verbatim}
 
 > getRamTypes :: Basis s -> [(String,HpQType s)]
-> getRamTypes (_,(env,_)) = assocsEnv env
+> getRamTypes (Basis (_,(env,_))) = assocsEnv env
 
 > ramTypeToRom :: Basis s -> ST s [(String,QType)]
-> ramTypeToRom (_,(env,_)) = foreach (assocsEnv env) 
->    (\(n,hpt) -> qtypeOutOfHeap [] hpt <@ pair n) 
+> ramTypeToRom (Basis (_,(env,_))) = foreach (assocsEnv env) 
+>    (\(n,hpt) -> qtypeOutOfHeap allGeneric hpt <@ pair n) 
 > ramKindToRom :: KindBasis s -> ST s [(String,Kind)]
 > ramKindToRom (_,env) = foreach (assocsEnv env) 
 >    (\(n,hpt) -> kindOutOfHeap     hpt <@ pair n)

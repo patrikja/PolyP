@@ -5,7 +5,7 @@
 >                  ErrMsg(..), internalError, impossible) where
 > import TypeGraph(HpType,NonGenerics,
 >                  qtypeOutOfHeap,typesOutOfHeap,
->                  showNodePtr)
+>                  showNodePtr,allGeneric)
 > import MonadLibrary(STErr,mliftErr,ErrorMonad(failEM),(<@),mIf,liftop,
 >                     ST,(===),readVar)
 > import PrettyPrinter(Pretty(..),($$),nest,text,sep,prType)
@@ -37,14 +37,14 @@
 >        $$ nest 3 (pretty t $$ pretty u)
 
 > failWith :: String -> HpType s -> HpType s -> STErr s b
-> failWith mess a b = mliftErr (typesOutOfHeap [] (a,b)) >>= \p->
+> failWith mess a b = mliftErr (typesOutOfHeap allGeneric (a,b)) >>= \p->
 >                     failEM (show (err p))
 >   where err (a,b)= sep [text "can't unify:",
 >                         nest 3 (sep [pretty a,text "with",pretty b])] 
 >                    $$ text ("as "++mess)
 
 > mayshowargs :: HpType s -> HpType s -> STErr s ()
-> mayshowargs a b = mliftErr (mayshowargs' [] a b)
+> mayshowargs a b = mliftErr (mayshowargs' allGeneric a b)
 
 > mayshowargs' :: NonGenerics s -> HpType s -> HpType s -> ST s ()
 > mayshowargs' l a b = typesOutOfHeap l (a,b) >>= mayshowtypes a b

@@ -275,8 +275,8 @@ Where the {\tt ST s}-monad can be removed by \verb|runST| later.
 > blockOutOfHeap :: [(HpTEqn s,(VarID,HpQType s))] -> 
 >                   ST s [(TEqn,(VarID,QType))]
 > blockOutOfHeap ps = mapl f ps 
->   where f (eqn,(n,t)) = tEqnOutOfHeap' [] eqn >>= \meqn ->
->                         qtypeOutOfHeap' [] t   >>= \mt   ->
+>   where f (eqn,(n,t)) = tEqnOutOfHeap' allGeneric eqn >>= \meqn ->
+>                         qtypeOutOfHeap' allGeneric t   >>= \mt   ->
 >                         return (mapSnd (pair n) 
 >                                  (runVarSupply (map2 pair meqn mt)) ) 
 
@@ -314,9 +314,8 @@ encountered we need either its already defined name or a fresh name.
 >     var v = readAndUpdate lookupVar freshVarNum rememberVar v <@ varOf v
 >     con c = return (TCon c)
 >     app   = liftop (:@@:)
->     varOf v n | isGen v   = TVar (variablename n)
->               | otherwise = TVar ("_" ++ show n)
->     isGen p = null (filter (p===) ngs)  
+>     varOf v n | isGenericApproximation v ngs  = TVar (variablename n)
+>               | otherwise                     = TVar ("_" ++ show n)
 
 \end{verbatim}
 To translate from the abstract syntax to the heap we need a maping
@@ -371,10 +370,19 @@ A variable is generic iff it is not reachable from the list of
 normally very few variables are non-generic at the same time.
 \begin{verbatim}
 
-> type NonGenerics s = [HpType s]
+> newtype NonGenerics s = NGS [HpType s]
+
+> allGeneric :: NonGenerics s
+> allGeneric = NGS []
+
+> addtoNGS :: [HpType s] -> NonGenerics s -> NonGenerics s
+> addtoNGS a (NGS b) = NGS (a++b)
 
 > isGeneric :: HpType s -> NonGenerics s -> ST s Bool
-> isGeneric tyVar ngs = map not (occursInTypeList tyVar ngs) 
+> isGeneric tyVar (NGS ngs) = map not (occursInTypeList tyVar ngs) 
+
+> isGenericApproximation :: HpType s -> NonGenerics s -> Bool
+> isGenericApproximation tyVar (NGS ngs) = null (filter (tyVar===) ngs)
 
 > occursInTypeList :: HpType s -> [HpType s] -> ST s Bool
 > occursInTypeList tyVar
@@ -382,7 +390,12 @@ normally very few variables are non-generic at the same time.
 >                            else occursIn t) False
 >   where occursIn = (tyVar `occursInType`)
 
-\end{verbatim}
+\end{verbatim} 
+
+Function \texttt{isGenericApproximation} assumes that the list
+contains only type variables so that the test \texttt{occursInType}
+can be simplified to pointer equality.
+
 The second \verb|occursInType| (obtained by expanding the definition
 of {\tt cata\-HpType} and short-circuiting the use of \verb-||-) is
 more efficient as in the first laziness is destroyed by the
@@ -406,8 +419,8 @@ occursInType :: NodePtr s -> HpType s -> ST s Bool
 >                             else occursIn px
 
 > flattenNgs :: NonGenerics s -> ST s (NonGenerics s)
-> flattenNgs = mfoldr flat []
->   where flat t ngs = flattenHpType t <@ (++ngs)
+> flattenNgs (NGS ngs) = mfoldr flat allGeneric ngs
+>   where flat t ngs = flattenHpType t <@ (`addtoNGS` ngs)
 
 \end{verbatim}
 
@@ -461,7 +474,7 @@ elsewhere.
 >    runST         mqt
 #endif /* __HBC__ */
 >   where mqt :: ST s QType
->         mqt = qtypeIntoHeap qt >>= simplifyHpContext >>= qtypeOutOfHeap []
+>         mqt = qtypeIntoHeap qt >>= simplifyHpContext >>= qtypeOutOfHeap allGeneric
 
 
 > simplifyHpContext :: HpQType s -> ST s (HpQType s)

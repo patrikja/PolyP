@@ -8,8 +8,8 @@ targets = testSum.hs testCrush.hs testFlatten.hs testPropagate.hs	\
 
 CHASE = $(PERL) ../bin/chase -i ../polylib
 
-default: $(targets)
-
+default: check
+ 
 # Files in this directory:
 # README
 # contents.txt

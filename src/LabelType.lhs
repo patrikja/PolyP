@@ -10,20 +10,20 @@
 >                TEqn, TExpr, PrgEqns, PrgTEqns, QType, Qualified((:=>)),
 >                deQualify,qualify,isPolytypic,getNameOfVarBind)
 > import InferKind(inferDataDefs)
-> import InferType(inferLiteral,patBindToVarBind,tevalAndSubst)
+> import InferType(inferLiteral,patBindToVarBind,checkTypedInstance,tevalAndSubst)
 > import MonadLibrary(STErr, (<@),(<@-), mliftErr, unDone, LErr, mapLErr,
 >                     convertSTErr, Error(..), mapl, foreach)
 > import MyPrelude(pair,mapFst,mapSnd,splitUp,  maytrace)
 > import StartTBasis(startTBasis)
 > import StateFix-- (ST [,runST [,RunST]]) in hugs, ghc, hbc
-> import TypeBasis(Basis,KindBasis,TBasis,extendKindEnv,
->                  extendKindTBasis,extendTypeAfterTBasis,
+> import TypeBasis(Basis,TBasis,extendKindEnv,
+>                  tBasis2Basis,extendKindTBasis,extendTypeAfterTBasis,
 >                  extendTypeEnv,extendTypeTBasis,getKindEnv,
 >                  getNonGenerics,getRamTypes,instantiate,inventTypes,
 >                  lookupType,makeNonGeneric,ramKindToRom,ramTypeToRom)
 > import TypeGraph(HpQType,HpType, HpTExpr, HpTEqn, 
 >                  mkVar, mkFun, (##), mkQFun,
->                  eqnIntoHeap, blockOutOfHeap)
+>                  eqnIntoHeap, blockOutOfHeap,allGeneric)
 > import UnifyTypes(unify, checkInstance)
 > import Monad(foldM)
 
@@ -62,6 +62,13 @@ polytypic definitions using {\tt labelPoly} and both these functions
 use \verb!|->! to label expressions with types. 
 
 \section{Programs}
+
+After the data declarations have been kind-checked, a mapping from
+type names to functors should be added to the \texttt{TBasis}.  
+% 
+This mapping is needed during type inference, when simplifying type
+expressions containing \texttt{FunctorOf}.
+
 \begin{verbatim}
 
 > labelProgram :: PrgEqns -> LErr (TBasis,PrgTEqns)
@@ -170,13 +177,24 @@ could perhaps be used in the parser.
 >     return tExpr              <@
 >     pair (Letrec eqnss' expr')
 
-line 3 below: This should not be [] but ngs, or something like that,
-but it interferes with explicitly typed equations.
+\end{verbatim}
+*** line 3 below: checkInstance allGeneric hpType tExpr 
+%
+This should not be allGeneric but ngs, or something like that, but it
+interferes with explicitly typed equations. This means that the
+present trick for handling explicitly typed equations by translation
+to explicitly typed exprssions should be changed, and a special rule
+for type checking equations should be used.
+
+Infer the type of the expression, and check that it is more general
+than the supplied type. Label with the (less general) explicit type.
+
+\begin{verbatim}
 
 > basis |-> (Typed expr hpType)
 >   = basis |-> expr        >>= \(expr',tExpr) -> 
->     checkInstance [] hpType tExpr >>
->     return tExpr <@ 
+>     checkTypedInstance allGeneric hpType tExpr >>
+>     return hpType <@ 
 >     mkTyped expr' 
 >   where ngs = getNonGenerics basis
 
@@ -228,7 +246,7 @@ an identifier in the basis together with the corresponding equation.
 #else /* not __HBC__ */
 > labelTopBlock eqns tbasis = map simplify (runST         (convertSTErr m))
 #endif /* __HBC__ */
->   where basis = (tbasis,(newEnv,[]))
+>   where basis = tBasis2Basis tbasis
 >         m :: STErr s ([TEqn],[(VarID,QType)])
 >         m = (lift (foreach eqns' eqnIntoHeap) >>=  
 >             labelBlock basis) >>= \(hpeqns,basis') ->
@@ -384,8 +402,8 @@ in the list.
 
 \begin{verbatim}
 
->       lift (instantiate [] hpty') >>= \hpty@(((_,hpf:_):_):=>_)-> 
->       lift (mapl (instantiate []) funs') >>= \funs->
+>       lift (instantiate allGeneric hpty') >>= \hpty@(((_,hpf:_):_):=>_)-> 
+>       lift (mapl (instantiate allGeneric) funs') >>= \funs->
 >       lift (mapl (tevalAndSubst hpty) 
 >                  (maytrace "teval\n" funs)) >>= \taui ->
 
