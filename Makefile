@@ -13,7 +13,6 @@ hugs ghc hbc:
 	-mkdir $@src
 	$(MAKE) -C src $@src 
 # compile[1] the source
-	-mkdir bin
 	$(MAKE) -C $@src 
 	@echo Read the files src/$@.USAGE and USAGE for details on how to run PolyP
 
