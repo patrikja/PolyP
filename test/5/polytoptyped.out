@@ -1,2 +1,2 @@
 (Just 1,"")
-(InR ParF{unParF=1},InL EmptyF)
+(InR (ParF 1),InL EmptyF)

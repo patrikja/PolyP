@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fglasgow-exts -fallow-undecidable-instances #-}
 module PolyPrelude where
 
 ---
@@ -69,7 +69,7 @@ instance (Show (f a b), Show (g a b)) => Show (SumF f g a b) where
     showsPrec p (InR y) = showParen (p>9) $ showString "InR " . showsPrec 10 y
 
 instance (Show (f a b), Show (g a b)) => Show (ProdF f g a b) where
-    showsPrec p (x :*: y) = showParen (p>5) $ showsPrec 6 x . shows " :*: " . showsPrec 5 y
+    showsPrec p (x :*: y) = showParen (p>5) $ showsPrec 6 x . showString " :*: " . showsPrec 5 y
 
 instance Show a => Show (ParF a b) where
     showsPrec p (ParF x) = showParen (p>9) $ showString "ParF " . showsPrec 10 x

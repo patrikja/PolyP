@@ -1,1 +1,1 @@
-(InR (ParF{unParF='h'} :*: RecF{unRecF="ej"}),"hej")
+(InR (ParF 'h' :*: RecF "ej"),"hej")
