@@ -20,23 +20,26 @@ CHASE = $(PolyPDIR)/bin/chase
 %.run: %.hs
 	$(runhugs) $(HUGSFLAGS) $<
 
-type%.hs :
-	echo import MyPolyPrel > $@
+#type%.hs :
+#	echo import MyPolyPrel > $@
 
-%.hs: %.Hs2 type%.hs
-	cat type$*.hs $< > $@
+#%.hs: %.Hs2 type%.hs
+#	cat $(dir $*)type$(notdir $*).hs $< > $@
 
-%.Hs2: %.Phs2
-	$(PolyP) $(PolyPFLAGS) ${PolyPREQUESTS} $< > $@ 
+#%.Hs2: %.Phs2
+#	$(PolyP) $(PolyPFLAGS) ${PolyPREQUESTS} $< > $@ 
 
-%.Phs2: %.phs
-	$(CHASE) $(CHASEFLAGS) $< > $@
+#%.Phs2: %.phs
+#	$(CHASE) $(CHASEFLAGS) $< > $@
+
+%.hs : %.phs
+	$(PolyP) $< > $@
 
 %.phs: %.lphs
 	lhs2TeX -code -lcodeOnly=True $< | cut -c3- > $@
 
 %.out2: %.hs
-	$(runhugs) $(HUGSFLAGS) $< > $@
+	$(runhugs) $(HUGSFLAGS) -P:$(PolyPDIR)/lib:$(PolyPDIR)/polylib $< > $@
 
 %.out2: %.lhs
 	$(runhugs) $(HUGSFLAGS) $< > $@

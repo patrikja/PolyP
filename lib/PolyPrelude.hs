@@ -1,5 +1,5 @@
 
-module MyPolyPrel where
+module PolyPrelude where
 
 ---
 --		FunctorOf class
@@ -8,22 +8,30 @@ module MyPolyPrel where
 class FunctorOf f d | d -> f where
 	inn :: f a (d a) -> d a
 	out :: d a -> f a (d a)
+	datatypeName :: d a -> String
+	constructorName :: d a -> String
 
 ---
 --		Default FunctorOf instances
 ---
 
 instance FunctorOf (SumF EmptyF (ProdF ParF RecF)) [] where
-  inn (InL EmptyF) = []
-  inn (InR (ParF a :*: RecF b)) = a : b
-  out [] = InL EmptyF
-  out (a : b) = InR (ParF a :*: RecF b)
-  
+	inn (InL EmptyF) = []
+	inn (InR ((ParF a) :*: (RecF b))) = a : b
+	out [] = InL EmptyF
+	out (a : b) = InR ((ParF a) :*: (RecF b))
+	datatypeName = const "[]"
+	constructorName [] = "[]"
+	constructorName (_:_) = ":"
+ 
 instance FunctorOf (SumF EmptyF ParF) Maybe where
   inn (InL EmptyF) = Nothing
   inn (InR (ParF a)) = Just a
   out Nothing = InL EmptyF
   out (Just a) = InR (ParF a)
+  datatypeName = const "Maybe"
+  constructorName Nothing = "Nothing"
+  constructorName (Just _) = "Just"
   
 ---
 --		Structure types
@@ -45,6 +53,18 @@ unParF (ParF x) = x
 unRecF (RecF x) = x
 unConstF (ConstF x) = x
 unCompF (CompF x) = x
+
+(f -*- g) (x :*: y) = f x :*: g y
+f -+- g = foldSum (InL . f) (InR . g)
+
+(f -**- g) (x:*:y) = (f x, g y)
+f -++- g = (Left . f) `foldSum` (Right . g)
+
+foldProd f (x :*: y) = f x y
+
+foldSum f g e = case e of
+	InL x	-> f x
+	InR y	-> g y
 
 ---
 --		Polytypic map

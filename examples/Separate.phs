@@ -54,22 +54,6 @@ polytypic fmap2 :: (a -> c) -> (b -> d) -> f a b -> f c d
       	      Const t ->  \(ConstF x) -> ConstF x
 
 {-
-Non-polytypic help functions. In Haskell the datatype for sums is
-  predefined together with its catamorphism: either.
-  data Either a b = Left a | Right b
-  either :: (a -> c) -> (b -> c) -> Either a b -> c
--}
-
-(f -*- g) (x :*: y) = f x :*: g y
-f -+- g = foldSum (InL . f) (InR . g)
-
-foldProd f (x :*: y) = f x y
-
-foldSum f g e = case e of
-	InL x	-> f x
-	InR y	-> g y
-
-{-
 The definition of flatten is taken from ../polylib/Flatten.phs.
 -}
 flatten :: Regular d => d a -> [a]

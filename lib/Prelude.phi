@@ -26,12 +26,14 @@ asTypeOf:: a->a->a
 compare :: Ord a => a -> a -> Ordering
 concat  :: [[a]]->[a]
 const   :: a->b->a
+curry   :: ((a,b) -> c) -> a -> b -> c
 div     :: Integral a => a -> a -> a
 drop    :: Int->[a]->[a]
 either  :: (a->c) -> (b->c) -> Either a b -> c
 error   :: [Char] -> a
 filter  :: (a->Bool)->[a]->[a]
 flip    :: (a -> b -> c) -> b -> a -> c
+fmap    :: Functor f => (a -> b) -> f a -> f b
 foldr   :: (a -> b -> b) -> b -> [a] -> b
 fst     :: (a,b)->a
 getLine :: IO String
@@ -56,8 +58,13 @@ print   :: Show a => a -> IO ()
 putStr  :: String -> IO ()
 putStrLn:: String -> IO ()
 read    :: Read a => String -> a
+repeat  :: a -> [a]
 return  :: Monad m => a -> m a
 show    :: Show a => a -> String
+showString :: String -> String -> String
+shows   :: Show a => a -> String -> String
+showsPrec :: Show a => Int -> a -> String -> String
+showParen :: Bool -> (String -> String) -> String -> String
 snd     :: (a,b)->b
 splitAt :: Int -> [a] -> ([a],[a])
 tail    :: [a]->[a]
@@ -73,6 +80,15 @@ unParF  :: ParF a b -> a
 unRecF  :: RecF a b -> b
 unCompF :: CompF d g a b -> d (g a b)
 unConstF:: ConstF t a b -> t
+unProdF :: ProdF f g a b -> (f a b, g a b)
+unSumF  :: SumF f g a b -> Either (f a b) (g a b)
+foldSum :: (f a b -> c) -> (g a b -> c) -> SumF f g a b -> c
+foldProd:: (f a b -> g a b -> c) -> ProdF f g a b -> c
+(-+-)   :: (f a b -> h c d) -> (g a b -> i c d) -> SumF f g a b -> SumF h i c d
+(-*-)   :: (f a b -> h c d) -> (g a b -> i c d) -> ProdF f g a b -> ProdF h i c d
+(-++-)   :: (f a b -> c) -> (g a b -> d) -> SumF f g a b -> Either c d
+(-**-)   :: (f a b -> c) -> (g a b -> d) -> ProdF f g a b -> (c, d)
+gmap    :: Regular d => (a -> b) -> d a -> d b
 -- Prelude data types
 data Bool        =  False | True
 data Either a b  =  Left a | Right b

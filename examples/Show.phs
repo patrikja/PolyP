@@ -2,9 +2,9 @@
 -- Showing values
 --   980409 Patrik Jansson [NOT CLEANED UP]
 ----------------------------------------------------------------
-module Show(pshow,ppretty) where
-import Base(pmap)
-import ConstructorName(constructorName,constructors)
+module Show(pshow,ppretty,Expr(..)) where
+import Base(pmap,cata)
+import ConstructorName(constructors)
 
 pshow :: Regular d =>(a->[Char]) -> d a -> [Char]
 pshow sh x = cata (fshow (cnames x)) (pmap sh x)
@@ -13,19 +13,25 @@ cnames x = map constructorName (constructors `asTypeOf` [x])
 
 polytypic fshow :: [[Char]] -> f [Char] [Char] -> [Char] 
   =  \ss -> case f of
-                g + h	-> fshow2 (head ss) `either` fshow (tail ss) 
-                g	-> fshow2 (head ss) 
+                g + h   -> fshow2 (head ss) `foldSum` fshow (tail ss) 
+                g * h   -> fshow2 (head ss)
+                Empty   -> fshow2 (head ss)
+                Par     -> fshow2 (head ss)
+                Rec     -> fshow2 (head ss)
+                d @ g   -> fshow2 (head ss)
+                Const t -> fshow2 (head ss)
 
 fshow2 str x = str ++ fshow3 x
 
 polytypic fshow3 :: f [Char] [Char] -> [Char] 
   = case f of
-      g * h	-> \(x,y)-> parenthesize (fshow3 x) ++ fshow3 y
-      d @ g	-> pshow id . pmap fshow3
-      Empty	-> \_ -> ""
-      Par	-> parenthesize 
-      Rec	-> parenthesize
-      f		-> \_-> "{unimp}"
+      g * h -> \(x :*: y)-> parenthesize (fshow3 x) ++ fshow3 y
+      d @ g -> pshow id . pmap fshow3 . unCompF
+      Empty -> \_ -> ""
+      Par   -> parenthesize . unParF
+      Rec   -> parenthesize . unRecF
+      g + h -> \_-> "{unimp}"
+      Const t -> \_ -> "{unimp}"
 
 parenthesize s = " ("++s++") "
 
@@ -43,23 +49,35 @@ ppretty x = cata (fpretty (cnames x)) x
 
 polytypic fpretty :: [[Char]] -> f a (Expr a) -> Expr a
   =  \ss -> case f of
-                g + h	-> fpretty2 (head ss) `either` fpretty (tail ss) 
-                g	-> fpretty2 (head ss) 
+                g + h   -> fpretty2 (head ss) `foldSum` fpretty (tail ss) 
+                g * h   -> fpretty2 (head ss)
+                Empty   -> fpretty2 (head ss)
+                Par     -> fpretty2 (head ss)
+                Rec     -> fpretty2 (head ss)
+                d @ g   -> fpretty2 (head ss)
+                Const t -> fpretty2 (head ss)
 
 fpretty2 c x = Constr c (fpretty3 x)
 
 polytypic fpretty3 :: f a (Expr a) -> [Expr a] 
   = case f of
-      g * h	-> \(x,y)-> fpretty3 x ++ fpretty3 y
-      Empty	-> \_ -> []
-      f		-> singleton . fpretty4 
+      g * h   -> \(x :*: y)-> fpretty3 x ++ fpretty3 y
+      Empty   -> \_ -> []
+      g + h   -> singleton . fpretty4 
+      Par     -> singleton . fpretty4 
+      Rec     -> singleton . fpretty4 
+      d @ g   -> singleton . fpretty4 
+      Const t -> singleton . fpretty4 
 
 polytypic fpretty4 :: f a (Expr a) -> Expr a 
   = case f of
-      Par	-> Par
-      Rec	-> id
-      d @ g	-> joinExpr . ppretty . pmap fpretty4
-      f		-> \_-> error "fpretty4: not implemented"
+      Par     -> Par . unParF
+      Rec     -> unRecF
+      d @ g   -> joinExpr . ppretty . pmap fpretty4 . unCompF
+      g + h   -> \_-> error "fpretty4: not implemented"
+      g * h   -> \_-> error "fpretty4: not implemented"
+      Empty   -> \_-> error "fpretty4: not implemented"
+      Const t -> \_-> error "fpretty4: not implemented"
 
 -- d @ g-fallet ar intressant: med anrop till fpretty4 innebar det att
 --       g ej far innehalla +,* 

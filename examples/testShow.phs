@@ -13,13 +13,13 @@ data Test a = D a
             | F (Test a) (Test a) (Test a)
         deriving Show
 
-showExpr :: Expr Char -> [Char]
+showExpr :: Expr Char -> String
 showExpr = showExpr' (\_ c -> ((:)'\'').((:)c).((:)'\''))
 
-showExpr' :: (Int->a->[Char]->[Char]) -> Expr a -> [Char]
+showExpr' :: (Int->a->String->String) -> Expr a -> String
 showExpr' s x = showsPrecExpr s low x ""
 
-showsPrecExpr :: (Int->a->[Char]->[Char]) -> Int -> Expr a -> [Char] -> [Char]
+showsPrecExpr :: (Int->a->String->String) -> Int -> Expr a -> String -> String
 showsPrecExpr s p e = 
   case e of
     (Par x)      -> s p x

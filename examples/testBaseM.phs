@@ -1,6 +1,6 @@
 module Main where
 import Base(pmap)
-import BaseM(pmapM)
+import BaseM(pmapM,pmapM',pmapMr)
 data Rose a = Fork a [Rose a] deriving (Eq,Show)
 f = Fork 
 l x = f x []

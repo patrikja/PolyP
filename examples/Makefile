@@ -41,6 +41,8 @@ HUGSFLAGS = -98 -P:$(PolyPDIR)/lib
 
 include ../test/polyp.mk
 
+testShow.hs : Show.hs
+
 print:
 	cat ../polylib/Base.phs    ../polylib/Sum.phs       ../polylib/Crush.phs \
 	    ../polylib/Flatten.phs ../polylib/Propagate.phs ../polylib/Thread.phs\

@@ -1,5 +1,6 @@
 module Main where
-import Thread(thread,pmapM)
+import Thread(thread)
+import BaseM(pmapM)
 data Tree a = Leaf a | Bin (Tree a) (Tree a) deriving (Eq,Show)
 main = print ( thread (Bin (Leaf "ab") (Leaf "12"))
              , pmapM Just "PJ"

@@ -1,5 +1,5 @@
 module Main where
-import ConstructorName(constructorName,constructors)
+import ConstructorName(constructorNames,constructors)
 data Test a = A a | B (Test a) [Test a] | C (Test a) (Test a) (Test a)
 
 main = print (constructorNames (A undefined))
