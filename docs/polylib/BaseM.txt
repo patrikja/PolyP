@@ -1,39 +1,9 @@
----------------------------------------------------------------
--- Monadic polytypic functions
---   980504 Patrik Jansson
----------------------------------------------------------------
-module BaseM(pmapM,fmapM,cataM,anaM,hyloM,paraM) where
-
--- pmapM :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
-pmapM fM   = mapm inn . fmapM fM  (pmapM fM)   . out
-
--- fmapM :: (Bifunctor f, Monad m) => (a -> m c) -> (b -> m d) -> 
---                                    f a b -> m (f c d)
-
-polytypic fmapM :: (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
-  = \p r -> case f of
-	      g + h     ->  summapM  (fmapM p r) (fmapM p r)
-	      g * h     ->  prodmapM (fmapM p r) (fmapM p r)
-	      Empty     ->  return
-	      Par       ->  p                     
-	      Rec       ->  r                     
-	      d @ g     ->  pmapM (fmapM p r)
-	      Const t   ->  return                    
-
-summapM f g = (mapm Left . f) `either` (mapm Right . g)
-prodmapM f g p = f (fst p) >>= \x-> g (snd p) >>= \y-> return (x,y) 
+-- Calculations with monadic polytypic functions
+-- See polylib/BaseM.phs for the definitions.
 
 -- cataM :: Regular d => (FunctorOf d a b -> m b) -> (d a -> m b)
 -- anaM  :: Regular d => (b -> m (FunctorOf d a b)) -> (b -> m (d a))
 -- hyloM :: Bifunctor f => (f a b -> m d)-> (c -> m (f a b)) -> c -> m d
-cataM iM    = iM      @@ fmapM idM (cataM iM   ) . out
-anaM     oM = mapm inn . fmapM idM (anaM     oM) @@ oM
-hyloM iM oM = iM      @@ fmapM idM (hyloM iM oM) @@ oM
-
--- new names for symmetry
-innM = idM . inn
-outM = idM . out
-idM  = return
 
 {- ekvivalent definitions
 cataM iM = applyM iM . fmapM idM (cataM iM  ) . out
@@ -42,20 +12,7 @@ cataM iM    = iM      @@ fmapM idM (cataM iM   ) @@ outM
 anaM     oM = innM    @@ fmapM idM (anaM     oM) @@   oM
 -}
 
--- paraM :: Regular d => (d a -> FunctorOf d a b -> m b) -> d a -> m b
-paraM iM x = applyM (iM x) (fmapM idM (paraM iM) (out x))
-
-----------------------------------------------------------------
--- Monad operations (that are not in PolyPs prelude)
-
--- mapm :: Monad m => (a->b) -> m a -> m b
-mapm f mx = mx >>= \x -> return (f x)
--- applyM :: Monad m => (a->m b) -> m a -> m b
-applyM f x = x >>= f
--- (@@) :: Monad m => (b->m c) -> (a->m b) -> (a->m c)
-f @@ g = \y -> g y >>= f
-
-{-
+{- alternative definitions
 f @@ g = (>>= f) . g
 f @@ g = applyM f . g
 (@@) = (.) . (flip (>>=))
