@@ -28,5 +28,7 @@ the error. Every phase of Polyp will print information about its
 progress, so by checking how far PolyP got you can get a pretty good
 indication of where the error is. 
 
+More usage information can be found in the docs/ directory.
+
 ----------------------------------------------------------------
 For information of how to compile PolyP - see INSTALL.

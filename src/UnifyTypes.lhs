@@ -73,7 +73,7 @@ effect'!)
 >               then maytrace "unifyVar:equal pointers" ok 
 >               else
 >                 mIf (a `occursIn` b) 
->                  (failEM "unifyVar: Cyclic types not allowed")
+>                  (failWith "unifyVar: Cyclic types not allowed" a b)
 >                  (lifE (a ==> b))
 >   where   t1 `occursIn` t2 = lifE (t1 `occursInType` t2)
 
