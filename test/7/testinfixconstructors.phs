@@ -1,4 +1,4 @@
-data Number = VarNum | Z | S Number | Number :+: Number | Number :*: Number 
+data Number = VarNum | Z | S Number | Number :+ Number | Number :* Number 
   deriving Show
 
-main = print (Z :+: Z)
+main = print (Z :+ Z)

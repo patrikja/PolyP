@@ -323,7 +323,7 @@ applying the following rewrite rules: \\
 > typeSynEnv :: Env VarID (Int,QType)
 > typeSynEnv = extendsEnv [typeSyn "+" "" "SumF",
 >                          typeSyn "*" "" "ProdF",
->                          typeSyn ">" "fgab" "f a b -> g a b",
+>                          typeSyn ">" "" "FunF",
 >                          typeSyn "@" "" "CompF",
 >                          typeSyn "Par" "" "ParF",
 >                          typeSyn "Rec" "" "RecF",
