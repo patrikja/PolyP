@@ -1,3 +1,13 @@
+For the impatient:
+
+Install: (tcsh syntax)
+  setenv POLYPDIR `pwd`
+  ln -s $POLYPDIR/bin/ghcpolyp $HOME/bin/polyp
+  ln -s $POLYPDIR/bin/chase $HOME/bin/chase
+
+Check: (GNU make might be called gmake)
+  make check 
+
 ----------------USAGE----------------
 [A more in-depth description is in docs/reference.html.]
 
