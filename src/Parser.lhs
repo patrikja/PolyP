@@ -3,8 +3,6 @@ The basic idea for all these parsers is that they should end by eating
 white space (and comments) and assume that the first character they
 receive be non-space. 
 
-{\em a prefix `-'-sign is translated to `negate', which is not in the
-prelude (StartTBasis.lhs)}
 \begin{verbatim}
 
 > module Parser(parse,pModule,pType0,pType1,tupleConstructor) where
@@ -26,7 +24,7 @@ The parser is not in good shape and uses far too many reductions
 right now. (Plus it's UGLY!)
 
 \section{Module}
-The module parser ignores the module head, exports and imports.
+The module parser accepts but ignores the module head, exports and imports.
 %
 \begin{verbatim}
 
@@ -34,25 +32,34 @@ The module parser ignores the module head, exports and imports.
 > pModule = pModule'
 
 > pModule' = (pModuleHead `opt` ("Main",["main"])) >> 
->            pImports >> 
+>            pImpDecls >> 
 >            pEqns
 
 > pModuleHead =  (symbol "module" >> pConID)
 >             <*> pExports << mustbe "where"
 
 > pExports = pParenTuple pExport `opt` []
-> pExport =  pVarID 
->         ++ (pConID << (pIDTuple `opt` []))
+> pExport =  pImport
 >         ++ (symbol "module" >> pConID)
 
-> pImports = some_offside pImport `opt` []
-> pImport =   (symbol "import" >> may (symbol "qualified") >> pConID)  
+> pImpDecls = some_offside pImpDecl `opt` []
+> pImpDecl =   (symbol "import" >> may (symbol "qualified") >> pConID)  
 >         <*> (may (symbol "as" >> pConID) >> pImpSpec)
 
-> pImpSpec = (pIDTuple ++ ((symbol "hiding") >> pIDTuple)
+> pImpSpec = (pImpTuple ++ ((symbol "hiding") >> pImpTuple)
 >            ) `opt` []
 
-> pIDTuple = pParenTuple (pVarID++pConID)
+> pImpTuple = pParenTuple pImport
+
+> pImport =   pVarID 
+>         ++ (pConID << 
+>                  (pParenthesized 
+>                     (   symbol ".." <@- []
+>                      ++ pCommaList (pConID++pVarID)
+>                     )
+>                  ) `opt` []
+>            )
+
 > pParenTuple p = pParenthesized (pCommaList p `opt` [])
 
 > may :: Parser a -> Parser a
@@ -339,13 +346,20 @@ In \verb|(1)| \verb|pExpr| is too general.
 > list2expr = foldr (\e1 e2 -> Con ":" :@: e1 :@: e2) (Con listConstructor)
 
 > pCharLit :: Parser Char
-> pCharLit = (lit '\'' >> item) << mustbe "'"
+> pCharLit = (lit '\'' >> pChar) << mustbe "'"
 
 > pBoolLit :: Parser Bool
 > pBoolLit = (symbol "True" <@- True) ++ (symbol "False" <@- False)
 
+> pChar  :: Parser Char
+> pChar =   (lit '\\' >> lit '\'') -- an escaped '
+>         ++ item
+
 \end{verbatim}
-These string literals does not allow special characters.
+
+These string and character literal parsers do not allow special
+characters.  This could be solved using {\tt reads :: Read a => String
+-> [(a,String)]} if it can be transformed into a Parser.
 
 \section{Types}
 The list type \verb|[]| is represented by \verb|TCon "[]"| and a

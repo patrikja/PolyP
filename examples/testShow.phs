@@ -14,7 +14,7 @@ data Test a = D a
         deriving Show
 
 showExpr :: Expr Char -> [Char]
-showExpr = showExpr' (\_ c -> ((:)''').((:)c).((:)'''))
+showExpr = showExpr' (\_ c -> ((:)'\'').((:)c).((:)'\''))
 
 showExpr' :: (Int->a->[Char]->[Char]) -> Expr a -> [Char]
 showExpr' s x = showsPrecExpr s low x ""

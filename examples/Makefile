@@ -66,14 +66,14 @@ test%.check : test%.phs
           && runhugs test$*.hs > test$*.check) || echo >test$*.check
 	@diff test$*.check test$*.out
 
-genfiles = $(targets) $(targets:.hs=.check) tmp.phs tmp.hs
+genfiles = $(targets) $(targets:.hs=.check) tmp.phs tmp.hs Separate.hs
 
 print:
 	cat ../polylib/Base.phs    ../polylib/Sum.phs       ../polylib/Crush.phs \
 	    ../polylib/Flatten.phs ../polylib/Propagate.phs ../polylib/Thread.phs \
 	    ../polylib/Zip.phs     ../polylib/ConstructorName.phs ../polylib/EqOrd.phs \
 	    Show.phs > All.phs ; \
-    enscript -2Gr All.phs 
+	enscript -2Gr All.phs 
 
 clean:
 	rm -f *~

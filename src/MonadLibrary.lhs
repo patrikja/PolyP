@@ -5,10 +5,10 @@
 > import StateFix(ST,  (>>=!)) -- Hugs import ST
 > import MyPrelude(pair,mapFst)
 
-> infixl <@
-> infixl <@-
-> infixr @@
-> infixr <*>
+> infixl 9 <@
+> infixl 9 <@-
+> infixr 9 @@
+> infixr 9 <*>
 > infixr 1 <<
 
 \end{verbatim}

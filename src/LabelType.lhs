@@ -31,7 +31,7 @@
 >                  typeOutOfHeap',runVarSupply)
 > import UnifyTypes(unify, checkInstance)
 
-> infix |->
+> infix 9 |->
 
 \end{verbatim}
 This is an extension of the normal type inference algorithm that gives

@@ -14,7 +14,7 @@
 > import Env(newEnv,extendsEnv)
 > import TypeBasis(TBasis)
 
-> infixr -=>
+> infixr 9 -=>
 
 \end{verbatim}
 We will need three versions of the prelude:
@@ -63,6 +63,7 @@ These should be read from a file.
 >               ("compare","Ord a => a -> a -> Ordering"),
 >               ("or" ,"[Bool]->Bool"),
 >               ("foldr","(a -> b -> b) -> b -> [a] -> b"),
+>               ("negate","Num a => a->a"),
 >               ("uncurry","(a -> b -> c) -> (a,b) -> c"),
 >               ("error","[Char] -> a"),
 >               ("undefined","a"),

@@ -4,8 +4,8 @@ Pretty printing combinators.
 
 > module PrettyPrintLibrary(Doc,(<>),($$),text,sep,nest,layout) where
 
-> infixr $$
-> infixr <>
+> infixr 9 $$
+> infixr 9 <>
 
 > data Doc = Nest Int [Alt]
 > data Alt = Text Int SS | Above Int SS Doc

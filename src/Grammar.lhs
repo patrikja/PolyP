@@ -5,8 +5,8 @@
 > import List((\\))
 > import MyPrelude(mapSnd)
 
-> infixl :@:
-> infixl :@@:
+> infixl 9 :@:
+> infixl 9 :@@:
 > infix 4 :=>
 > infixr 5 ##
 

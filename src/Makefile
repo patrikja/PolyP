@@ -22,7 +22,7 @@ hbc:
 	$(MAKE) -f hbc.mk hs_link_flags=$(HOME)/haskell/hbcfix/fix.o
 hugs:
 	@echo "Ignore any warnings about closed pipes."
-	hugs -F"cpp -P -traditional" Main.lhs
+	hugs -F"cpp -P -C -traditional -D__HUGS__" Main.lhs
 
 clean::	ghcclean hbcclean
 	rm -f *~
