@@ -4,6 +4,10 @@ The basic idea for all these parsers is that they should {\em end} by
 eating white space (and comments) and assume that the first character
 they receive be non-space.
 
+Known bugs:
+
+The argument to \texttt{pBackQuoted} should not allow trailing white-space. (Because this allows the incorrect `elem  `.)
+
 \begin{verbatim}
 
 > module Parser(parse,pModule,pType0,pType1) where
@@ -356,7 +360,7 @@ In \verb|(1)| \verb|pExpr| is too general.
 > pListLit = pBracketed (pCommaList pExpr `opt` []) <@ list2expr
 
 > pStrLit :: Parser String
-> pStrLit = pPack "\"" (many (sat (/='"'))) "\"" 
+> pStrLit = pDoubleQuoted (many (sat (/='"')))
 
 > list2expr :: [Expr] -> Expr
 > list2expr = foldr (\e1 e2 -> Con ":" :@: e1 :@: e2) (Con listConstructor)
@@ -467,18 +471,23 @@ From the Haskell report:
 >              "data", "polytypic", "deriving"]
 
 \end{verbatim}
+***
 Reserved identifiers in Haskell 1.3: {\tt case | class | data |
   default | deriving | do | else | if | import | in | infix | infixl |
   infixr | instance | let | module | newtype | of | then | type |
   where }
 \section{Extra combinators}
+Function \texttt{pPack'} does not allow space after leading symbol.
 \begin{verbatim}
 
-> pPack a p b  = (symbol a >> p) << mustbe b
+> pPack  a p  b  = (symbol a >> p ) << mustbe b
+> pPack' a p' b  = (string a >> p') << mustbe b
  
+> pDoubleQuoted  p' = pPack' "\"" p' "\"" 
+> pBackQuoted    p' = pPack' "`"  p' "`"
+
 > pBracketed     p = pPack "[" p "]"
 > pParenthesized p = pPack "(" p ")"
-> pBackQuoted    p = pPack "`" p "`"
 
 > pCommaList p = p `sepby` symbol ","
 
