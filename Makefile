@@ -115,9 +115,9 @@ polyp-$(polyp_version).tar.gz: polyp-$(polyp_version)
 WWWDIR = $(HOME)/pub/www/poly
 
 www: polyp-$(polyp_version).tar.gz
-	cp polyp$(polyp_version).tar.gz $(WWWDIR)
+	cp polyp-$(polyp_version).tar.gz $(WWWDIR)
 	cd $(WWWDIR); $(MAKE) -e polyp-$(polyp_version)
-	rm -rf polyp$(polyp_version).tar.gz polyp$(polyp_version)
+	rm -rf polyp-$(polyp_version).tar.gz polyp-$(polyp_version)
 # `-e' `--environment-overrides'
 #     Give variables taken from the environment precedence over
 #     variables from makefiles. Used here to export $(polyp_version)
