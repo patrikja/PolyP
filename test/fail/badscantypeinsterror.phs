@@ -1,0 +1,24 @@
+main = scan2 (out "Hej")
+
+polytypic fscan2 :: f a b -> [f a b]
+  = case f of
+        f * g -> \(x,y) -> fscan2 x ++ fscan2 y
+--        Par   -> \x -> [x]
+--        Rec   -> \x -> [x]
+--        Empty -> const []
+
+{-
+För hand:
+ fscan2 :: f a b -> [f a b] 
+inferens på 
+  \(x,y) -> fscan2 x ++ fscan2 y
+ger
+  (f' a' b',f' a' b') -> [f' a' b'] 
+och teval ger (g*h) a b -> [(g*h) a b] ==
+  (g a b, h a b) -> [(g a b, h a b)]
+
+checkInstance "unifierar" f' := g; g := h
+
+felet är till höger om funktionspilen
+
+-}
