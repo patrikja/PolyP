@@ -14,7 +14,7 @@ This text is a reference manual for PolyP.
 <h2>Flag summary</h2>
 Usage:
 <blockquote>
-  <code>polyp [--version] [-v] [-p Preludefile.hs] [polypcode.phs]</code>
+  <code>polyp [--version] [-v] {-p Preludefile.hs} {-r f[:D]} [polypcode.phs]</code>
 </blockquote>
 <dl compact>
   <dt><code>--version</code>
@@ -23,6 +23,10 @@ Usage:
   <dd>Verbatim - print information about the compiler phases while compiling
   <dt><code>-p <em>file</em></code>
   <dd>Read explicit type information from <em>file</em> before starting.
+  <dt><code>-r <em>value[:type constructor]</em></code>
+  <dd>Start polytypic instantiation from <em>value</em> (default is
+      from main). If <em>value</em> is polytypic, the desired datatype
+      constructor <em>D</em> must be given. 
 </dl>
 
 If polyp is compiled with hbc, prepend a dash ('<code>-</code>') to
@@ -34,9 +38,9 @@ the command line. (Or compile with polyp with <code>make hbc "hbc=hbc
 Invoking the compiler phases:
 
 <pre>
-  chase [-i ImportDir] PolyPModule.phs  &gt; PolyPcode.Phs
+  chase {-i ImportDir} PolyPModule.phs  &gt; PolyPcode.Phs
 
-  polyp [-v] [-p ExplTypes.hs] PolyPcode.Phs &gt; Haskellcode.Hs
+  polyp [-v] {-p ExplTypes.hs} {-r f[:D]}] PolyPcode.Phs &gt; Haskellcode.Hs
 
   [cat Prefix.hs Haskellcode.Hs         &gt; Haskellcode.hs]
 </pre>
@@ -67,7 +71,15 @@ P.Phs</code>.
 
 It type checks the input file <code>P.Phs</code> and generates the
 instances of all polytypic functions that are used in the code
-reachable from <code>main</code>.
+reachable from the definitions of the start values.
+
+By default there is one start value - <code>main</code> - but the flag
+<code>-r value[:D]</code> can be used (any number of times) to specify other
+start values.
+
+If the start value is polytypic, it must be instatiated to a type
+constructor (<em>D</em>) given after the colon.
+<p>
 
 The output is Haskell code and can be loaded in hugs or compiled with
 a Haskell compiler.
@@ -81,9 +93,9 @@ In this case these declarations have to be supplied by hand.
 The simplest way to do this is to put them in a separate file and then
 <code>cat</code> it together with the <code>polyp</code> output.
 
-If the flag -v (verbose) is used, the different phases of the PolyP
-compilation give progress reports in a Haskell comment in the output
-file:
+If the flag <code>-v</code> (verbose) is used, the different phases of
+the PolyP compilation give progress reports in a Haskell comment in
+the output file:
 
 <ul>
 
@@ -169,7 +181,7 @@ think about:
 
 <hr>
 <!-- hhmts start -->
-Last modified: Wed Jul 14 11:02:15 MET DST 1999
+Last modified: Thu Jul 15 17:30:51 MET DST 1999
 <!-- hhmts end -->
 by
 <address>

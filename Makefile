@@ -1,5 +1,5 @@
 # The Makefile is for the following PolyP-version
-export polyp_version = 1.4
+export polyp_version = 1.5
 
 help: 
 	@echo Makefile for PolyP by Patrik Jansson
@@ -20,7 +20,7 @@ export PolyP = polyp
 # For a quick test of PolyP - use hugs to avoid compilation
 
 # Make PolyP using hugs, ghc or hbc
-hugs ghc hbc:
+hugs ghc hbc: bin/chase
 # Make the source
 	-mkdir $@src
 	$(MAKE) -C src $@src "hc=$($@)" 
@@ -41,6 +41,16 @@ check.% : %
 
 # compile with all three compilers and check the results
 checkdist: check.ghc check.hbc check.hugs
+
+POLYPDIR   = $(shell pwd)
+POLYLIBDIR = $(POLYPDIR)/polylib
+PERL       = $(shell which perl)
+
+bin/chase: src/chase.in
+	echo '#!'$(PERL) > bin/chase
+	echo '$$POLYLIBDIR='\'$(POLYLIBDIR)\'\; >>bin/chase
+	cat src/chase.in >> bin/chase
+
 
 
 oldhugs:
@@ -80,8 +90,6 @@ polyp$(polyp_version).tar.gz: polyp$(polyp_version)
 	gtar -zcf $@ $<
 
 WWWDIR = $(HOME)/pub/www/poly
-
-export polyp_version
 
 www: polyp$(polyp_version).tar.gz
 	cp polyp$(polyp_version).tar.gz $(WWWDIR)

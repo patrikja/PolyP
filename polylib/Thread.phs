@@ -4,16 +4,10 @@
 ---------------------------------------------------------------
 module Thread(thread,pmapM,fthread,fmap2M) where
 import Base(cata,inn,pmap)
+import BaseM(pmapM,fmap2M)
 
 thread :: (Regular d, Monad m) => d (m a) -> m (d a)
 thread  =  cata (mapm inn . fthread)
-
-pmapM :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
-pmapM f = thread . pmap f
-
-fmap2M :: (Bifunctor f, Monad m) => (a -> m c) -> (b -> m d) -> 
-                                   f a b -> m (f c d)
-fmap2M f g = fthread . fmap2 f g
 
 -- Bifunctor f => ...
 polytypic fthread :: Monad m => f (m a) (m b) -> m (f a b)
@@ -37,3 +31,11 @@ prodthread (mx,my) = mx >>= \x-> my >>= \y-> return (x,y)
 
 mapm :: Monad m => (a->b) -> m a -> m b
 mapm f mx = mx >>= \x -> return (f x)
+
+-- Alternative definitions of pmapM and fmap2M
+-- pmapM :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
+-- pmapM f = thread . pmap f
+-- fmap2M :: (Bifunctor f, Monad m) => (a -> m c) -> (b -> m d) -> 
+--                                     f a b -> m (f c d)
+-- fmap2M f g = fthread . fmap2 f g
+

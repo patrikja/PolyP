@@ -1,5 +1,5 @@
 This directory contains examples of the use of polytypic functions 
-with PolyP. The translated files are interpreted by hugs (1.4).
+with PolyP. The translated files are interpreted by hugs.
 All the examples are of the form 
   concatenate testM.phs its dependents using the perl script chase
   use polyp to translate the concatenated files to Haskell (testM.hs)

@@ -26,9 +26,9 @@ prodmapM :: Monad b => (a -> b c) -> (d -> b e) ->
 prodmapM  f g p = f (fst p) >>= \x-> g (snd p) >>= \y-> return (x,y) 
 prodmapMr f g p = g (snd p) >>= \y-> f (fst p) >>= \x-> return (x,y) 
 
-cataM :: Regular d => (FunctorOf d a b -> m b) -> (d a -> m b)
-anaM  :: Regular d => (b -> m (FunctorOf d a b)) -> (b -> m (d a))
-hyloM :: Bifunctor f => (f a b -> m b)-> (c -> m (f a c)) -> c -> m b
+cataM :: (Regular d,Monad m) => (FunctorOf d a b -> m b) -> (d a -> m b)
+anaM  :: (Regular d,Monad m) => (b -> m (FunctorOf d a b)) -> (b -> m (d a))
+hyloM :: (Bifunctor f,Monad m) => (f a b -> m b)-> (c -> m (f a c)) -> c -> m b
 cataM iM    = iM      @@ fmap2M idM (cataM iM   ) . out
 anaM     oM = mapm inn . fmap2M idM (anaM     oM) @@ oM
 hyloM iM oM = iM      @@ fmap2M idM (hyloM iM oM) @@ oM
@@ -41,9 +41,10 @@ innM = idM . inn
 innM :: (Regular d, Monad m) => d a -> m (FunctorOf d a (d a))
 outM = idM . out
 -- synonym
+pmapMl :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
 pmapMl = pmapM
 
-paraM :: Regular d => (d a -> FunctorOf d a b -> m b) -> d a -> m b
+paraM :: (Regular d, Monad m) => (d a -> FunctorOf d a b -> m b) -> d a -> m b
 paraM iM x = applyM (iM x) (fmap2M idM (paraM iM) (out x))
 
 -- Reverse order traversals
@@ -60,6 +61,9 @@ polytypic fmap2Mr :: Monad m => (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
 	      d @ g     ->  pmapMr (fmap2Mr p r)
 	      Const t   ->  return                    
 
+cataMr :: (Regular d,Monad m) => (FunctorOf d a b -> m b) -> (d a -> m b)
+anaMr  :: (Regular d,Monad m) => (b -> m (FunctorOf d a b)) -> (b -> m (d a))
+hyloMr :: (Bifunctor f,Monad m) => (f a b -> m b)-> (c -> m (f a c)) -> c -> m b
 cataMr iM    = iM      @@ fmap2Mr idM (cataMr iM   ) . out
 anaMr     oM = mapm inn . fmap2Mr idM (anaMr     oM) @@ oM
 hyloMr iM oM = iM      @@ fmap2Mr idM (hyloMr iM oM) @@ oM

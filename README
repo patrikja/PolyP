@@ -3,7 +3,7 @@
                                        
 Patrik Jansson and Johan Jeuring
 
-  PolyP [3]version 1.4
+  PolyP [3]version 1.5
   
    This distribution contains
      * the source files for a compiler written in Haskell that compiles
@@ -34,7 +34,7 @@ Polytypism
    [14]http://www.cs.chalmers.se/~patrikj/poly/.
      _________________________________________________________________
    
-   Last modified: Wed Jul 14 11:49:51 MET DST 1999 by
+   Last modified: Thu Jul 15 14:48:08 MET DST 1999 by
    
    
     [15]Patrik Jansson / [16]patrikj@cs.chalmers.se
@@ -50,7 +50,7 @@ References
    7. http://haskell.org/
    8. http://www.cs.chalmers.se/~augustss/hbc/hbc.html
    9. http://haskell.org/hugs/
-  10. http://www.dcs.gla.ac.uk/fp/software/ghc/
+  10. http://research.microsoft.com/users/t-simonm/ghc/
   11. http://www.cs.chalmers.se/~patrikj/poly/polyp.tar.gz
   12. http://www.cs.chalmers.se/~patrikj/poly/polyp/INSTALL
   13. mailto:patrikj@cs.chalmers.se

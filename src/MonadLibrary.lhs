@@ -224,7 +224,7 @@ instance Functor (ST a) where
 >       case x of 
 >         Done a  -> return a
 >         Err msg -> putErrStrLn msg  >>
->                    error "drop!" --return undefined
+>                    error "drop!" -- return undefined
 > 
 > dropError :: IOErr a -> IO b -> (a -> IO b) -> IO b
 > dropError (IOErr m) failure success

@@ -44,6 +44,7 @@ not     :: Bool->Bool
 or      :: [Bool]->Bool
 print   :: Show a => a -> IO ()
 putStr  :: String -> IO ()
+putStrLn:: String -> IO ()
 read    :: Read a => String -> a
 return  :: Monad m => a -> m a
 show    :: Show a => a -> String

@@ -1,4 +1,6 @@
-main = scan2 (out "Hej")
+-- This definition is not type correct, and this is reported by PolyP.
+
+main = fscan2 (out "Hej")
 
 polytypic fscan2 :: f a b -> [f a b]
   = case f of
@@ -8,17 +10,17 @@ polytypic fscan2 :: f a b -> [f a b]
 --        Empty -> const []
 
 {-
-För hand:
- fscan2 :: f a b -> [f a b] 
-inferens på 
+By hand:
+  fscan2 :: f a b -> [f a b] 
+First infer the type of
   \(x,y) -> fscan2 x ++ fscan2 y
-ger
-  (f' a' b',f' a' b') -> [f' a' b'] 
-och teval ger (g*h) a b -> [(g*h) a b] ==
-  (g a b, h a b) -> [(g a b, h a b)]
+gives
+  tau  = (f' a' b',f' a' b') -> [f' a' b'] 
+and teval gives
+  tau' = (g*h) a b           -> [(g*h) a b] 
+       = (g a b, h a b)      -> [(g a b, h a b)]
 
-checkInstance "unifierar" f' := g; g := h
+checkInstance complains that tau is not an instance of tau'
 
-felet är till höger om funktionspilen
-
+The error is the pair to the right of the function arrow.
 -}
