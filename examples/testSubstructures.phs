@@ -1,0 +1,11 @@
+module Main where
+import Substructures(substructures)
+
+data Tree a = T | S (Tree a) a (Tree a) deriving Show
+l y = S T y T
+
+x = S (l 'H') 'e' (S (l 'l') 'l' (l 'o'))
+y = S T 1 (S T 2 (l 3)) 
+
+main = print (substructures y)
+-- expected output: [S T 1 (S T 2 (S T 3 T)), T, S T 2 (S T 3 T), T, S T 3 T, T, T]

@@ -1,0 +1,42 @@
+A short tutorial:
+  (For more examples, see contents.txt.)
+
+The file Separate.phs contains a simple polytypic program including
+commments. To translate it to Haskell run
+
+  polyp Separate.phs  | cat typeSeparate.hs - > Separate.hs
+
+This will (if everything works out) write the translated PolyP program
+to the file Separate.hs.
+
+Look at the output file Separate.hs for some information about the
+different phases of the translation.
+
+To interpret this file, you can start hugs and tell hugs to load the
+generated file Separate.hs by typing
+
+  hugs Separate.hs
+
+Now you can evaluate the main value by simply writing
+
+  main
+
+You can evaluate other functions in Separate.hs or check their types.
+
+  separate_f4Rose (f 'P' [f 'a' [l 't',l 'r'],l 'i',l 'k']) where f = Fork; l c = f c []
+
+  :type main
+
+When done, exit hugs by typing
+
+  :quit
+
+There are a number of other small polytypic programs in this
+directory, and the Makefile has some more information about these.
+To run a test suite do
+  make check
+
+Report bugs to patrikj@cs.chalmers.se.
+
+
+

@@ -1,0 +1,36 @@
+module Main where
+import Show(pshow,ppretty,Expr(..),(+++))
+
+main = print (showExpr (ppretty x))
+
+showCh c = "'" ++ (c : "'")
+
+x = F (E (D 'P') (C (D 'a') N)) (D 't') (D 'r')
+
+data L a = N | C a (L a) deriving Show
+data Test a = D a 
+            | E (Test a) (L (Test a)) 
+            | F (Test a) (Test a) (Test a)
+        deriving Show
+
+showExpr :: Expr Char -> [Char]
+showExpr = showExpr' (\_ c -> ((:)''').((:)c).((:)'''))
+
+showExpr' :: (Int->a->[Char]->[Char]) -> Expr a -> [Char]
+showExpr' s x = showsPrecExpr s low x ""
+
+showsPrecExpr :: (Int->a->[Char]->[Char]) -> Int -> Expr a -> [Char] -> [Char]
+showsPrecExpr s p e = 
+  case e of
+    (Par x)      -> s p x
+    (Constr c l) -> case l of
+                      ([]) -> (+++) c
+                      _    -> mayparen p (((+++) c).showsPrecExprList s high l)
+
+high = 1
+low = 0
+mayparen p s = if p == high 
+               then ((:) '(') . s . ((:) ')')
+               else s
+
+showsPrecExprList s p = foldr (.) id . map (\e-> ((:) ' ') . showsPrecExpr s p e)

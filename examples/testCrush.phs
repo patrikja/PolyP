@@ -1,0 +1,8 @@
+module Main where
+import CrushFuns(flatten,pany)
+data Rose a = Fork a [Rose a]
+f = Fork 
+l x = f x []
+namn = f 'P' [l 'a', f 't' [l 'r'], l 'i', l 'k']
+main = print (flatten namn, pany (\c->c=='r') namn)
+-- expected output: ("Patrik", True)

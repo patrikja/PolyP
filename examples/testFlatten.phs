@@ -1,0 +1,9 @@
+module Main where
+import Flatten(flatten)
+
+data Foo a = Bar | Cee a | Doo (Foo a) a (Foo a)
+
+x = Doo (Doo (Cee 'P') 'a' (Doo Bar 't' Bar)) 'r' (Doo Bar 'i' (Doo Bar 'k' Bar))
+
+main = print (flatten "Patrik", flatten x)
+-- expected output: ("Patrik", "Patrik")

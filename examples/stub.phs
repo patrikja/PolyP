@@ -1,0 +1,9 @@
+polytypic p :: t
+  = case f of
+      g + h   -> 
+      g * h   -> 
+      Empty   -> 
+      Par     -> 
+      Rec     -> 
+      d @ g   -> 
+      Const t -> 

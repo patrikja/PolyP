@@ -1,0 +1,29 @@
+This directory contains examples of the use of polytypic functions 
+with PolyP. The translated files are interpreted by hugs (1.4).
+All the examples are of the form 
+  concatenate testM.phs its dependents using the perl script chase
+  use polyp to translate the concatenated files to Haskell (testM.hs)
+  [prepend the declarations in typeM.hs]
+  run hugs on testM.hs
+  evaluate main
+  check that the value from main is correct
+  quit hugs
+
+make check will run all the examples and check that the output is correct.
+
+A function stub for polytypic definitions is in `stub.phs'.
+
+................................................................
+Example: to test Sum: 
+  make testSum.hs
+  main  
+  $$ == 6
+  :q
+................................................................
+
+Show functions: Show.phs [Base.phs,ConstructorName.phs]
+  pshow
+
+Substructures: Substructures.phs [Base.phs,Flatten.phs]
+  substructures
+

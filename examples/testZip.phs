@@ -1,0 +1,5 @@
+module Main where
+import Zip(pzip)
+
+main = print (pzip ("Pti","ark"))
+-- expected output: Just [('P', 'a'), ('t', 'r'), ('i', 'k')]

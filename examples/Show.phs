@@ -1,0 +1,79 @@
+----------------------------------------------------------------
+-- Showing values
+--   980409 Patrik Jansson [NOT CLEANED UP]
+----------------------------------------------------------------
+module Show(pshow,ppretty) where
+import Base(pmap)
+import ConstructorName(constructorName,constructors)
+
+-- pshow :: (a->[Char]) -> d a -> [Char]
+pshow sh x = cata (fshow (cnames x)) (pmap sh x)
+
+cnames x = map constructorName (constructors `astypeof` [x])
+
+x +++ y = [] ++ x ++ y  -- trick to get the restricted type
+
+polytypic fshow :: [[Char]] -> f [Char] [Char] -> [Char] 
+  =  \ss -> case f of
+                g + h	-> fshow2 (head ss) `either` fshow (tail ss) 
+                g	-> fshow2 (head ss) 
+
+fshow2 str x = str ++ fshow3 x
+
+polytypic fshow3 :: f [Char] [Char] -> [Char] 
+  = case f of
+      g * h	-> \(x,y)-> parenthesize (fshow3 x) +++ fshow3 y
+      d @ g	-> pshow id . pmap fshow3
+      Empty	-> \_ -> ""
+      Par	-> parenthesize 
+      Rec	-> parenthesize
+      f		-> \_-> "{unimp}"
+
+parenthesize s = " ("++s++") "
+
+----------------------------------------------------------------
+-- generalize:
+--   generate a value that can later be printed non-polytypically
+--   i.e. _factorize_ pshow
+
+data Expr a = Constr [Char] [Expr a] 
+            | Par a
+        deriving Show
+
+ppretty :: d a -> Expr a
+ppretty x = cata (fpretty (cnames x)) x
+
+polytypic fpretty :: [[Char]] -> f a (Expr a) -> Expr a
+  =  \ss -> case f of
+                g + h	-> fpretty2 (head ss) `either` fpretty (tail ss) 
+                g	-> fpretty2 (head ss) 
+
+fpretty2 c x = Constr c (fpretty3 x)
+
+polytypic fpretty3 :: f a (Expr a) -> [Expr a] 
+  = case f of
+      g * h	-> \(x,y)-> fpretty3 x +++ fpretty3 y
+      Empty	-> \_ -> []
+      f		-> singleton . fpretty4 
+
+polytypic fpretty4 :: f a (Expr a) -> Expr a 
+  = case f of
+      Par	-> Par
+      Rec	-> id
+      d @ g	-> joinExpr . ppretty . pmap fpretty4
+      f		-> \_-> error "fpretty4: not implemented"
+
+-- d @ g-fallet ar intressant: med anrop till fpretty4 innebar det att
+--       g ej far innehalla +,* 
+-- Normalt ar g = Rec, men detta bor underdersokas
+
+joinExpr :: Expr (Expr a) -> Expr a
+joinExpr e = case e of
+   (Par x)      -> x
+   (Constr c l) -> Constr c (map joinExpr l)
+
+singleton x = [x]
+
+astypeof :: a -> a -> a
+astypeof = const
+

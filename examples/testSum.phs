@@ -1,0 +1,4 @@
+module Main where
+import Sum(size)
+main = print (size "Patrik")
+-- expected output: 6
