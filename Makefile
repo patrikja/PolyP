@@ -1,5 +1,5 @@
 # The Makefile is for the following PolyP-version
-version=0.9
+version=1.0
 
 help: 
 	@echo Makefile for PolyP by Patrik Jansson
@@ -8,7 +8,6 @@ help:
 	@echo "    makes the sources and compiles them with compiler X"
 	@echo "  gmake check.X"
 	@echo "    runs some regression tests."
-
 
 # These variables can be used to specify the desired version of the compiler
 ghc  = ghc
@@ -54,6 +53,7 @@ clean:
 	rm -f docs/*~
 	-$(MAKE) -C examples clean
 	$(MAKE) -C book clean
+	rm -fr polyp$(version) polyp$(version).tar.gz
 
 veryclean:	clean
 	$(MAKE) -C src veryclean
@@ -67,34 +67,49 @@ distclean:	veryclean
 	rm -fr  bin/hugspolyp bin/ghcpolyp bin/hbcpolyp bin/polyp
 	rm -r   CVS */CVS
 
+# Distribution
+polyp$(version):
+	-rm -r $@
+	cvs export -D now -d $@  p
+
+polyp$(version).tar.gz: polyp$(version)
+	-rm -r $@
+	gtar -zcf $@ $<
+
+WWWDIR = $(HOME)/pub/www/poly
+
+export version
+
+www:	polyp$(version).tar.gz
+	cp polyp$(version).tar.gz $(WWWDIR)
+	cd $(WWWDIR); $(MAKE) -e polyp$(version)
+# `-e' `--environment-overrides'
+#     Give variables taken from the environment precedence over
+#     variables from makefiles. Used here to export $(version)
+
 packpolylib:
-	tar cf polylib.tar polylib examples 
-	gzip polylib.tar
+	gtar -zcf polylib.tar.gz polylib examples 
 
-# outdated
-dist:
-	$(MAKE) -C src dist
-	-rm -r ../polyp$(version)
-	mkdir ../polyp$(version)
-	cp -r * ../polyp$(version)
-	$(MAKE) -C ../polyp$(version) distclean
-	-rm ../polyp$(version).tar
-# change directory to store the correct path in the .tar-file
-	cd ..; tar cf polyp$(version).tar polyp$(version)
-	gzip ../polyp$(version).tar
+local:	polyp$(version)
+	$(MAKE) -C polyp$(version) ghc
+	$(MAKE) -C polyp$(version) check.ghc
+	rm $(HOME)/bin/polyp
+	ln -s $(HOME)/poly/polyp/polyp$(version)/bin/ghcpolyp $(HOME)/bin/polyp
+	@echo Skicka brev lokalt och meddela detta
 
-disthugs:
-	-rm -r ../polyphugs$(version)
-	mkdir ../polyphugs$(version)
-	cp -r * ../polyphugs$(version)
-	$(MAKE) -C ../polyphugs$(version) distclean
-	$(MAKE) -C ../polyphugs$(version)/src hugssrc
-	cd ..; tar cf polyphugs$(version).tar polyphugs$(version); 
-	gzip ../polyphugs$(version).tar
-	cd ../polyphugs$(version); tar -zcf hugssrc.tar.gz hugssrc
+fromwww:
+	lynx -source 'http://www.cs.chalmers.se/~patrikj/poly/polyp.tar.gz'\
+           > polyp.tar.gz
+	gunzip < polyp.tar.gz | tar xf -
+	cd polyp$(version); $(MAKE) check.hbc
 
+WEBSITE = http://www.cs.chalmers.se/~patrikj/poly/polyp$(version)/
+
+README:	index.html
+	lynx -dump $(WEBSITE) >README
 
 # These targets are not real files
-.PHONY: help install hugs ghc hbc clean distclean packpolylib dist disthugs
+.PHONY: help install hugs ghc hbc clean distclean packpolylib \
+	www fromwww local 
 
 # for some reason, checkhbc, checkghc, chechhugs should not be in that list
