@@ -52,12 +52,14 @@ sumzip p = case p of
 prodzip :: ((a,b),(c,d)) -> Maybe ((a,c),(b,d))
 prodzip ((x,y),(s,t))  =  resultM ((x,s),(y,t))
 
--- should be
---   constzip :: Eq t => (t,t) -> Maybe t
---   constzip (x,y) = if x==y then resultM x else zeroM
--- but this requires an inexpressible type of fzip
-constzip :: (t,t) -> Maybe t
-constzip (x,y) = resultM x
+-- This requires an inexpressible type of fzip, but works due to a PolyP bug
+constzip :: Eq t => (t,t) -> Maybe t
+constzip (x,y) = if x==y then resultM x else zeroM
+
+-- this is the intended meaning: one for each instance of Eq
+--constzipInt :: (Int,Int) -> Maybe Int
+--constzipInt (x,y) = if x==y then resultM x else zeroM
+
 
 {-
   Maybe monad functions
