@@ -112,6 +112,7 @@ PolyInstance.o : ./MyPrelude.hi
 PolyInstance.o : ./PrettyPrinter.hi
 PolyInstance.o : ./StartTBasis.hi
 PolyInstance.o : ./TypeBasis.hi
+PolyInstance.o : ./Flags.hi
 PrettyPrintExtra.o : PrettyPrintExtra.lhs
 PrettyPrintExtra.o : ./PrettyPrintLibrary.hi
 PrettyPrintLibrary.o : PrettyPrintLibrary.lhs
@@ -128,7 +129,6 @@ StartTBasis.o : ./Env.hi
 StartTBasis.o : ./TypeBasis.hi
 StartTBasis.o : ./InferKind.hi
 StartTBasis.o : ./NonStdTrace.hi
-StartTBasis.o : ./CommandLine.hi
 StartTBasis.o : ./Flags.hi
 StateFix.o : StateFix.lhs
 TypeBasis.o : TypeBasis.lhs

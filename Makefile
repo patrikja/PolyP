@@ -67,7 +67,7 @@ veryclean:	clean
 
 distclean:	veryclean
 	rm -fr  bin/hugspolyp bin/ghcpolyp bin/hbcpolyp bin/polyp
-	rm -r   CVS */CVS
+	-rm -r   CVS */CVS
 
 # Distribution
 polyp$(version):

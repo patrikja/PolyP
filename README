@@ -3,19 +3,19 @@
                                        
 Patrik Jansson and Johan Jeuring
 
-  PolyP [3]version 1.2
+  PolyP [3]version 1.3
   
    This distribution contains
      * the source files for a compiler written in Haskell that compiles
        PolyP-code to Haskell.
      * a [4]library of polytypic functions written in PolyP
-     * some [5]examples. (For more info see the [6]README file.)
+     * some [5]examples. (For more info see the [6]examples/README file.)
        
-   The compiler is written in [7]Haskell 1.4 (+ the ST-monad) and is
-   known to work with
+   The compiler is written in [7]Haskell 98 (+ the ST-monad) and is known
+   to work with
      * [8]Chalmers Haskell compiler hbc 0.9999.4,
-     * [9]Hugs 1.4 January 1998 and
-     * [10]Glasgow Haskell compiler 2.10.
+     * [9]Hugs 98 and
+     * [10]Glasgow Haskell compiler 2.10 and 4.02.
        
 Download
 
@@ -35,7 +35,7 @@ Polytypism
    [15]http://www.cs.chalmers.se/~patrikj/poly/
      _________________________________________________________________
    
-   Last modified: Thu Aug 20 16:29:48 MET DST 1998 by
+   Last modified: Wed May 19 14:54:46 MET DST 1999 by
    
    
     [16]Patrik Jansson / [17]patrikj@cs.chalmers.se

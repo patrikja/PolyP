@@ -50,8 +50,6 @@ S: Upgrade! http://www.haskell.org/hugs/
 
 P: I have hugs but I don't have runhugs.
 S: Install runhugs (it comes with the hugs distribution)
-   or use hugs:
+   or use hugs: (slow and painful)
       hugs hugssrc/Main.lhs
       main
-
-     
