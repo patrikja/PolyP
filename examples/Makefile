@@ -6,7 +6,7 @@ targets = testSum.hs testCrush.hs testFlatten.hs testPropagate.hs	\
           testThread.hs testZip.hs testConstructorName.hs testEqOrd.hs 	\
           testEqual.hs testSubstructures.hs testShow.hs testBaseM.hs
 
-CHASE = $(PERL) ../bin/chase
+CHASE = $(PERL) ../bin/chase -i ../polylib
 
 default: $(targets)
 
@@ -35,7 +35,7 @@ default: $(targets)
 all: $(targets)
 
 .SUFFIXES: 
-.SUFFIXES: .phs .hs
+.SUFFIXES: .phs .hs .check
 
 # using the perl-script chase for import-chasing this rule translates
 # its input file using polyp, prepends possible extra type
@@ -50,12 +50,9 @@ test%.hs : test%.phs
           && hugs $@) \
          || (mv $@ tmp.hs; more tmp.hs)
 
-Base.phs:
-	lndir ../polylib
-
 # make check should only print lines starting with --!!!
 
-check:: Base.phs $(targets:.hs=.check) $(wildcard ../polylib/*.phs)
+check:: $(targets:.hs=.check) $(wildcard ../polylib/*.phs)
 
 check:: 
 	rm *.check
