@@ -9,8 +9,9 @@
 > import Grammar(VarID, Eqn'(..), Expr'(..), Type(..), Eqn, 
 >                TEqn, TExpr, PrgEqns, PrgTEqns, QType, Qualified((:=>)),
 >                deQualify,qualify,isPolytypic,getNameOfVarBind)
-> import InferType((###),inferLiteral, inventTypes,
->                  patBindToVarBind,tevalAndSubst,inferDataDefs)
+> import InferKind(inferDataDefs)
+> import InferType((###),inferLiteral,
+>                  patBindToVarBind,tevalAndSubst)
 > import MonadLibrary(STErr, (<@),(<@-), mliftErr, unDone, LErr, mapLErr,
 >                     convertSTErr, Error(..), mapl, foreach)
 > import MyPrelude(pair,mapFst,mapSnd,splitUp,  maytrace)
@@ -19,7 +20,7 @@
 > import TypeBasis(Basis,KindBasis,TBasis,extendKindEnv,
 >                  extendKindTBasis,extendTypeAfterTBasis,
 >                  extendTypeEnv,extendTypeTBasis,getKindEnv,
->                  getNonGenerics,getRamTypes,instantiate,
+>                  getNonGenerics,getRamTypes,instantiate,inventTypes,
 >                  lookupType,makeNonGeneric,ramKindToRom,ramTypeToRom)
 > import TypeGraph(HpQType,HpType, HpTExpr, HpTEqn, 
 >                  mkVar, mkFun, eqnIntoHeap,
@@ -66,11 +67,9 @@ use \verb!|->! to label expressions with types.
 > labelProgram :: PrgEqns -> LErr (TBasis,PrgTEqns)
 > labelProgram (dataDefs, bindss) = 
 >         case inferDataDefs startTBasis dataDefs of
->           Err msg -> ((startTBasis,(dataDefs,[])),Err msg)
->           Done (tass,kass) -> 
->            let tbasis = (extendTypeTBasis tass . 
->                          extendKindTBasis kass) startTBasis
->            in mapLErr (mapSnd (pair dataDefs))  
+>           (_,Err msg) -> ((startTBasis,(dataDefs,[])),Err msg)
+>           (tbasis, _) ->
+>               mapLErr (mapSnd (pair dataDefs))  
 >                       (labelTopBlocks bindss tbasis)
 
 \end{verbatim}

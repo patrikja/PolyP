@@ -3,12 +3,19 @@
 
 > module InferKind where
 
-> import Grammar(Type(..))
-> import TypeGraph(HpKind,HpNode(..),fetchNode,mkVar,mkCon,mkFun,kindOutOfHeap)
-> import TypeBasis(KindBasis,lookupKind)
+> import Grammar(Kind,Type(..),Eqn,Eqn'(..),VarID,ConID,QType,
+>                (-=>),qualify,getNameOfDataDef)
+> import TypeGraph(HpKind,HpNode(..),fetchNode,mkVar,mkCon,mkFun,
+>                  kindOutOfHeap)
+> import TypeBasis(KindBasis,TBasis,lookupKind,inventTypes,
+>                  extendKindEnv,ramKindToRom,getKindEnv,
+>                  extendTypeTBasis,extendKindTBasis)
+> import StateFix-- (ST [,runST [,RunST]]) in hugs, ghc, hbc
+> import Env(newEnv,lookupEnv,extendsEnv)
 > import PrettyPrinter(Pretty(..))
 > import UnifyTypes(unify)
-> import MonadLibrary(STErr,mliftErr,ErrorMonad(failEM))
+> import MonadLibrary(STErr,mliftErr,convertSTErr,ErrorMonad(failEM),
+>                     Error(..),LErr, foreach,(<@))
 
 > infix 9 |*
 
@@ -56,4 +63,58 @@ The actual kind inference algorithm.
 \end{verbatim}
 (It seems to be slightly more efficient to infer the kind of \verb|x|
 before \verb|f|.)
+
+
+\section{Datatype declarations}
+For each datatype constructor the types of the data constructors and the kind 
+
+\begin{verbatim}
+
+> inferDataDef :: KindBasis s -> Eqn -> STErr s [(ConID, QType)]
+> inferDataDef basis (DataDef tyCon vars alts _)
+>   = inventKinds vars >>= \kindVars -> 
+>     let extbasis = extendKindEnv (zip vars kindVars) basis
+>     in foreach alts (checkAltKind extbasis)
+>   where
+>     checkAltKind extbasis (constr, args) =
+>            assureType extbasis tp >>
+>            return (constr, qualify tp) 
+>        where tp = foldr (-=>) res args
+>     res = foldl (:@@:) (TCon tyCon) (map TVar vars)
+> inferDataDef _ _ = error "InferType.inferDataDef: impossible: not a DataDef"
+
+> inferDataDefs :: TBasis -> [Eqn] -> LErr TBasis
+> inferDataDefs startTBasis dataDefs = 
+>         case inferDataDefs' startTBasis dataDefs of
+>           Err msg -> (startTBasis,Err msg)
+>           Done (tass,kass) -> 
+>            let basis = (extendTypeTBasis tass . 
+>                         extendKindTBasis kass) startTBasis
+>            in (basis,Done ())
+
+> inferDataDefs' :: TBasis -> [Eqn] -> 
+>                   Error ([(ConID, QType)],[(ConID, Kind)])
+#ifdef __HBC__
+> inferDataDefs' tbasis eqns = runST $ RunST (convertSTErr m)
+#else /* not __HBC__ */
+> inferDataDefs' tbasis eqns = runST         (convertSTErr m)
+#endif /* __HBC__ */
+>   where m :: STErr s ([(String,QType)],[(String,Kind)])
+>         m = inventKinds names >>= \kinds -> 
+>             let extbasis = extendKindEnv 
+>                               (zip names kinds) basis
+>             in foreach eqns (inferDataDef extbasis) 
+>                                    <@ concat >>= \tass->
+>                mliftErr (ramKindToRom extbasis) 
+>                                              >>= \kass->
+>                return (tass,kass)
+>         names = map getNameOfDataDef eqns
+>         basis = (getKindEnv tbasis,newEnv) 
+
+
+> inventKinds :: [VarID] -> STErr s [HpKind s]
+> inventKinds = inventTypes
+
+\end{verbatim}
+
 

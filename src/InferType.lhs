@@ -2,7 +2,7 @@
 \begin{verbatim}
 
 > module InferType where
-> import InferKind(assureType)
+> import InferKind(inferDataDefs)
 > import UnifyTypes(unify,checkInstance)
 > import TypeGraph(HpType,HpKind,NodePtr,HpNode(..),HpQType,
 >                  mkFun,mkCon,mkVar,mkFOfd,
@@ -12,7 +12,7 @@
 >                  extendTypeTBasis,extendTypeAfterTBasis,
 >                  getNonGenerics,makeNonGeneric,lookupType,ramTypeToRom,
 >                  extendTypeEnv,ramKindToRom,getKindEnv,instantiate,
->                  extendKindEnv,extendKindTBasis)
+>                  extendKindEnv,extendKindTBasis,inventTypes)
 > import StartTBasis(startTBasis,charType,intType,floatType,boolType,strType)
 > import Env(Env,newEnv,lookupEnv,extendsEnv)
 > import MyPrelude(pair,splitUp)
@@ -35,12 +35,10 @@
 
 > inferProgram :: PrgEqns -> LErr TBasis
 > inferProgram (dataDefs, bindss) = 
->         case inferDataDefs startTBasis dataDefs of
->           Err msg -> (startTBasis,Err msg)
->           Done (tass,kass) -> 
->            let basis = (extendTypeTBasis tass . 
->                         extendKindTBasis kass) startTBasis
->            in inferGroups bindss basis
+>   let p@(basis,err) = inferDataDefs startTBasis dataDefs
+>   in case err of 
+>        Err msg -> p
+>        _       -> inferGroups bindss basis
 
 \end{verbatim}
 \section{Groups}
@@ -213,9 +211,6 @@ for the free variables occuring in the pattern and then infer the type
 as for expressions. As the new variables will be needed in some
 corresponding right hand side the extended basis is returned along with
 the inferred type.
-
-Maybe inventTypes should give Qtypes instead. (If so makeNonGeneric
-must also be changed.)
 
 Takes basis to basis' and then pattern to type.
 \begin{verbatim}
@@ -591,49 +586,4 @@ polytypic checking of x :: ty = case f of {fi -> ei}
  \item (3): taui = teval {f |-> fi} ty
  \item (4): ti >= taui
 \end{itemize}
-\section{Data type definitions}
-\begin{verbatim}
 
-> inferDataDef :: KindBasis s -> Eqn -> STErr s [(ConID, QType)]
-> inferDataDef basis (DataDef tyCon vars alts _)
->   = inventKinds vars >>= \kindVars -> 
->     let extbasis = extendKindEnv (zip vars kindVars) basis
->     in foreach alts (checkAltKind extbasis)
->   where
->     checkAltKind extbasis (constr, args) =
->            assureType extbasis tp >>
->            return (constr, qualify tp) 
->        where tp = foldr (-=>) res args
->     res = foldl (:@@:) (TCon tyCon) (map TVar vars)
-> inferDataDef _ _ = error "InferType.inferDataDef: impossible: not a DataDef"
-
-> inferDataDefs :: TBasis -> [Eqn] -> 
->                  Error ([(ConID, QType)],[(ConID, Kind)])
-#ifdef __HBC__
-> inferDataDefs tbasis eqns = runST $ RunST (convertSTErr m)
-#else /* not __HBC__ */
-> inferDataDefs tbasis eqns = runST         (convertSTErr m)
-#endif /* __HBC__ */
->   where m :: STErr s ([(String,QType)],[(String,Kind)])
->         m = inventKinds names >>= \kinds -> 
->             let extbasis = extendKindEnv 
->                               (zip names kinds) basis
->             in foreach eqns (inferDataDef extbasis) 
->                                    <@ concat >>= \tass->
->                mliftErr (ramKindToRom extbasis) 
->                                              >>= \kass->
->                return (tass,kass)
->         names = map getNameOfDataDef eqns
->         basis = (getKindEnv tbasis,newEnv) 
-
-\end{verbatim}
-\section{Auxiliary functions}
-\begin{verbatim}
-
-> inventKinds :: [VarID] -> STErr s [HpKind s]
-> inventKinds = inventTypes
-
-> inventTypes :: [VarID] -> STErr s [HpType s]
-> inventTypes vars = mliftErr (foreach vars (\_ -> mkVar))
-
-\end{verbatim}

@@ -402,3 +402,4 @@ pointer structure looks like.
 >              HpApp p1 p2 -> liftop (++) (showNodePtr p1) (showNodePtr p2 <@ ('@':))
 
 \end{verbatim}
+

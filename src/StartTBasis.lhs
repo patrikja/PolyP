@@ -43,8 +43,13 @@ Idea: A prelude (haskell) file (specified on the command line) is used
 to initialize the type information. Only data type declarations and
 explicit type declarations are recorded - the rest is ignored.
 
-First try: only explicit type declarations are accepted - the rest is
-ignored.
+First try: only explicit type declarations are accepted.
+
+The next step is to allow datatype declarations also - using
+\texttt{InferKind.inferDataDefs} to extend the environment.
+(\texttt{inferDataDefs :: TBasis -> [Eqn] -> LErr TBasis})
+
+[dataDefs, binds] = splitUp [isDataDef] eqns
 
 \begin{verbatim}
 
@@ -165,7 +170,7 @@ Gofer's {\tt cc.prelude}.
 
 
 \end{verbatim}
-Missing things:
-\begin{itemize}
-\item \texttt{String} (there are no type synonyms in PolyP)
-\end{itemize}
+
+There is no type synonym handling in the main part of PolyP, but the
+type synonym \texttt{String} is translated to \texttt{[Char]} by the
+parser.

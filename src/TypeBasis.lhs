@@ -6,7 +6,7 @@
 > import Folding(dmmapQualified)
 > import MyPrelude(pair)
 > import MonadLibrary((<@),StateM,executeSTM,fetchSTM,mliftSTM,
->                     STErr,mliftErr,ErrorMonad(failEM),mapl,
+>                     STErr,mliftErr,ErrorMonad(failEM),foreach,
 >                     ST,(===))
 > import Env(Env,Cache,newEnv,lookupEqEnv,lookupEnv,
 >            extendsEnv,assocsEnv,remember,extendsAfterEnv)
@@ -66,12 +66,18 @@ type- and kind environments respectively.
 \end{verbatim}
 {\tt makeNonGeneric} marks the types it receives as it first argument
 as non-generic in the type basis.
+Invent fresh types for the supplied type variables.
 \begin{verbatim}
 
 > makeNonGeneric :: [HpType s]  -> Basis s -> Basis s
 > getNonGenerics :: Basis s -> NonGenerics s
- 
+> inventTypes :: [VarID] -> STErr s [HpType s]
+
 \end{verbatim}
+
+Maybe inventTypes should give QTypes instead. (If so makeNonGeneric
+must also be changed.)
+
 \section{Implementation}
 \begin{verbatim}
 
@@ -131,6 +137,8 @@ variables are non-generic.
 
 > getNonGenerics (_,(_, ngs)) = ngs
 
+> inventTypes vars = mliftErr (foreach vars (\_ -> mkVar))
+
 > instantiate :: NonGenerics s -> HpQType s -> ST s (HpQType s)
 > instantiate ngs hpqt = 
 >    flattenNgs ngs   >>= \allngs ->
@@ -178,10 +186,10 @@ out of the heap.
 > getRamTypes (_,(env,_)) = assocsEnv env
 
 > ramTypeToRom :: Basis s -> ST s [(String,QType)]
-> ramTypeToRom (_,(env,_)) = 
->    mapl (\(n,hpt) -> qtypeOutOfHeap [] hpt <@ pair n ) (assocsEnv env)
+> ramTypeToRom (_,(env,_)) = foreach (assocsEnv env) 
+>    (\(n,hpt) -> qtypeOutOfHeap [] hpt <@ pair n) 
 > ramKindToRom :: KindBasis s -> ST s [(String,Kind)]
-> ramKindToRom (_,env) = 
->    mapl (\(n,hpt)->kindOutOfHeap hpt <@ pair n) (assocsEnv env)
+> ramKindToRom (_,env) = foreach (assocsEnv env) 
+>    (\(n,hpt) -> kindOutOfHeap     hpt <@ pair n)
 
 \end{verbatim}

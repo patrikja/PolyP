@@ -20,7 +20,7 @@ For more information about PolyP, read the INSTALL, USAGE files or
 the web-page at http://www.cs.chalmers.se/~patrikj/poly/polyp/
 For information about polytypic programming in general check the web-pages
   http://www.cs.chalmers.se/~patrikj/lic/
-  http://www.cs.chalmers.se/~johanj/polytypism/
+  http://www.cs.chalmers.se/~patrikj/poly/
 
 (Most of the files are literate LaTeX scripts and the file book.tex can
 be used to produce a commented program listing in a nice format.)
