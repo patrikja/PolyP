@@ -120,7 +120,7 @@ Gofer's {\tt cc.prelude}.
 >                (tupleConstructor 2,  s2s2s),
 >                (tupleConstructor 3,  star -=> s2s2s)] 
 >            ++ map (\x->(x,star)) 
->                ["Char","Double","Float","Int","Integer",
+>                ["Bool","Char","Double","Float","Int","Integer",
 >                 "IOError","Void","Ordering"]
 >            ++ [("Maybe",s2s),
 >                ("IO",s2s),
