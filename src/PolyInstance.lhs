@@ -264,9 +264,9 @@ the correct types and constraints for polytypic functions.
 
 >           -- Build an instance from a polytypic case branch
 >           buildInstance (c :=> t, e) = let c :=> _ = inferQType polyenv e in
->		let t' = realFuncNames t in
->		    Instance c (className, [t'])
->			[ simp $ VarBind name Nothing [] e ]
+>               let t' = realFuncNames t in
+>                   Instance c (className, [t'])
+>                       [ simp $ VarBind name Nothing [] e ]
 
               case t of
                  TCon "+" :@@: f :@@: g ->
