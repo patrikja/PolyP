@@ -80,10 +80,14 @@ These should be read from a file.
 >               ("fst","(a,b)->a"),("snd","(a,b)->b"),
 >               ("head","[a]->a"),("tail","[a]->[a]"),
 >               ("take","Int->[a]->[a]"),
+>               ("filter","(a->Bool)->[a]->[a]"),
+>               ("!!","[a] -> Int -> a"),
+>               ("show","Show a => a -> String"),
 >               ("zip","[a] -> [b] -> [(a,b)]"),
 >--               ("@@","Monad m => (b->m c) -> (a->m b) -> (a->m c)"),
 >               ("return","Monad m => a -> m a"),
 >               (">>=",   "Monad m => m a -> (a -> m b) -> m b"),
+>               (">>",    "Monad m => m a -> m b -> m b"),
 >               ("applyM","Monad m => (a -> m b) -> m a -> m b")
 >               ]
 

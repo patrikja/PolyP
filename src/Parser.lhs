@@ -427,11 +427,17 @@ From the Haskell report:
 	  | (->) (function constructor)
 	  | (,{,}) (tupling constructors)
 
-> pTypeCon = map TCon $
->              pConID
+> pTypeCon = map (expandStringSynonym . TCon) $
+>              pConID 
 >           ++ symbol listConstructor 
 >           ++ symbol "(->)" <@- functionConstructor
 >           ++ pTupleCon
+
+> expandStringSynonym :: Type -> Type
+> expandStringSynonym (TCon "String") = TCon listConstructor :@@: TCon "Char"
+> expandStringSynonym c               = c
+
+*** Hack to allow String as a predefined type synonym for [Char]
 
 > pTupleCon :: Parser ConID
 > pTupleCon = pParenthesized (many (lit ',')) <@ (tupleConstructor . tupNum)
