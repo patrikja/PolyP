@@ -48,15 +48,17 @@ instead of {\tt F[]} to make it a legal Haskell identifier(-suffix).
 >                               pshow t ++ " found as part of " ++ pshow f )
 
 > codeType :: Type -> Error (String -> String)
-> codeType (f :@@: t) = map2 (.) (codeType f) (codeType t)
-> codeType (TCon d)  = map0 ((codeTCon d)++)
-> codeType (TVar v)  = map0 ((codeTVar v)++)
-
-
+> codeType (f :@@: t) = map1 (('a':).) (map2 (.) (codeType f) (codeType t))
+> codeType (TCon d)   = map0 (('C':).((codeTCon d)++))
+> codeType (TVar v)   = map0 (('V':).((codeTVar v)++))
 
 > {- 
 > decodeType :: String -> (String, Func)
-> decodeType xs = (xs,TCon "Const" :@@: TVar "t")
+> decodeType s = p s
+>   where p "" = error "FunctorNames.decodeType: type encoding ended prematurely"
+>         p ('a':xs) = mapSnd (uncurry (:@@:)) ((p >*> p) xs)
+>         p ('C':xs) = decodeTCon xs
+>         p ('V':xs) = decodeTVar xs
 
 > decodeFunctor :: String -> Func
 > decodeFunctor s = snd (p s)
@@ -66,20 +68,23 @@ instead of {\tt F[]} to make it a legal Haskell identifier(-suffix).
 >     p ('r':xs)  = (xs,TCon "Rec")
 >     p ('m':xs)  = (xs,TCon "Mu")
 >     p ('f':xs)  = (xs,TCon "FunctorOf")
->     p ('c':xs)  = decodeType xs
+>     p ('c':xs)  = mapSnd (TCon "Const" :@@:) (decodeType xs)
 >     p ('S':xs)  = mapSnd plus (popp xs)
 >     p ('P':xs)  = mapSnd prod (popp xs)
 >     p ('A':xs)  = mapSnd appl (popp xs)
 >     p ( c :xs) | isDigit c = mapSnd TCon (decodeTCon (c:xs))
 >                | otherwise = error "FunctorNames.decodeFunctor: bad functor encoding"
->     p ""        = error "FunctorNames.decodeFunctor: functor ended prematurely"
->     popp = p `op` p
+>     p ""        = error "FunctorNames.decodeFunctor: functor encoding ended prematurely"
 >     plus (t,t') = TCon "+" :@@: t :@@: t'
 >     prod (t,t') = TCon "*" :@@: t :@@: t'
 >     appl (t,t') = TCon "@" :@@: t :@@: t'
->     op w w' xs = (zs,(y,z))
->       where (ys,y) = w  xs
->             (zs,z) = w' ys
+>     pthenp = p >*> p
+
+> -- Operator for sequencing simple parsers
+> (>*>) :: SimpleParser a -> SimpleParser b -> SimpleParser (a,b)
+> (>*>) w w' xs = (zs,(y,z))
+>   where (ys,y) = w  xs
+>         (zs,z) = w' ys
 
 > decodeTCon :: String -> (ConID,String)
 > decodeTCon s | n > 0  = splitAt n text
@@ -116,7 +121,7 @@ Just a test expression --- not used.
 
 > codeTCon :: ConID -> String
 > codeTCon c | c == listConstructor = "0"
->             | otherwise            = show (length c) ++ c
+>            | otherwise            = show (length c) ++ c
 
 > codeTVar :: VarID -> String
 > codeTVar v = show (length v) ++ v

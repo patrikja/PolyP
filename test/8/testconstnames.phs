@@ -1,0 +1,11 @@
+data IC a = IC Int Char String deriving Show
+
+main = print (inn x :: IC ())
+
+polytypic x :: f a b
+  = case f of
+      g * h        -> (x, x) -- :: (g a b, h a b) 
+      Const Int    -> 1
+      Const Char   -> 'a'
+      Const String -> "hej"
+      

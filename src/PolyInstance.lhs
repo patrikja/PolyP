@@ -93,7 +93,7 @@ f:all", where f is not polytypic.)
 >       combineUniqueBy eqReq []
 >     $ concat 
 >     $ map (transformReq funcenv typeenv . parseReq) 
->     $ reqflags
+>     $ reqtexts
 >   where reqflags = requests flags
 >         reqtexts = if null reqflags
 >                    then defaultRequestTexts
