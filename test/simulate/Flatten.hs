@@ -6,7 +6,7 @@ flatten :: Regular d => d a -> [a]
 flatten  =  fflatten . fmap2 singleton flatten . out
 
 fflatten :: f [a] [a] -> [a]
-fflatten x = error "fflatten: only useful for type checking" x
+fflatten x = error "fflatten: only useful for type checking" pmap x
 
 fl_par :: Bifunctor f => f a b -> [a]
 fl_rec :: Bifunctor f => f a b -> [b]
