@@ -19,7 +19,7 @@ files to try and a list of files that have been found.
 >   | otherwise
 >   = do
 >       imports <- getImports path file
->       --putStrLn (concat $ ["File ", file, " imports: "] ++ imports)
+>       --putErrStrLn (concat $ ["File ", file, " imports: "] ++ imports)
 >       chaseImports path (imports ++ files) (file:seen)
 > 
 > getImports :: [String] -> String -> IO [String]
