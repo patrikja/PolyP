@@ -1,337 +1,36 @@
 \chapter{Type inference}
 \begin{verbatim}
 
-> module InferType where
-> import InferKind(inferDataDefs)
-> import UnifyTypes(unify,checkInstance)
+> module InferType(tevalAndSubst,qTypeEval,
+>		   inferLiteral,patBindToVarBind,checkTypedInstance) where
+> import UnifyTypes(checkInstance)
 > import TypeGraph(HpType,NodePtr,HpNode(..),HpQType,NonGenerics,
->                  mkFun,mkVar,mkFOfd,mkQFun,
->                  (==>),checkCon,
+>                  mkFOfd,(==>),checkCon,
 >                  qtypeIntoHeap,qtypeOutOfHeap,allGeneric,
->                  spineWalkHpType,getChild, (+#+))
-> import TypeBasis(Basis,TBasis,
->                  tBasis2Basis,extendTypeTBasis,extendTypeAfterTBasis,
->                  getNonGenerics,makeNonGeneric,lookupType,ramTypeToRom,
->                  extendTypeEnv,instantiate,
->                  inventTypes)
-> import StartTBasis(startTBasis,charType,intType,floatType,boolType,strType)
+>                  spineWalkHpType,getChild)
+> import TypeBasis(Basis,instantiate)
+> import StartTBasis(charType,intType,floatType,boolType,strType)
 > import Env(Env,newEnv,lookupEnv,extendsEnv)
-> import MyPrelude(pair,splitUp,fMap)
-> import MonadLibrary(STErr,mliftErr,convertSTErr,Error(..),unDone,(@@),
->                     foreach,mapl,(<@),(<@-),LErr,accumseq,accumseq_)
+> import MyPrelude(fMap)
+> import MonadLibrary(STErr,mliftErr,unDone,(@@),
+>                     mapl,(<@),(<@-),accumseq,accumseq_)
 > import StateFix -- (ST [,runST [,RunST]]) in hugs, ghc, hbc
-> import Grammar -- (Qualified,Type(..),PrgEqns)
-> import Folding(freeVarsPat)
+> import Grammar(Literal(..),Eqn'(..),Expr'(..),
+>		 Qualified(..),Qualifier,QType,
+>                VarID,Type(TVar))
 > import ParseLibrary(parse)
 > import Parser(pType1)
 > import PrettyPrinter()
 > import Monad(foldM)
 
 \end{verbatim}
-\section{Programs}
-\begin{verbatim}
 
-> inferProgram :: PrgEqns -> LErr TBasis
-> inferProgram (dataDefs, bindss) = 
->   let p@(basis,err) = inferDataDefs startTBasis dataDefs
->   in case err of 
->        Err _ -> p
->        _     -> inferGroups bindss basis
-
-\end{verbatim}
-\section{Groups}
-To infer the types of a list of blocks of (mutually recursive)
-equations we start with a type environment with primitive functions
-and type constructors and extend this incrementally with the types
-from each group.
-
-We would like to:
-\begin{itemize}
-\item Get the result from the first few groups even if the type
-  inference fails later
-\item Get this result lazily (the types of the declarations in the
-  first group should be available immediately after they have been
-  inferred)
-\end{itemize}
-Idea:
-\begin{itemize}
-\item Assume that there is a list of succesive approximations to the
-  final \verb|TBasis|. (\verb|tbasiss|)
-\item Apply \verb|inferGroup| to each group and the corresponding
-  basis. (Giving \verb|errtenvs|)
-\item Filter out only the successful inferences. (Giving \verb|tenvs|)
-\item Calculate the original list from the starting type basis and
-  this list.
-\item Now the result is essentially the last element in the list of
-  approximations, but to preserve laziness it is calculated
-  separately. (Function \verb|last| waits until the whole list is
-  produced before giving any result.)
-\end{itemize}
-\begin{verbatim}
-
-> inferGroups :: [[Eqn]] -> TBasis -> LErr TBasis
-> inferGroups eqnss starttbasis = (finaltbasis,err)
->  where 
->   tbasiss :: [TBasis]
->   errtenvs= zipWith inferGroup eqnss tbasiss
->   tenvs   = map unDone (takeWhile ok errtenvs)
->   tbasiss = scanl (flip extendTypeTBasis) starttbasis tenvs
->   finaltbasis = extendTypeAfterTBasis (concat tenvs) 
->                                       starttbasis
->   err = last errtenvs <@- ()
->   ok (Done _) = True
->   ok _        = False
-
-\end{verbatim}
-To infer the types in a group of mutually recursive definitions we
-need to:
-\begin{itemize}
-\item Assume new non-generic type variables for the variable
-  bindings. (Store in the heap.)
-\item Store the explicitly given types for the polytypic definitions
-  in \verb|TBasis|.
-\item Infer the types of the variable bindings.
-\item Make their type variables generic.
-\item Check the types of the polytypic definitions.
-\item Get the types of the variable bindings out of the heap and
-  return them. 
-\end{itemize}
-The fact that the variable bindings are temporarily given non-generic
-types means that we don't allow polymorphic recursion. The explicitly
-given types in the polytypic declarations are treated as containg only
-generic variables (just like any other explicit type).
-
-The idea is that the types should be stored in \verb|TBasis| in such a
-way that they can be lazily pulled out of it one group at a time.
-\begin{verbatim}
-
-> inferGroup :: [Eqn] -> TBasis -> Error [(VarID,QType)]
-> inferGroup eqns tbasis = __RUNST__ (convertSTErr (mInferGroup eqns tbasis))
-
-> mInferGroup :: [Eqn] -> TBasis -> STErr s [(String,QType)]
-> mInferGroup eqns tbasis = inferBlock basis eqns   >>= \basis' ->
->                           mliftErr (ramTypeToRom basis')
->   where basis = tBasis2Basis tbasis
-
-\end{verbatim}
-\section{Expressions}
-The fact that an expression $e$ has type $\tau$ in a type environment
-$\Gamma$ in often written $\Gamma \vdash e : \tau$. To imitate that
-way of writing we will denote the function that infers the most
-general type of an expression by the infix operator \verb"|-" of type:
-\begin{verbatim}
-
-> (|-) :: Basis s -> Expr -> STErr s (HpQType s)
-
-\end{verbatim}
-The result type is the inferred type or an error message embedded in
-the \verb|STErr|-monad.
-
-The algorithm is split up into different cases corresponding to the
-alternatives in the abstract syntax of expressions. 
-
-\begin{verbatim}
-
-> basis |- (Var name) = name `lookupType` basis
-> basis |- (Con name) = name `lookupType` basis
-> basis |- (f :@: x)  =
->     basis |- x               >>= \(ps:=>tX)-> 
->     basis |- f               >>= \(qs:=>tF)-> 
->     mliftErr mkVar           >>= \tApp -> 
->     mliftErr (mkFun tX tApp) >>= \tF'  -> 
->     unify tF tF'             >> 
->     mliftErr (ps +#+ qs)      >>= \pqs ->
->     return (pqs :=> tApp)
-
-> basis |- (Lambda pat expr)
->   = inferPat basis pat >>= \(tPat, basis')-> 
->     basis' |- expr     >>= \tExpr-> 
->     mliftErr (mkQFun tPat tExpr)
-
-> basis |- (Literal lit) = inferLiteral basis lit
-> _     |- WildCard      = mliftErr (mkVar <@ qualify)
-
-> basis |- (Case expr alts)
->   = basis |- expr            >>= \(ps:=>tExpr) -> 
->     mliftErr mkVar           >>= \tA -> 
->     foreach alts (infAlt (tExpr,tA)) >>= \qss ->
->     mliftErr (foldM (+#+) [] (ps:qss))  >>= \pqs->
->     return (pqs :=> tA)
->  where -- infAlt :: (HpType s,HpType s) -> (Expr,Expr) -> 
->        --           STErr s [Qualifier (HpType s)]
->        infAlt (l,r) (lhs,rhs) = 
->           inferPat basis lhs >>= \((qs:=>tLhs), basis') -> 
->           basis' |- rhs      >>= \(rs:=>tRhs) -> 
->           unify l tLhs       >> 
->           unify tRhs r       >>
->           mliftErr (qs +#+ rs)
-
-> basis |- (Letrec eqnss expr)
->   = inferBlocks basis eqnss >>= \basis' -> 
->     basis' |- expr
-
-> basis |- (Typed expr uType)
->   = mliftErr (qtypeIntoHeap uType)   >>= \uHpQType -> 
->     basis |- expr                   >>= \tExpr   -> 
->     checkInstance ngs uHpQType tExpr >>= \_ ->
->     return tExpr
->   where ngs = getNonGenerics basis
-
-\end{verbatim}
-\section{Literals}
-Just selects the type of the literal. 
-\begin{verbatim}
-
-> inferLiteral :: Basis s -> Literal -> STErr s (HpQType s)
-> inferLiteral _ (IntLit _)  = mliftErr (qtypeIntoHeap intType)
-> inferLiteral _ (FloatLit _)= mliftErr (qtypeIntoHeap floatType)
-> inferLiteral _ (BoolLit _) = mliftErr (qtypeIntoHeap boolType)
-> inferLiteral _ (CharLit _) = mliftErr (qtypeIntoHeap charType)
-> inferLiteral _ (StrLit _)  = mliftErr (qtypeIntoHeap strType)
-
-\end{verbatim}
-\section{Patterns}
-To infer the type of a pattern we invent non-generic type variables
-for the free variables occuring in the pattern and then infer the type
-as for expressions. As the new variables will be needed in some
-corresponding right hand side the extended basis is returned along with
-the inferred type.
-
-Takes basis to basis' and then pattern to type.
-\begin{verbatim}
-
-> inferPat :: Basis s -> Pat -> STErr s (HpQType s, Basis s)
-> inferPat basis pat
->   = inventTypes vars >>= \tVars -> 
->     let basis' = ( makeNonGeneric tVars
->                  . extendTypeEnv (zip vars (map qualify tVars)) 
->                  ) basis
->     in (basis' |- pat) <@ (`pair` basis')
->   where vars = freeVarsPat pat
-
-\end{verbatim}
-
-\section{Blocks of equations (sorted after dependencies)}
-To infer the types in a program, we simply infer the types of the
-blocks in the order they arrive (thus assuming that they are
-topologically sorted with respect to dependecies), threading the
-updated basis through the calculation.
-\begin{verbatim}
-
-> inferBlocks :: Basis s -> [[Eqn]] -> STErr s (Basis s)
-> inferBlocks basis [] = return basis
-> inferBlocks basis (block:blocks) 
->   = basis  `inferBlock`  block  >>= \basis' -> 
->     basis' `inferBlocks` blocks
-
-\end{verbatim}
-\section{List of (mutually recursive) equations}
-To infer the types of a mutually recursive group of value- and
-polytypic-definitions we first extend the environment with the
-(explicitly given) types of the polytypic definitions and some fresh
-type variables for the value definitions. Thus equipped we move on to
-inferring and checking the types of the definitions with the new type
-variables temporarily non-generic. (We don't allow polymorphic
-recursion.)  (We assume here that the explicitly given types have the
-right kind.)
-\begin{verbatim}
-
-> inferBlock :: Basis s -> [Eqn] -> STErr s (Basis s)
-> inferBlock basis eqns = m
->   where
->     [peqns,veqns] = splitUp [isPolytypic] eqns
->     typeVar veqn = mkVar <@ (pair (getNameOfVarBind veqn) . qualify)
->     typePoly (Polytypic v (ps:=>t) f _) = 
->                 qtypeIntoHeap (poly f ps :=> t) <@ pair v
->     typePoly _ = error "InferType.inferBlock: impossible: not Polytypic"
->     poly :: QType -> [Context]-> [Context]
->     poly f ps = ("Poly",[deQualify f]):ps
->     m = mliftErr (foreach veqns typeVar ) >>= \vals ->
->         mliftErr (foreach peqns typePoly) >>= \polys -> 
->         let extbasis = extendTypeEnv (vals++polys) basis
->             tmpbasis = makeNonGeneric tVars extbasis
->             tVars    = map (deQualify.snd) vals
-
-\end{verbatim}
-After transforming the pattern bindings to value bindings we proceed
-to inferring the types of the value bindings and the polydefs. The
-value bindings are checked in an environment where all their type
-variables are non-generic, but before the polytypic definitions are
-checked the variables are again made generic.  (If this is the right
-way requires further thinking.)
-\begin{verbatim}
-
->             veqnt = zip veqns tVars
->         in foreach veqnt (checkVal tmpbasis)  >>= \ts ->
->            foreach peqns (checkPoly extbasis) >>
->            let finalbasis = extendTypeEnv (vals'++polys) basis
->                vals' = zipWith (\(n,_) t -> (n,t)) vals ts
->            in return finalbasis
-
-\end{verbatim}
-Maybe this definition should be in a static analysis phase.
-
-The last component, inv, puts back the patterns in their original
-position.
-\begin{verbatim}
-
-> patBindToVarBind :: Eqn' t -> (Expr' t,Expr' t -> Eqn' t)
-> patBindToVarBind (VarBind v t pats rhs) = (expr',inv t)
->   where expr'= maybe id (flip Typed) t (foldr Lambda rhs pats)
->         inv' 0 e = ([],e)
->         inv' n (Lambda p e) = (p:ps,e')
->              where (ps,e') = inv' (n-1) e
->         inv' _ _ = error "InferType.patBindToVarBind: impossible: wrong no of Lambdas"
->         inv Nothing = uncurry (VarBind v Nothing) . (inv' (length pats))
->         inv (Just _)= invfun
->         invfun (Typed e ty) =
->                       (uncurry (VarBind v (Just ty)) (inv' (length pats) e))
->         invfun _ = error ("patBindToVarBind: untyped Typed expression found:"++v)
-> patBindToVarBind _ = error "InferType.patBindToVarBind: impossible: not a VarBind"
-
-> checkVal :: Basis s -> (Eqn,HpType s) -> STErr s (HpQType s)
-> checkVal basis (eqn,tLhs) = 
->    basis |- e >>= \t@(_:=>tRhs) -> 
->    unify tLhs tRhs <@- t
->  where (e,_) = patBindToVarBind eqn
-
-\end{verbatim}
-To check a polytypic definition we first infer the types of the case 
-alternatives one by one.
-\begin{verbatim}
-
-> checkPoly :: Basis s -> Eqn -> STErr s ()
-> checkPoly basis (Polytypic _ ty _ cases) =
->    let (funs,es) = unzip cases  
->    in mapl (basis |-) es >>= \ti -> 
-
-\end{verbatim}
-We also calculate the types the alternatives {\em should} have by
-substituting the different functor alternatives for the functor in the
-given type and evaluating the resulting type using teval.
-
-\begin{verbatim}
-
->       mliftErr (qtypeIntoHeap ty        >>= \hpty->
->                 mapl qtypeIntoHeap funs >>= \funs'->
->                 mapl (tevalAndSubst hpty) funs') >>= \taui -> 
-
-\end{verbatim}
-Finally we check that the inferred types are more general than the
-calculated types.
-\begin{verbatim}
-
->          mapl (moreGeneral ngs) (zip ti taui) >>
->          return ()
->  where
->    ngs = getNonGenerics basis
->    moreGeneral ngs' (t,tau) = checkInstance ngs' tau t
-> checkPoly _ _ = error "InferType.checkPoly: impossible: not Polytypic"
-
-\end{verbatim}
-
+%*** This assumption is not checked
 The functor variable in the polytypic case is assumed to be the first
 in the context list.
+
+The functions tevalAndSubst, qTypeEval and checkTypedInstance are all
+  implemented in terms of hpQTypeEval.
 
 \begin{verbatim}
 
@@ -356,6 +55,7 @@ hpQTypeEval ({f|->Par} Poly f => f a b -> b) =
 hpQTypeEval (Poly Par => (Par) a b -> b) = 
 () => a -> b
 \end{verbatim}
+The context transformation/simplification is implemented by funEval.
 
 \begin{verbatim}
 
@@ -382,6 +82,10 @@ typeEval t = __RUNST__ m
 >    where poly :: HpType s -> Qualifier (HpType s)
 >          poly f = ("Poly", [f])
 > tevalC c                  = return [ c ]
+
+\end{verbatim}
+
+\begin{verbatim}
 
 > funEval :: HpType s -> ST s [HpType s] -- functors
 > funEval = funEval' @@ spineWalkHpType 
@@ -529,10 +233,10 @@ The evaluation is done by side-effecting the pointer structure.
 >     HpVar _   -> def
 >     HpCon c   -> maybe def eval (lookupEnv c typeSynEnv)
 >     HpApp _ _ -> error "InferType.hpTypeEval': impossible: HpApp found after spine removal"
->   where f:args = map snd pargs
->         nargs = length args
+>   where f:args   = map snd pargs
+>         nargs    = length args
 >         children = map getChild args
->         def = return children
+>         def      = return children
 >         eval (arity,syn) | arity > nargs = def -- partial application
 >                          | otherwise     = applySynonym syn children >>= again
 >         again ptr = 
@@ -543,15 +247,16 @@ The evaluation is done by side-effecting the pointer structure.
 
 \end{verbatim}
 These should be precalculated (maybe moved to another module).
-Function \verb|teval| 'evaluates' type expressions by the following
-rewrite rules: \\
+Function \verb|teval| 'evaluates' type expressions by repeatadly
+applying the following rewrite rules: \\
 \begin{tabular}{lll}
-  Rec a b           & $\rightarrow$ & b             \\
-  Par a b           & $\rightarrow$ & a             \\
-  (f :+: g) a b     & $\rightarrow$ & f a b + g a b \\
-  (f :*: g) a b     & $\rightarrow$ & (f a b,g a b) \\
-  ((Mu f) :@: g) a b& $\rightarrow$ & Mu f (g a b)  \\
-  Const x a b       & $\rightarrow$ & x             \\
+  (f + g) a b     & $\rightarrow$ & Either (f a b) (g a b) \\
+  (f * g) a b     & $\rightarrow$ & (f a b,g a b) \\
+  (d @ g) a b     & $\rightarrow$ & d (g a b)     \\
+  Par a b         & $\rightarrow$ & a             \\
+  Rec a b         & $\rightarrow$ & b             \\
+  Const t a b     & $\rightarrow$ & t             \\
+  Empty a b       & $\rightarrow$ & ()            \\
 \end{tabular} \\
 \begin{verbatim}
 
@@ -568,8 +273,8 @@ rewrite rules: \\
 \end{verbatim}
 We represent type synonyms by their arity, and a qualified type where
 the context is used to name the variables and the type is the body. In
-this way the normal qtypeIntoHeap will give us pointers into the body
-that we can use for substitution.
+this way the normal \texttt{qtypeIntoHeap} will give us pointers into
+the body that we can use for substitution.
 
 Problem: The program loops if not all synonyms are present. 
 \begin{verbatim}
@@ -588,6 +293,153 @@ Problem: The program loops if not all synonyms are present.
 >     accumseq (zipWith (==>) vars args) <@- rhs
 
 \end{verbatim}
+
+%**
+Maybe this definition should be in a static analysis phase.
+
+Function \texttt{patBindToVarBind} transforms a pattern binding to a
+lambda expression so that the type checker does not need to know about
+pattern bindings. To restore the original shape of the expression a
+function (inv) from expressions to equations is returned.
+
+\begin{verbatim}
+
+> patBindToVarBind :: Eqn' t -> (Expr' t,Expr' t -> Eqn' t)
+> patBindToVarBind (VarBind v t pats rhs) = (expr',inv t)
+>   where expr'= maybe id (flip Typed) t (foldr Lambda rhs pats)
+>         inv' 0 e = ([],e)
+>         inv' n (Lambda p e) = (p:ps,e')
+>              where (ps,e') = inv' (n-1) e
+>         inv' _ _ = error "InferType.patBindToVarBind: impossible: wrong no of Lambdas"
+>         inv Nothing = uncurry (VarBind v Nothing) . (inv' (length pats))
+>         inv (Just _)= invfun
+>         invfun (Typed e ty) =
+>                       (uncurry (VarBind v (Just ty)) (inv' (length pats) e))
+>         invfun _ = error ("patBindToVarBind: untyped Typed expression found:"++v)
+> patBindToVarBind _ = error "InferType.patBindToVarBind: impossible: not a VarBind"
+
+\end{verbatim}
+\section{Literals}
+Just selects the type of the literal. 
+\begin{verbatim}
+
+> inferLiteral :: Basis s -> Literal -> STErr s (HpQType s)
+> inferLiteral _ (IntLit _)  = mliftErr (qtypeIntoHeap intType)
+> inferLiteral _ (FloatLit _)= mliftErr (qtypeIntoHeap floatType)
+> inferLiteral _ (BoolLit _) = mliftErr (qtypeIntoHeap boolType)
+> inferLiteral _ (CharLit _) = mliftErr (qtypeIntoHeap charType)
+> inferLiteral _ (StrLit _)  = mliftErr (qtypeIntoHeap strType)
+
+\end{verbatim}
+
+\section{Groups}
+To infer the types of a list of blocks of (mutually recursive)
+equations we start with a type environment with primitive functions
+and type constructors and extend this incrementally with the types
+from each group.
+
+We would like to:
+\begin{itemize}
+\item Get the result from the first few groups even if the type
+  inference fails later
+\item Get this result lazily (the types of the declarations in the
+  first group should be available immediately after they have been
+  inferred)
+\end{itemize}
+Idea:
+\begin{itemize}
+\item Assume that there is a list of succesive approximations to the
+  final \verb|TBasis|. (\verb|tbasiss|)
+\item Apply \verb|inferGroup| to each group and the corresponding
+  basis. (Giving \verb|errtenvs|)
+\item Filter out only the successful inferences. (Giving \verb|tenvs|)
+\item Calculate the original list from the starting type basis and
+  this list.
+\item Now the result is essentially the last element in the list of
+  approximations, but to preserve laziness it is calculated
+  separately. (Function \verb|last| waits until the whole list is
+  produced before giving any result.)
+\end{itemize}
+
+To infer the types in a group of mutually recursive definitions we
+need to:
+\begin{itemize}
+\item Assume new non-generic type variables for the variable
+  bindings. (Store in the heap.)
+\item Store the explicitly given types for the polytypic definitions
+  in \verb|TBasis|.
+\item Infer the types of the variable bindings.
+\item Make their type variables generic.
+\item Check the types of the polytypic definitions.
+\item Get the types of the variable bindings out of the heap and
+  return them. 
+\end{itemize}
+The fact that the variable bindings are temporarily given non-generic
+types means that we don't allow polymorphic recursion. The explicitly
+given types in the polytypic declarations are treated as containg only
+generic variables (just like any other explicit type).
+
+The idea is that the types should be stored in \verb|TBasis| in such a
+way that they can be lazily pulled out of it one group at a time.
+
+\section{Expressions}
+The fact that an expression $e$ has type $\tau$ in a type environment
+$\Gamma$ in often written $\Gamma \vdash e : \tau$. To imitate that
+way of writing we will denote the function that infers the most
+general type of an expression by the infix operator \verb"|-" of type:
+\begin{verbatim}
+
+#if 0
+> (|-) :: Basis s -> Expr -> STErr s (HpQType s)
+#endif
+
+\end{verbatim}
+The result type is the inferred type or an error message embedded in
+the \verb|STErr|-monad.
+
+The algorithm is split up into different cases corresponding to the
+alternatives in the abstract syntax of expressions. 
+
+\section{Patterns}
+To infer the type of a pattern we invent non-generic type variables
+for the free variables occuring in the pattern and then infer the type
+as for expressions. As the new variables will be needed in some
+corresponding right hand side the extended basis is returned along with
+the inferred type.
+
+Takes basis to basis' and then pattern to type.
+
+\section{Blocks of equations (sorted after dependencies)}
+To infer the types in a program, we simply infer the types of the
+blocks in the order they arrive (thus assuming that they are
+topologically sorted with respect to dependecies), threading the
+updated basis through the calculation.
+
+\section{List of (mutually recursive) equations}
+To infer the types of a mutually recursive group of value- and
+polytypic-definitions we first extend the environment with the
+(explicitly given) types of the polytypic definitions and some fresh
+type variables for the value definitions. Thus equipped we move on to
+inferring and checking the types of the definitions with the new type
+variables temporarily non-generic. (We don't allow polymorphic
+recursion.)  (We assume here that the explicitly given types have the
+right kind.)
+
+After transforming the pattern bindings to value bindings we proceed
+to inferring the types of the value bindings and the polydefs. The
+value bindings are checked in an environment where all their type
+variables are non-generic, but before the polytypic definitions are
+checked the variables are again made generic.  (If this is the right
+way requires further thinking.)
+
+To check a polytypic definition we first infer the types of the case 
+alternatives one by one.
+We also calculate the types the alternatives {\em should} have by
+substituting the different functor alternatives for the functor in the
+given type and evaluating the resulting type using teval.
+Finally we check that the inferred types are more general than the
+calculated types.
+
 
 polytypic checking of x :: ty = case f of {fi -> ei}
 \begin{itemize}
