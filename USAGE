@@ -1,0 +1,32 @@
+----------------USAGE----------------
+
+Basically the command polyp generates Haskell code from PolyP input.
+
+More specifically: If you enter 
+
+  polyp file.phs > file.hs
+
+(the suffixes are just suggestions) you will get a file.hs containing a
+comment {- with some info about the different phases of PolyP -}
+followed by the generated code. This file is (hopefully) a valid Hugs
+program. It should also be a Haskell program if main has type IO ().
+
+The file.hs can be read by hugs (a Haskell interpreter)
+
+  hugs file.hs
+  main
+
+Or it can be compiled with hbc (the Chalmers University Haskell
+compiler) or with your favourite Haskell implementation (possibly
+requiring some small changes to file.hs).
+
+For examples see examples/README.
+
+If something goes wrong in the code generation process, the
+information in the starting comment in file.hs can be used to locate
+the error. Every phase of Polyp will print information about its
+progress, so by checking how far PolyP got you can get a pretty good
+indication of where the error is. 
+
+----------------------------------------------------------------
+For information of how to compile PolyP - see INSTALL.

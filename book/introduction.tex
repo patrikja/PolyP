@@ -1,0 +1,58 @@
+\chapter{Introduction}
+In words the program does the following: 
+\begin{itemize}
+\item The parser takes the file to a list of equations. 
+\item Dependency analysis splits these equations into datatype
+  declarations and mutual recursive groups of function definitions.
+\item The datatype definitions are checked with kind inference.
+\item The equation groups are checked with type inference.
+\item The polytypic part generates instances of the polytypic functions.
+\item The pretty printer produces the output.
+\end{itemize}
+\section{Dependencies}
+\begin{itemize} 
+\item DependencyAnalysis: Array, Env, Folding, Grammar, GraphLibrary,
+  MyPrelude
+\item Env: MyPrelude, MonadLibrary
+\item Folding: Grammar, MyPrelude, MonadLibrary
+\item Functorize: Char, MyPrelude, Grammar
+\item Grammar: List, MyPrelude
+\item GraphLibrary: Array, MyPrelude, StateFix, StateArrayFix
+\item InferKind: Grammar, TypeGraph, TypeBasis, PrettyPrinter,
+  UnifyTypes, MonadLibrary
+\item InferType: InferKind, UnifyTypes, TypeGraph, TypeBasis,
+  StartTBasis, Env, MyPrelude, MonadLibrary, Grammar, Folding,
+  StateFix, ParseLibrary, Parser
+\item LabelType: List, Env, Folding, Grammar, InferType, MonadLibrary,
+  MyPrelude, StartTBasis, StateFix, TypeBasis, TypeGraph, UnifyTypes
+\item Main: DependencyAnalysis, Env, Grammar, InferType, LabelType,
+  MonadLibrary, MyPrelude, ParseLibrary, Parser, PolyInstance,
+  PrettyPrintExtra, PrettyPrinter, StartTBasis, TypeBasis
+\item MonadLibrary: StateFix,MyPrelude
+\item MyPrelude: NonStdTrace
+\item ParseLibrary: Char, MonadLibrary, MyPrelude
+\item Parser: Char, MyPrelude, MonadLibrary, ParseLibrary, Grammar
+\item PolyInstance: Char, Env, Grammar, Folding, Functorize,
+  MonadLibrary, MyPrelude, Parser, PrettyPrinter, TypeBasis
+\item PrettyPrintExtra: PrettyPrintLibrary
+\item PrettyPrintLibrary: 
+\item PrettyPrinter: Char, MonadLibrary, PrettyPrintExtra, Grammar
+\item StartTBasis: Parser, ParseLibrary, MyPrelude, Grammar,
+  MonadLibrary, Env, TypeBasis
+\item StateArrayFix: State, MutArray
+\item StateFix: State
+\item TypeBasis: Grammar, Folding, StateFix, MyPrelude, MonadLibrary,
+  Env, TypeGraph
+\item TypeGraph: StateFix, MyPrelude, Grammar, PrettyPrintExtra,
+  PrettyPrintLibrary, MonadLibrary, Env, Folding
+\item UnifyTypes: MyPrelude, TypeGraph, StateFix, MonadLibrary, Env,
+  PrettyPrintExtra, PrettyPrinter, Grammar
+\end{itemize}
+\section{Known bugs}
+\begin{itemize}
+\item The unification algorithm can't handle situations like: unify (f
+  + g, FunctorOf d)
+\item There might be problems with function that are polytypic in more
+  than one variable. (No canonical order of contexts yet.)
+\end{itemize}
+

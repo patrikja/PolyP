@@ -1,0 +1,270 @@
+In the polytypic construct the paper [1] writes 
+  `()'  where PolyP uses `Empty'.
+  `Con' where PolyP uses `Const'.
+  `Poly (FunctorOf d)' where PolyP uses `Regular d'
+  `Bifunctor' where PolyP uses `Poly'
+  `junc' where PolyP uses `either'
+
+The prelude contains (at least):
+ 
+  Mu        :: (* -> * -> *) -> (* -> *)
+  FunctorOf :: (* -> * -> *) <- (* -> *)
+
+  data (->) a b 
+  data ([]) a = [] | a : [a]
+  data Either a b = Left a | Right b
+  data Bool = False | True
+  data Maybe a  =  Nothing | Just a
+  data () = ()
+  data (,) a b = (a,b)
+  data (,,) a b c = (a,b,c)
+
+  inn :: Poly (FunctorOf d) => FunctorOf d a (d a) -> d a
+  out :: Poly (FunctorOf d) => d a -> FunctorOf d a (d a)
+
+
+  (+) :: Num a => a->a->a
+  (==) :: Eq a => a->a->Bool
+  (.) :: (b->c)->(a->b)->(a->c)
+  (++) :: [a]->[a]->[a]
+  const :: a->b->a
+  id :: a->a
+  map :: (a->b)->[a]->[b]
+
+
+----------------------------------------------------------------
+[1] Polytypic Programming
+    Johan Jeuring and Patrik Jansson
+ in Lecture Notes in Computing Science 1129
+    Advanced Functional Programming
+    eds. J. Launchbury, E. Meijer, T. Sheard
+    1996, pp 68-114
+
+
+================================================================
+-- below is the rest of the prelude (most of it not included)
+----------------------------------------------------------------
+-- Taken from http://haskell.cs.yale.edu/haskell-report/prelude-index.html
+-- Special prelude datatypes
+data (->) a b 
+data ([]) a = [] | a : ([]) a  deriving (Eq, Ord) 
+data () = ()  deriving (Eq, Ord, Enum, Bounded) 
+data (,) a b = (,) a b deriving (Eq, Ord, Bounded) 
+data Char 
+data Double 
+data Float 
+data Int 
+data Integer 
+data IOError 
+data Void
+
+data IO a 
+-- prelude datatypes
+data Bool = False | True deriving (Eq, Ord, Enum, Read, Show, Bounded)
+data Either a b  =  Left a | Right b deriving (Eq, Ord, Read, Show) 
+data Maybe a  =  Nothing | Just a deriving (Eq, Ord, Read, Show) 
+data Ordering = LT | EQ | GT  deriving (Eq, Ord, Enum, Read, Show, Bounded) 
+-- No type synonyms
+--type FilePath =  String 
+--type ReadS a = String -> [(a,String)] 
+--type ShowS = String -> String 
+--type String = [Char]
+----------------------------------------------------------------
+-- prelude constructors
+[], :, (), (,), EQ, False, GT, Just, Left, LT, Nothing, Right, True
+-- prelude functions
+ (!!) :: [a] -> Int -> a 
+ ($)  :: (a -> b) -> a -> b 
+ (&&) :: Bool -> Bool -> Bool 
+ (||) :: Bool -> Bool -> Bool 
+ (*)  :: Num a => a -> a -> a
+ (**) :: Floating a => a -> a -> a 
+ (+)  :: Num a => a -> a -> a 
+ (++) :: MonadPlus m => m a -> m a -> m a 
+ (-)  :: Num a => a -> a -> a 
+ (.)  :: (b -> c) -> (a -> b) -> a -> c 
+ (/)  :: Fractional a => a -> a -> a 
+ (/=) :: Eq a => a -> a -> Bool 
+ (<)  :: Ord a => a -> a -> Bool 
+ (<=) :: Ord a => a -> a -> Bool 
+ (==) :: Eq a => a -> a -> Bool 
+ (>)  :: Ord a => a -> a -> Bool 
+ (>=) :: Ord a => a -> a -> Bool 
+ (>>) :: m a -> m b -> m b 
+ (>>=):: m a -> (a -> m b) -> m b 
+ (^)  :: (Num a, Integral b) => a -> b -> a 
+ (^^) :: (Fractional a, Integral b) => a -> b -> a 
+ abs  :: Num a => a -> a 
+ accumulate :: Monad m => [m a] -> m [a] 
+ acos :: Floating a => a -> a 
+ acosh :: Floating a => a -> a 
+ all :: (a -> Bool) -> [a] -> Bool 
+ and :: [Bool] -> Bool 
+ any :: (a -> Bool) -> [a] -> Bool 
+ appendFile :: FilePath -> String -> IO ()
+ applyM :: Monad m => (a -> m b) -> m a -> m b
+ asTypeOf :: a -> a -> a 
+ asin :: Floating a => a -> a 
+ asinh :: Floating a => a -> a 
+ atan :: Floating a => a -> a 
+ atan2 :: RealFrac a => a -> a 
+ atanh :: Floating a => a -> a 
+ break :: (a -> Bool) -> [a] -> ([a], [a]) 
+ catch :: IO a -> (IOError -> IO a) -> IO a 
+ ceiling :: (RealFrac a, Integral b) => a -> b 
+ compare :: Ord a => a -> a -> Ordering 
+ concat :: MonadPlus m => [m a] -> m a 
+ concatMap :: (a -> [b]) -> [a] -> [b]
+ const :: a -> b -> a
+ cos :: Floating a => a -> a 
+ cosh :: Floating a => a -> a 
+ curry :: ((a, b) -> c) -> a -> b -> c
+ cycle :: [a] -> [a] 
+ decodeFloat :: RealFloat a => a -> (Integer, Int) 
+ div :: Integral a => a -> a -> a 
+ divMod :: Integral a => a -> a -> (a, a) 
+ drop :: Int -> [a] -> [a] 
+ dropWhile :: (a -> Bool) -> [a] -> [a] 
+ elem :: Eq a => a -> [a] -> Bool 
+ encodeFloat :: RealFloat a => Integer -> Int -> a 
+ enumFrom :: Enum a => a -> [a] 
+ enumFromThen :: Enum a => a -> a -> [a] 
+ enumFromThenTo :: Enum a => a -> a -> a -> [a] 
+ enumFromTo :: Enum a => a -> a -> [a] 
+ error :: String -> a 
+ even :: Integral a => a -> Bool
+ exp :: Floating a => a -> a 
+ exponent :: RealFloat a => a -> Int 
+ fail :: IOError -> IO a 
+ filter :: MonadZero m => (a -> Bool) -> m a -> m a 
+ flip :: (a -> b -> c) -> (b -> a -> c)
+ floatDigits :: RealFloat a => a -> Int 
+ floatRadix :: RealFloat a => a -> Integer 
+ floatRange :: RealFloat a => a -> (Int, Int) 
+ floor :: (RealFrac a, Integral b) => a -> b 
+ foldl :: (a -> b -> a) -> a -> [b] -> a 
+ foldl1 :: (a -> a -> a) -> [a] -> a 
+ foldr :: (a -> b -> b) -> b -> [a] -> b 
+ foldr1 :: (a -> a -> a) -> [a] -> a 
+ fromEnum :: Enum a => a -> Int 
+ fromInteger :: Num a => Integer -> a 
+ fromIntegral :: (Integral a, Num b) => a -> b
+ fromRational :: Fractional a => Rational -> a 
+ fromRealFrac :: (RealFrac a, Fractional b) => a -> b
+ fst :: (a, b) -> a
+ gcd :: (Integral a) => a -> a -> a
+ getChar :: IO Char 
+ getContents :: IO String
+ getLine :: IO Char 
+ guard :: MonadZero m => Bool -> m ()
+ head :: [a] -> a
+ id :: a -> a
+ init :: [a] -> [a]
+ interact :: (String -> String) -> IO ()
+ isDenormalized :: RealFloat a => a -> Bool 
+ isIEEE :: RealFloat a => a -> Bool 
+ isInfinite :: RealFloat a => a -> Bool 
+ isNaN :: RealFloat a => a -> Bool 
+ isNegativeZero :: RealFloat a => a -> Bool 
+ iterate :: (a -> a) -> a -> [a] 
+ last :: [a] -> a 
+ lcm :: Integral a => a -> a -> a
+ length :: [a] -> Int 
+ lex :: ReadS String 
+ lines :: String -> [String]
+ log :: Floating a => a -> a 
+ logBase :: Floating a => a -> a -> a 
+ lookup :: Eq a => a -> [(a, b)] -> Maybe b
+ map :: Functor f => (a -> b) -> f a -> f b 
+ mapM :: Monad m => (a -> m b) -> [a] -> m [b]
+ mapM_ :: Monad m => (a -> m b) -> [a] -> m ()
+ max :: Ord a => a -> a -> a 
+ maxBound :: Bounded a => a 
+ maximum :: Ord a => [a] -> a
+ maybe :: b -> (a -> b) -> Maybe a -> b 
+ min :: Ord a => a -> a -> a 
+ minBound :: Bounded a => a 
+ minimum :: Ord a => [a] -> a
+ mod :: Integral a => a -> a -> a 
+ negate :: Num a => a -> a 
+ not :: Bool -> Bool
+ notElem :: Eq a => a -> [a] -> Bool
+ null :: [a] -> Bool
+ odd :: Integral a => a -> Bool
+ or :: [Bool] -> Bool
+ otherwise :: Bool
+ pi :: Floating a => a 
+ pred :: Enum a => a -> a 
+ print :: Show a => IO () 
+ product :: Num a => [a] -> a
+ properFraction :: (RealFrac a, Integral b) => a -> (b, a) 
+ putChar :: Char -> IO ()
+ putStr :: String -> IO ()
+ putStrLn :: String -> IO () 
+ quot :: Integral a => a -> a -> a 
+ quotRem :: Integral a => a -> a -> (a, a) 
+ read :: Read a => String -> a
+ readFile :: FilePath -> IO String
+ readIO :: Read a => String -> IO a 
+ readList :: Read a => ReadS [a]
+ readLn :: Read a => IO a
+ readParen :: Bool -> ReadS a -> ReadS a
+ reads :: Read a => ReadS a 
+ readsPrec :: Read a => Int -> ReadS a
+ recip :: Fractional a => a -> a 
+ rem :: Integral a => a -> a -> a 
+ repeat :: a -> [a] 
+ replicate :: Int -> a -> [a] 
+ return :: Monad m => a -> m a 
+ reverse :: [a] -> [a] 
+ round :: (RealFrac a, Integral b) => a -> b 
+ scaleFloat :: RealFloat a => Int -> a -> a 
+ scanl :: (a -> b -> a) -> a -> [b] -> [a] 
+ scanl1 :: (a -> a -> a) -> [a] -> [a] 
+ scanr :: (a -> b -> b) -> b -> [a] -> [b] 
+ scanr1 :: (a -> a -> a) -> [a] -> [a] 
+ seq :: Eval a => a -> a -> b 
+ sequence :: Monad m => [m a] -> m () 
+ show :: Show a => a -> String 
+ showChar :: Char -> ShowS
+ showList :: Show a => [a] -> ShowS
+ showParen :: Bool -> ShowS -> ShowS
+ showString :: String -> ShowS
+ shows :: Show a => a -> ShowS 
+ showsPrec :: Show a => Int -> a -> ShowS 
+ significand :: RealFloat a => a -> a 
+ signum :: Num a => a -> a 
+ sin :: Floating a => a -> a 
+ sinh :: Floating a => a -> a 
+ snd :: (a, b) -> b
+ span :: (a -> Bool) -> [a] -> ([a], [a]) 
+ splitAt :: Int -> [a] -> ([a], [a]) 
+ sqrt :: Floating a => a -> a 
+ strict :: Eval a => (a -> b) -> (a -> b) 
+ subtract :: Num a => a -> a -> a
+ succ :: Enum a => a -> a 
+ sum :: Num a => [a] -> a 
+ tail :: [a] -> [a] 
+ take :: Int -> [a] -> [a] 
+ takeWhile :: (a -> Bool) -> [a] -> [a] 
+ tan :: Floating a => a -> a 
+ tanh :: Floating a => a -> a 
+ toEnum :: Enum a => Int -> a 
+ toInteger :: Integral a => a -> Integer 
+ toRational :: Real a => a -> Rational 
+ truncate :: (RealFrac a, Integral b) => a -> b 
+ uncurry :: (a -> b -> c) -> ((a, b) -> c)
+ undefined :: a 
+ unlines :: [String] -> String
+ until :: (a -> Bool) -> (a -> a) -> a -> a 
+ unwords :: [String] -> String
+ unzip :: [(a, b)] -> ([a], [b]) 
+ unzip3 :: [(a, b, c)] -> ([a], [b], [c])
+ userError :: String -> IOError
+ words :: String -> [String] 
+ writeFile :: FilePath -> String -> IO ()
+ zero :: MonadZero m => m a 
+ zip :: [a] -> [b] -> [(a, b)] 
+ zip3 :: [a] -> [b] -> [c] -> [(a, b, c)]
+ zipWith :: (a -> b -> c) -> [a] -> [b] -> [c] 
+ zipWith3 :: (a -> b -> c -> d) -> [a] -> [b] -> [c] -> [d]

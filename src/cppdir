@@ -1,0 +1,10 @@
+#!/bin/sh
+
+for file in *.lhs; do
+    gcc -E -C -P -traditional -x c-header $3 $1/$file > $2/$file
+done
+# -E   use preprocessor only
+# -C   don't touch comments
+# -P   don't give line number info
+# -traditional suppresses warnings about strings etc. 
+# -x c-header  treats the files as .h-files

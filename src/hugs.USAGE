@@ -1,0 +1,57 @@
+[This is the file src/hugs.USAGE]
+
+The easiest way to use PolyP with hugs is create an alias for the call
+
+  runhugs hugssrc/Main.lhs
+
+In tcsh this can be done with 
+
+   alias polyp runhugs `pwd`/hugssrc/Main.lhs
+ 
+standing in the root of the PolyP distribution.
+
+The installation instead provides a shell-script "bin/hugspolyp" that
+proides the same functionality (if make works as intended...).
+
+The file USAGE gives more information assuming your executable (or
+alias) is called "polyp".
+
+
+Potential problems:
+[P=problem, E=explanation, S=solution]
+
+P: I can't run "make hugs" (or make chokes on the Makefile)
+E: Maybe you don't have make, or it is not GNU make. 
+S: The only difference between src/ and hugssrc/ is
+   that src/ has C-preprocessor #ifdef's in it. 
+   The source code in src/ can be used directly with hugs provided
+    that you have 
+      a version of hugs that supports a preprocessing filter (-F)
+      a C preprocessor (cpp)
+   Then this can work (ignore messages about closed pipes)
+     alias polyp runhugs -F"cpp -P -traditional" src/Main.lhs
+
+P: In the src directory, hugs Main.lhs complains about unexpected
+   keyword "runST".
+E: The src directory contains Haskell code with embedded
+   C-preprocessor instructions (#ifdef ...) so that it can be
+   instatiated to work for the different Haskell implementations.
+S: You should either make the hugs version of the sources as described
+   in the installation instructions or use cpp as a filter to hugs
+   (-F"cpp -P -traditional" or something similar) or - as a last
+   resort - manually edit the sources according to the #ifdef's
+   assuming __HUGS__ is defined.
+
+P: Hugs complains about the module IOExts.
+E: You are probably using an old version (<Oct 1997) of Hugs that does
+   not support the common Hugs-ghc Haskell extensions. (Containing
+   mutable variables.)
+S: Upgrade! http://www.haskell.org/hugs/
+
+P: I have hugs but I don't have runhugs.
+S: Install runhugs (it comes with the hugs distribution)
+   or use hugs:
+      hugs hugssrc/Main.lhs
+      main
+
+     

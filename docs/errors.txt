@@ -1,0 +1,14 @@
+Common error messages from polyp and possible causes:
+
+Fail: codeFunctor: uninstantiated functor variable k
+ found as part of FunctorOf k
+
+  The type inference could not determine the actual datatype k that
+  was to be used at a certain point. Thus no instance could be
+  generated.
+
+  Either a polytypic definition (the one currently being instantiated)
+  is wrong, or it is used polytypically at the top level. For example:
+
+  main = out
+

@@ -1,0 +1,10 @@
+[This is the file src/hbc.USAGE]
+
+If the installation works out the executable should be in bin/hbcpolyp.
+
+Rename this to polyp and put it on your path 
+or link to it from your own bin directory
+  ln -s bin/hbcpolyp $(HOME)/bin/polyp
+
+The USAGE file gives more information (and assumes the executable is
+called "polyp").

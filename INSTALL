@@ -1,0 +1,16 @@
+polyp is compiled with 
+
+ make X
+
+where X is ghc, hbc or hugs depending on what you want to compile it
+with. The compiled code runs faster with ghc, but the compilation
+takes longer. 
+
+This leaves the executable in the file bin/Xpolyp.
+
+[The makefiles are written for GNU make, sometimes called gmake.]
+
+Please send an email to 
+  patrikj@cs.chalmers.se 
+saying that you have installed PolyP so that we can give you
+information about future changes to PolyP.

@@ -1,0 +1,39 @@
+\documentclass[A4]{article}
+
+\begin{document}
+The following requires more memory (hbc -c -H12000000)
+hbc -c -H12000000 PolyInstance.lhs
+hbc -c -H12000000 InferType.lhs
+hbc -c -H12000000 Main.lhs
+
+To do:
+\begin{itemize}
+\item Make depAn join ExplType and VarBind.
+\item Complete the context parser.
+\end{itemize}
+
+
+
+\section{Dependecies}
+\begin{verbatim}
+MyPrelude.o StateFix.o PrettyPrintLibrary.o StateArrayFix.o
+Grammar.o PrettyPrintExtra.o MonadLibrary.o GraphLibrary.o
+Env.o Folding.o PrettyPrinter.o ParseLibrary.o
+TypeGraph.o Parser.o DependencyAnalysis.o
+TypeBasis.o UnifyTypes.o
+InferKind.o StartTBasis.o
+Functorize.o InferType.o
+PolyInstance.o LabelType.o
+Main.o
+\end{verbatim}
+\section{Bugs}
+\subsection{Fixed}
+\begin{itemize}
+\item The functor constructors + and * nest in wrong direction.
+\item All use of nontrivial constant types forbidden.
+\end{itemize}
+\subsection{Reported}
+\item Unresolved overloading in the output code (insert expl. types).
+\end{document}
+
+

@@ -1,0 +1,3 @@
+Arjan IJzendoorn (wrote some of the base)
+
+Benedict R. Gaster (help on upgrading from Hugs 1.2 to 1.3)
