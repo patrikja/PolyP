@@ -14,7 +14,8 @@ lhs_files = $(wildcard *.lhs)
 o_files   = $(addsuffix .$(osuf),  $(basename $(hs_files) $(lhs_files)))
 hi_files  = $(addsuffix .$(hisuf), $(basename $(hs_files) $(lhs_files)))
 
-SUFFIXES= .hs .lhs .$(hisuf) .$(osuf)
+.SUFFIXES:
+.SUFFIXES: .hs .lhs .$(hisuf) .$(osuf)
 
 %.$(osuf):	%.hs
 	rm -f $@

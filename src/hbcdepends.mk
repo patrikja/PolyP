@@ -1,25 +1,141 @@
-PrettyPrintLibrary.o: PrettyPrintLibrary.lhs
-NonStdTrace.o: NonStdTrace.lhs
-StateFix.o: StateFix.lhs
-MyPrelude.o: MyPrelude.lhs NonStdTrace.hi
-PrettyPrintExtra.o: PrettyPrintExtra.lhs PrettyPrintLibrary.hi
-Grammar.o: Grammar.lhs MyPrelude.hi
-MonadLibrary.o: MonadLibrary.lhs StateFix.hi MyPrelude.hi
-GraphLibrary.o: GraphLibrary.lhs MyPrelude.hi StateFix.hi
-PrettyPrinter.o: PrettyPrinter.lhs PrettyPrintExtra.hi Grammar.hi
-Env.o: Env.lhs MyPrelude.hi MonadLibrary.hi
-Folding.o: Folding.lhs Grammar.hi MyPrelude.hi MonadLibrary.hi
-ParseLibrary.o: ParseLibrary.lhs MonadLibrary.hi
-TypeGraph.o: TypeGraph.lhs MyPrelude.hi Grammar.hi PrettyPrinter.hi MonadLibrary.hi Env.hi Folding.hi
-Parser.o: Parser.lhs MyPrelude.hi MonadLibrary.hi ParseLibrary.hi Grammar.hi
-TypeBasis.o: TypeBasis.lhs Grammar.hi Folding.hi MyPrelude.hi MonadLibrary.hi Env.hi TypeGraph.hi
-TypeError.o: TypeError.lhs TypeGraph.hi MonadLibrary.hi PrettyPrinter.hi Grammar.hi
-UnifyTypes.o: UnifyTypes.lhs TypeGraph.hi TypeError.hi MonadLibrary.hi Env.hi Grammar.hi MyPrelude.hi
-StartTBasis.o: StartTBasis.lhs Parser.hi ParseLibrary.hi MyPrelude.hi Grammar.hi MonadLibrary.hi Env.hi TypeBasis.hi
-DependencyAnalysis.o: DependencyAnalysis.lhs Env.hi Folding.hi Grammar.hi GraphLibrary.hi MyPrelude.hi PrettyPrinter.hi TypeBasis.hi
-InferKind.o: InferKind.lhs Grammar.hi TypeGraph.hi TypeBasis.hi PrettyPrinter.hi UnifyTypes.hi MonadLibrary.hi
-Functorize.o: Functorize.lhs Env.hi Grammar.hi MyPrelude.hi Parser.hi StartTBasis.hi
-InferType.o: InferType.lhs InferKind.hi UnifyTypes.hi TypeGraph.hi TypeBasis.hi StartTBasis.hi Env.hi MyPrelude.hi MonadLibrary.hi StateFix.hi Grammar.hi Folding.hi ParseLibrary.hi Parser.hi PrettyPrinter.hi
-PolyInstance.o: PolyInstance.lhs Env.hi Grammar.hi Folding.hi Functorize.hi MonadLibrary.hi MyPrelude.hi Parser.hi PrettyPrinter.hi StartTBasis.hi TypeBasis.hi
-LabelType.o: LabelType.lhs Env.hi Folding.hi Grammar.hi InferType.hi MonadLibrary.hi MyPrelude.hi StartTBasis.hi StateFix.hi TypeBasis.hi TypeGraph.hi UnifyTypes.hi
-Main.o: Main.lhs DependencyAnalysis.hi Env.hi Grammar.hi LabelType.hi MonadLibrary.hi Parser.hi PolyInstance.hi PrettyPrinter.hi StateFix.hi TypeBasis.hi TypeGraph.hi UnifyTypes.hi
+# DO NOT DELETE: Beginning of Haskell dependencies
+Chase.o : Chase.lhs
+DependencyAnalysis.o : DependencyAnalysis.lhs
+DependencyAnalysis.o : ./Env.hi
+DependencyAnalysis.o : ./Folding.hi
+DependencyAnalysis.o : ./Grammar.hi
+DependencyAnalysis.o : ./GraphLibrary.hi
+DependencyAnalysis.o : ./MyPrelude.hi
+DependencyAnalysis.o : ./PrettyPrinter.hi
+DependencyAnalysis.o : ./TypeBasis.hi
+Env.o : Env.lhs
+Env.o : ./MyPrelude.hi
+Env.o : ./MonadLibrary.hi
+Folding.o : Folding.lhs
+Folding.o : ./Grammar.hi
+Folding.o : ./MyPrelude.hi
+Folding.o : ./MonadLibrary.hi
+Folding.o : ./PrettyPrinter.hi
+Functorize.o : Functorize.lhs
+Functorize.o : ./Env.hi
+Functorize.o : ./Grammar.hi
+Functorize.o : ./MyPrelude.hi
+Functorize.o : ./StartTBasis.hi
+Functorize.o : ./PrettyPrinter.hi
+Grammar.o : Grammar.lhs
+Grammar.o : ./MyPrelude.hi
+GraphLibrary.o : GraphLibrary.lhs
+GraphLibrary.o : ./MyPrelude.hi
+GraphLibrary.o : ./StateFix.hi
+InferKind.o : InferKind.lhs
+InferKind.o : ./Grammar.hi
+InferKind.o : ./TypeGraph.hi
+InferKind.o : ./TypeBasis.hi
+InferKind.o : ./PrettyPrinter.hi
+InferKind.o : ./UnifyTypes.hi
+InferKind.o : ./MonadLibrary.hi
+InferType.o : InferType.lhs
+InferType.o : ./InferKind.hi
+InferType.o : ./UnifyTypes.hi
+InferType.o : ./TypeGraph.hi
+InferType.o : ./TypeBasis.hi
+InferType.o : ./StartTBasis.hi
+InferType.o : ./Env.hi
+InferType.o : ./MyPrelude.hi
+InferType.o : ./MonadLibrary.hi
+InferType.o : ./StateFix.hi
+InferType.o : ./Grammar.hi
+InferType.o : ./Folding.hi
+InferType.o : ./ParseLibrary.hi
+InferType.o : ./Parser.hi
+InferType.o : ./PrettyPrinter.hi
+LabelType.o : LabelType.lhs
+LabelType.o : ./Env.hi
+LabelType.o : ./Folding.hi
+LabelType.o : ./Grammar.hi
+LabelType.o : ./InferType.hi
+LabelType.o : ./MonadLibrary.hi
+LabelType.o : ./MyPrelude.hi
+LabelType.o : ./StartTBasis.hi
+LabelType.o : ./StateFix.hi
+LabelType.o : ./TypeBasis.hi
+LabelType.o : ./TypeGraph.hi
+LabelType.o : ./UnifyTypes.hi
+Main.o : Main.lhs
+Main.o : ./DependencyAnalysis.hi
+Main.o : ./Env.hi
+Main.o : ./Grammar.hi
+Main.o : ./LabelType.hi
+Main.o : ./MonadLibrary.hi
+Main.o : ./Parser.hi
+Main.o : ./PolyInstance.hi
+Main.o : ./PrettyPrinter.hi
+Main.o : ./StateFix.hi
+Main.o : ./TypeBasis.hi
+Main.o : ./TypeGraph.hi
+Main.o : ./UnifyTypes.hi
+MonadLibrary.o : MonadLibrary.lhs
+MonadLibrary.o : ./StateFix.hi
+MonadLibrary.o : ./MyPrelude.hi
+MyPrelude.o : MyPrelude.lhs
+MyPrelude.o : ./NonStdTrace.hi
+NonStdTrace.o : NonStdTrace.lhs
+ParseLibrary.o : ParseLibrary.lhs
+ParseLibrary.o : ./MonadLibrary.hi
+Parser.o : Parser.lhs
+Parser.o : ./MyPrelude.hi
+Parser.o : ./MonadLibrary.hi
+Parser.o : ./ParseLibrary.hi
+Parser.o : ./Grammar.hi
+PolyInstance.o : PolyInstance.lhs
+PolyInstance.o : ./Env.hi
+PolyInstance.o : ./Grammar.hi
+PolyInstance.o : ./Folding.hi
+PolyInstance.o : ./Functorize.hi
+PolyInstance.o : ./MonadLibrary.hi
+PolyInstance.o : ./MyPrelude.hi
+PolyInstance.o : ./PrettyPrinter.hi
+PolyInstance.o : ./StartTBasis.hi
+PolyInstance.o : ./TypeBasis.hi
+PrettyPrintExtra.o : PrettyPrintExtra.lhs
+PrettyPrintExtra.o : ./PrettyPrintLibrary.hi
+PrettyPrintLibrary.o : PrettyPrintLibrary.lhs
+PrettyPrinter.o : PrettyPrinter.lhs
+PrettyPrinter.o : ./PrettyPrintExtra.hi
+PrettyPrinter.o : ./Grammar.hi
+StartTBasis.o : StartTBasis.lhs
+StartTBasis.o : ./Parser.hi
+StartTBasis.o : ./ParseLibrary.hi
+StartTBasis.o : ./MyPrelude.hi
+StartTBasis.o : ./Grammar.hi
+StartTBasis.o : ./MonadLibrary.hi
+StartTBasis.o : ./Env.hi
+StartTBasis.o : ./TypeBasis.hi
+StateFix.o : StateFix.lhs
+TypeBasis.o : TypeBasis.lhs
+TypeBasis.o : ./Grammar.hi
+TypeBasis.o : ./Folding.hi
+TypeBasis.o : ./MyPrelude.hi
+TypeBasis.o : ./MonadLibrary.hi
+TypeBasis.o : ./Env.hi
+TypeBasis.o : ./TypeGraph.hi
+TypeError.o : TypeError.lhs
+TypeError.o : ./TypeGraph.hi
+TypeError.o : ./MonadLibrary.hi
+TypeError.o : ./PrettyPrinter.hi
+TypeError.o : ./Grammar.hi
+TypeGraph.o : TypeGraph.lhs
+TypeGraph.o : ./MyPrelude.hi
+TypeGraph.o : ./Grammar.hi
+TypeGraph.o : ./PrettyPrinter.hi
+TypeGraph.o : ./MonadLibrary.hi
+TypeGraph.o : ./Env.hi
+TypeGraph.o : ./Folding.hi
+UnifyTypes.o : UnifyTypes.lhs
+UnifyTypes.o : ./TypeGraph.hi
+UnifyTypes.o : ./TypeError.hi
+UnifyTypes.o : ./MonadLibrary.hi
+UnifyTypes.o : ./Env.hi
+UnifyTypes.o : ./Grammar.hi
+UnifyTypes.o : ./MyPrelude.hi
+# DO NOT DELETE: End of Haskell dependencies

@@ -9,8 +9,8 @@ default:	ghc
 .SUFFIXES:
 
 # The C-preprocessor
-CPP = cpp -P -C -traditional
-#CPP = gcc -E -C -P -traditional -x c-header
+CPP = gcc -E -C -P -traditional -x c-header
+#CPP = cpp -P -C -traditional
 
 # All Haskell source files in this directory
 lhs_files = $(wildcard *.lhs)
@@ -23,7 +23,8 @@ hugssrc: $(lhs_files:%=../hugssrc/%)
 
 ghcsrc: $(lhs_files:%=../ghcsrc/%)
 	cp ghc.mk ../ghcsrc/Makefile
-	cp rules.mk depends.mk ../ghcsrc/
+	cp rules.mk ../ghcsrc/
+	sed -e "s/\.g_o/\.o/g" -e "s/\.g_hi/\.hi/g" <depends.mk >../ghcsrc/depends.mk
 
 ../ghcsrc/%.lhs:	../src/%.lhs
 	$(CPP) -D__GLASGOW_HASKELL__ $< -o $@  
@@ -67,6 +68,11 @@ hbcclean::
 veryclean::	clean
 	rm -f *.hi
 	rm -f *.g_hi
+
+# make sure that the depency files are up to date.
+dist:
+	$(MAKE) -f ghc.mk depends.mk
+	cp depends.mk hbcdepends.mk
 
 # old stuff
 

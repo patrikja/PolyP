@@ -5,19 +5,20 @@ functions.
 \begin{verbatim}
 
 > module PolyInstance(instantiateProgram) where
-> import Char(isDigit)
 > import Env(Env,mapEnv,lookasideST,lookupEnv,extendsEnv,newEnv)
 > import Grammar(Eqn'(..),Expr'(..),Type(..),Qualified(..),
 >                Eqn,TEqn,Expr,TExpr,Func,QType,VarID,ConID,
 >                PrgTEqns, changeNameOfBind,noType,
->                tupleConstructor,listConstructor)
-> import Folding(cataType,cataEqn,cataExpr,ExprFuns,EqnFuns)
+>                tupleConstructor)
+> import Folding(cataType,cataEqn,cataExpr,ExprFuns,EqnFuns,
+>                stripTEqn,mmapTEqn)
 > import Functorize(inn_def,out_def,either_def,fcname_def,
->                   makeFunctorStruct,Struct,Req,eqReq)
+>                   makeFunctorStruct,Struct,Req,eqReq,
+>                   codeFunctors)
 > import MonadLibrary(State, executeST, mapl,(<@),(@@),unDone,
 >                     OutputT,output,runOutput,mliftOut,map0,map1,map2)
 > import MyPrelude(maytrace,pair,mapFst,mapSnd,combineUniqueBy,  debug)
-> import PrettyPrinter(Pretty(..))
+> import PrettyPrinter(Pretty(pretty))
 > import StartTBasis(preludeFuns,preludedatadefs)
 > import TypeBasis(TBasis,TypeEnv)
 
@@ -466,96 +467,6 @@ buildInstances = foldr buildstep ([],[])
 buildinstance :: Req -> ([TEqn],[Reqs])
 \end{verbatim}
 % ----------------------------------------------------------------
-\section{Functor names}
-To identify a functor in a concise way, we use a coding of functors as
-strings of characters. 
-%
-We use prefix format and translate the operators as follows: 
-%
-The structures {\tt f+g}, {\tt f*g} and {\tt d@g} are coded by the
-first letters in Sum, Product and Application followed by the coded
-versions of their children. 
-%
-The base cases {\tt Empty}, {\tt Par}, {\tt Rec} and {\tt Const t} are
-coded by their first letter but in lower case.  
-%
-(This will have to be improved in the {\tt Const t} case when t is not
-just a type variable.  We simply need a pair of functions {\tt
-  codeType} and {\tt decodeType}.)  
-%
-There is one special case: {\tt FunctorOf []} is coded as {\tt F0}
-instead of {\tt F[]} to make it possible to parse.
-\begin{verbatim}
-
-> codeFunctors :: [Func] -> String
-> codeFunctors = concatMap (('_':).codeFunctor)
-
-> codeFunctor :: Func -> String
-> codeFunctor f = s f []
->   where 
->     s (TCon "Const" :@@: c)   = ('c':) -- . codeType c
->     s (g :@@: t)     = s g . s t
->     s (TCon "Empty") = ('e':)
->     s (TCon "Par")   = ('p':)    
->     s (TCon "Rec")   = ('r':)    
->     s (TCon "Mu")    = ('m':)
->     s (TCon "FunctorOf")= ('f':)
->     s (TCon "+")     = ('S':)
->     s (TCon "*")     = ('P':)
->     s (TCon "@")     = ('A':)
->     s (TCon d)       = ((codeTyCon d)++)
->     s t@(TVar v)     = error ("codeFunctor: uninstantiated functor variable " ++
->                               show (pretty t) ++ " found as part of " ++ show (pretty f) )
-
-> decodeFunctor :: String -> Func
-> decodeFunctor s = snd (p s)
->   where
->     p ('e':xs)  = (xs,TCon "Empty")
->     p ('p':xs)  = (xs,TCon "Par")
->     p ('r':xs)  = (xs,TCon "Rec")
->     p ('m':xs)  = (xs,TCon "Mu")
->     p ('f':xs)  = (xs,TCon "FunctorOf")
->     p ('c':xs)  = (xs,TCon "Const" :@@: TVar "t") -- use decodeType
->     p ('S':xs)  = mapSnd plus (popp xs)
->     p ('P':xs)  = mapSnd prod (popp xs)
->     p ('A':xs)  = mapSnd appl (popp xs)
->     p xs | isDigit (head xs) = mapSnd TCon (decodeTyCon xs)
->     popp = p `op` p
->     plus (t,t') = TCon "+" :@@: t :@@: t'
->     prod (t,t') = TCon "*" :@@: t :@@: t'
->     appl (t,t') = TCon "@" :@@: t :@@: t'
->     op w w' xs = (zs,(y,z))
->       where (ys,y) = w  xs
->             (zs,z) = w' ys
-
-> codeTyCon :: ConID -> String
-> codeTyCon c | c == listConstructor = "0"
->             | otherwise            = show (length c) ++ c
-
-> decodeTyCon :: String -> (ConID,String)
-> decodeTyCon s | n > 0  = splitAt n text
->               | n == 0 = (listConstructor,text)
->               | True   = error "PolyInstance.decodeTyCon: impossible: negative length"
->    where (num,text) = span isDigit s
->          n :: Int
->          n = read num
-
-\end{verbatim}
-Just a test expression --- not used.
-\begin{verbatim}
-
-> testfunctors :: [Func]
-> testfunctors = map decodeFunctor [fList,fTree,fRoseTree,
->                                   fVarTree,fVNumber,fBoolAlg]
->      where fList     = "SePpr"
->            fTree     = "SpPrr"
->            fRoseTree = "PpA"++fList++"r"
->            fVarTree  = "Sc"++fTree
->            fVNumber  = "SeSrSPrrPrr"
->            fBoolAlg  = "Se"++fVNumber
-
-\end{verbatim}
-% ----------------------------------------------------------------
 \section{Matching types}
 Given a type $t$ containing a functor variable $f$ and an instance
 $\tau$ of this type we want to find the functor corresponding to $f$.
@@ -640,73 +551,8 @@ make sure that no name clashes occur in the resulting type.
                      (VarBind,DataDef,Polytypic) )
 
 \end{verbatim}
-% ----------------------------------------------------------------
-\section{Tools for handling explicitly typed expressions}
-
-When the new definitions have been generated the explicit types are no
-longer needed and can be stripped off. Retaining them would be a good
-test of the type labelling, but does currently not work as types are
-not instatiated along with the program.
 
 \begin{verbatim}
-
-> stripTEqn  :: TEqn -> Eqn
-> stripTExpr :: TExpr -> Expr
-> stripTEqn  = cataEqn stripFuns
-> stripTExpr = cataExpr stripFuns
-
-> stripFuns :: (ExprFuns t (Expr' a) (Eqn' a), EqnFuns QType TExpr TEqn)
-
-> stripFuns = (exprfuns,eqnfuns)
->   where exprfuns = (Var,Con,(:@:),Lambda,Literal,WildCard,Case,Letrec,
->                     const) -- instead of Typed
->         eqnfuns  = (varBind,DataDef,Polytypic,ExplType)
->         varBind v t ps e = VarBind v noType ps e
-
-\end{verbatim}
-% ----------------------------------------------------------------
-\section{Misc.}
-A monadic map with access to the types of the variables.  We only
-require that the variables are typed.  Should be rewritten to update
-the state \'a la {\tt |-}.
-\begin{verbatim}
-
-> mmapTExpr :: (Functor m, Monad m,Pretty t) => 
->              (String -> t -> m String) -> Expr' t -> m (Expr' t)
-> mmapTExpr f = mt
->   where 
->     mt (Typed (Var v) t) = f v t <@ ((`Typed` t).Var)
->     mt (Typed e       t) = mt e   <@ (`Typed` t)
->     mt (Var v) = error "mmapTExpr: untyped variable encountered"
->     mt e = m e -- now e can't be Typed
-
->     m (Con c)       = map0 (Con c)
->     m (Lambda p e)  = map2 Lambda (mt p) (mt e)
->     m (Literal l)   = map0 (Literal l)
->     m WildCard      = map0 WildCard
->     m (g :@: e)     = map2 (:@:) (mt g) (mt e)
->     m (Case e cs)   = map2 Case (mt e) (mapl (uncurry (map2 pair)) 
->                                              (map mt2 cs)          )
->     m (Letrec qss e)= map2 Letrec (mapl (mapl mq) qss) (mt e)
->     m (Typed e t)   = error ("mmapTExpr: unexpected Typed expression: "++
->                              show (pretty e))
->     m e             = error ("mmapTExpr: unexpected expression: "++
->                              show (pretty e))
-
->     mt2 (x, y) = (mt x,mt y)
->     mq = mmapTEqn f
-
-> mmapTEqn  :: (Functor m, Monad m,Pretty t) => 
->              (String -> t -> m String) -> Eqn' t -> m (Eqn' t)
-> mmapTEqn f = mq
->   where
->     mq (VarBind v t ps e) = 
->        map2 (VarBind v t) (mapl mt ps) (mt e)
->     mq (Polytypic n t fun cs) = 
->        map1 (Polytypic n t fun) (mapl mtSnd cs)
->     mq _ = error "PolyInstance: mmapTEqn: impossible: not a binding"
->     mtSnd (x,y) = mt y <@ (pair x)
->     mt = mmapTExpr f
 
 > eqnsToDefenv :: [Eqn] -> DefEnv
 > eqnsToDefenv eqns = extendsEnv (map pairwithname eqns) newEnv
@@ -793,34 +639,30 @@ traverse :: TypeEnv -> (TEqn,Subst,QType) -> Qualified Func -> ([Req], [TEqn])
 classifyDef :: DefEnv -> VarID -> DefTypes
 pickPolyEqn :: FuncEnv -> TEqn -> QType -> (TEqn, Subst, QType)
   getFunctor, functorCase
+
+
 functorCase :: Type -> [(QType, a)] -> (a, Subst)
   match
 getFunctor :: FuncEnv -> VarID -> QType -> QType -> Func
   evaluateTopFun
 evaluateTopFun :: FuncEnv -> Type -> Type
   functorOf
-
 type FuncEnv = Env ConID (Struct,Func)
   Env.Env Grammar.ConID Functorize.Struct Grammar.Func
 functorOf :: VarID -> FuncEnv -> Func
-codeFunctors :: [Func] -> String
-  codeFunctor
-codeFunctor :: Func -> String
-  codeStr
-decodeFunctor :: String -> Func
-  decodeStr
-codeStr :: String -> String
-decodeStr :: String -> (String,String)
-
 
 getFunctors :: QType -> QType -> [Func] -- used by traverseEqn
-matchfuns :: (QType, QType) -> [(String, Func)]
+matchfuns :: (QType, QType) -> [(String, Func)] -- used by traverse
 match :: (Type, Type) -> Maybe Subst
   match'
 match' :: (Type,Type) -> Subst -> Maybe Subst
 addbind :: a -> b -> [(a, b)] -> Maybe [(a, b)]
 appSubst :: (VarID->Type) -> Type -> Type
 substQType :: Subst -> QType -> QType
+
+eqnsToDefenv :: [Eqn' a] -> [(VarID, Eqn' a)]
+
+{- In Folding.lhs
 stripTEqn  :: TEqn -> Eqn
   stripFuns
 stripTExpr :: TExpr -> Expr
@@ -828,5 +670,17 @@ stripTExpr :: TExpr -> Expr
 stripFuns :: (ExprFuns a (Expr' b) (Eqn' b), EqnFuns c (Expr' c) (Eqn' c))
 mmapTExpr :: (Functor m, Monad m) => 
              (String -> a -> m String) -> Expr' a -> m (Expr' a)
-eqnsToDefenv :: [Eqn' a] -> [(VarID, Eqn' a)]
+-}
+
+{- In Functorize.lhs
+codeFunctors :: [Func] -> String
+  codeFunctor
+codeFunctor :: Func -> String
+  codeTyCon
+decodeFunctor :: String -> Func
+  decodeTyCon
+codeTyCon :: String -> String
+decodeTyCon :: String -> (String,String)
+-}
+
 \end{verbatim}

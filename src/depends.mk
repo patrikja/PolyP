@@ -1,4 +1,5 @@
 # DO NOT DELETE: Beginning of Haskell dependencies
+Chase.g_o : Chase.lhs
 DependencyAnalysis.g_o : DependencyAnalysis.lhs
 DependencyAnalysis.g_o : ./Env.g_hi
 DependencyAnalysis.g_o : ./Folding.g_hi
@@ -14,12 +15,13 @@ Folding.g_o : Folding.lhs
 Folding.g_o : ./Grammar.g_hi
 Folding.g_o : ./MyPrelude.g_hi
 Folding.g_o : ./MonadLibrary.g_hi
+Folding.g_o : ./PrettyPrinter.g_hi
 Functorize.g_o : Functorize.lhs
 Functorize.g_o : ./Env.g_hi
 Functorize.g_o : ./Grammar.g_hi
 Functorize.g_o : ./MyPrelude.g_hi
-Functorize.g_o : ./Parser.g_hi
 Functorize.g_o : ./StartTBasis.g_hi
+Functorize.g_o : ./PrettyPrinter.g_hi
 Grammar.g_o : Grammar.lhs
 Grammar.g_o : ./MyPrelude.g_hi
 GraphLibrary.g_o : GraphLibrary.lhs
@@ -92,7 +94,6 @@ PolyInstance.g_o : ./Folding.g_hi
 PolyInstance.g_o : ./Functorize.g_hi
 PolyInstance.g_o : ./MonadLibrary.g_hi
 PolyInstance.g_o : ./MyPrelude.g_hi
-PolyInstance.g_o : ./Parser.g_hi
 PolyInstance.g_o : ./PrettyPrinter.g_hi
 PolyInstance.g_o : ./StartTBasis.g_hi
 PolyInstance.g_o : ./TypeBasis.g_hi
@@ -118,6 +119,11 @@ TypeBasis.g_o : ./MyPrelude.g_hi
 TypeBasis.g_o : ./MonadLibrary.g_hi
 TypeBasis.g_o : ./Env.g_hi
 TypeBasis.g_o : ./TypeGraph.g_hi
+TypeError.g_o : TypeError.lhs
+TypeError.g_o : ./TypeGraph.g_hi
+TypeError.g_o : ./MonadLibrary.g_hi
+TypeError.g_o : ./PrettyPrinter.g_hi
+TypeError.g_o : ./Grammar.g_hi
 TypeGraph.g_o : TypeGraph.lhs
 TypeGraph.g_o : ./MyPrelude.g_hi
 TypeGraph.g_o : ./Grammar.g_hi
@@ -127,9 +133,9 @@ TypeGraph.g_o : ./Env.g_hi
 TypeGraph.g_o : ./Folding.g_hi
 UnifyTypes.g_o : UnifyTypes.lhs
 UnifyTypes.g_o : ./TypeGraph.g_hi
+UnifyTypes.g_o : ./TypeError.g_hi
 UnifyTypes.g_o : ./MonadLibrary.g_hi
 UnifyTypes.g_o : ./Env.g_hi
-UnifyTypes.g_o : ./PrettyPrinter.g_hi
 UnifyTypes.g_o : ./Grammar.g_hi
 UnifyTypes.g_o : ./MyPrelude.g_hi
 # DO NOT DELETE: End of Haskell dependencies

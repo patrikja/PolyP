@@ -5,6 +5,7 @@
 > import Grammar -- (Eqn'(..),Expr'(..),VarID)
 > import MyPrelude(pair,mapFst,mapSnd,without,flatMap)
 > import MonadLibrary(mapl,foreach,(<*>),(<@),liftop,map0,map1,map2)
+> import PrettyPrinter(Pretty(pretty))
 
 \end{verbatim}
 \section{Folding expressions and types}
@@ -196,5 +197,78 @@ The function {\tt dmmapQualified} works through two layers of monads.
 > dmmapQualified :: (Functor m, Monad m, Functor n, Monad n) =>
 >                   (a -> m (n b)) -> Qualified a -> m (n (Qualified b))
 > dmmapQualified f = map (mmapQualified id) . mmapQualified f
+
+\end{verbatim}
+
+% ----------------------------------------------------------------
+\section{Tools for handling explicitly typed expressions}
+
+When the new definitions have been generated the explicit types are no
+longer needed and can be stripped off. Retaining them would be a good
+test of the type labelling, but does currently not work as types are
+not instatiated along with the program.
+
+\begin{verbatim}
+
+> stripTEqn  :: TEqn -> Eqn
+> stripTExpr :: TExpr -> Expr
+> stripTEqn  = cataEqn stripFuns
+> stripTExpr = cataExpr stripFuns
+
+> stripFuns :: (ExprFuns t (Expr' a) (Eqn' a), EqnFuns QType TExpr TEqn)
+
+> stripFuns = (exprfuns,eqnfuns)
+>   where exprfuns = (Var,Con,(:@:),Lambda,Literal,WildCard,Case,Letrec,
+>                     const) -- instead of Typed
+>         eqnfuns  = (varBind,DataDef,Polytypic,ExplType)
+>         varBind v t ps e = VarBind v noType ps e
+
+\end{verbatim}
+% ----------------------------------------------------------------
+\section{Misc.}
+
+A monadic map changing the variables names in an expression given
+access to the types of the variables.  We only require that the
+variables are typed.  Should be rewritten to update the state \'a la
+{\tt |-}. It is used in PolyInstance.
+
+\begin{verbatim}
+
+> mmapTExpr :: (Functor m, Monad m,Pretty t) => 
+>              (String -> t -> m String) -> Expr' t -> m (Expr' t)
+> mmapTExpr f = mt
+>   where 
+>     mt (Typed (Var v) t) = f v t <@ ((`Typed` t).Var)
+>     mt (Typed e       t) = mt e   <@ (`Typed` t)
+>     mt (Var v) = error "mmapTExpr: untyped variable encountered"
+>     mt e = m e -- now e can't be Typed
+
+>     m (Con c)       = map0 (Con c)
+>     m (Lambda p e)  = map2 Lambda (mt p) (mt e)
+>     m (Literal l)   = map0 (Literal l)
+>     m WildCard      = map0 WildCard
+>     m (g :@: e)     = map2 (:@:) (mt g) (mt e)
+>     m (Case e cs)   = map2 Case (mt e) (mapl (uncurry (map2 pair)) 
+>                                              (map mt2 cs)          )
+>     m (Letrec qss e)= map2 Letrec (mapl (mapl mq) qss) (mt e)
+>     m (Typed e t)   = error ("mmapTExpr: unexpected Typed expression: "++
+>                              show (pretty e))
+>     m e             = error ("mmapTExpr: unexpected expression: "++
+>                              show (pretty e))
+
+>     mt2 (x, y) = (mt x,mt y)
+>     mq = mmapTEqn f
+
+> mmapTEqn  :: (Functor m, Monad m,Pretty t) => 
+>              (String -> t -> m String) -> Eqn' t -> m (Eqn' t)
+> mmapTEqn f = mq
+>   where
+>     mq (VarBind v t ps e) = 
+>        map2 (VarBind v t) (mapl mt ps) (mt e)
+>     mq (Polytypic n t fun cs) = 
+>        map1 (Polytypic n t fun) (mapl mtSnd cs)
+>     mq _ = error "PolyInstance: mmapTEqn: impossible: not a binding"
+>     mtSnd (x,y) = mt y <@ (pair x)
+>     mt = mmapTExpr f
 
 \end{verbatim}

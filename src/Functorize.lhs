@@ -2,13 +2,14 @@
 \begin{verbatim}
 
 > module Functorize(inn_def,out_def,either_def,fcname_def,
->                   Struct,makeFunctorStruct,Req,eqReq) where
-> import Char(toLower)
+>                   Struct,makeFunctorStruct,Req,eqReq,codeFunctors) where
+> import Char(isDigit,toLower)
 > import Env(lookupEnv)
 > import Grammar(Eqn'(..),Expr'(..),Expr,Type(..),Qualified(..),Literal(..),
->                Eqn,Func,QType, ConID,VarID,tupleConstructor)
+>                Eqn,Func,QType, ConID,VarID,tupleConstructor,listConstructor)
 > import MyPrelude(mapFst,mapSnd,pair,variablename)
 > import StartTBasis(innType,outType,fcnameType,leftname,rightname,eitherType)
+> import PrettyPrinter(Pretty(pretty))
 
 \end{verbatim}
 \section{Extracting functors from {\tt data}-definitions} 
@@ -212,5 +213,96 @@ same functors as arguments.
 > eqReq :: Eq a => (a,QType) -> (a,QType) -> Bool
 > eqReq (x,ps:=>_) (y,qs:=>_) = x==y && funs ps == funs qs
 >   where funs preds = [ f | ("Poly",f:_) <- preds ]
+
+\end{verbatim}
+
+% ----------------------------------------------------------------
+\section{Functor names}
+To identify a functor in a concise way, we use a coding of functors as
+strings of characters. 
+%
+We use prefix format and translate the operators as follows: 
+%
+The structures {\tt f+g}, {\tt f*g} and {\tt d@g} are coded by the
+first letters in Sum, Product and Application followed by the coded
+versions of their children. 
+%
+The base cases {\tt Empty}, {\tt Par}, {\tt Rec} and {\tt Const t} are
+coded by their first letter but in lower case.  
+%
+(This will have to be improved in the {\tt Const t} case when t is not
+just a type variable.  We simply need a pair of functions {\tt
+  codeType} and {\tt decodeType}.)  
+%
+There is one special case: {\tt FunctorOf []} is coded as {\tt F0}
+instead of {\tt F[]} to make it possible to parse.
+\begin{verbatim}
+
+> codeFunctors :: [Func] -> String
+> codeFunctors = concatMap (('_':).codeFunctor)
+
+> codeFunctor :: Func -> String
+> codeFunctor f = s f []
+>   where 
+>     s (TCon "Const" :@@: c)   = ('c':) -- . codeType c
+>     s (g :@@: t)     = s g . s t
+>     s (TCon "Empty") = ('e':)
+>     s (TCon "Par")   = ('p':)    
+>     s (TCon "Rec")   = ('r':)    
+>     s (TCon "Mu")    = ('m':)
+>     s (TCon "FunctorOf")= ('f':)
+>     s (TCon "+")     = ('S':)
+>     s (TCon "*")     = ('P':)
+>     s (TCon "@")     = ('A':)
+>     s (TCon d)       = ((codeTyCon d)++)
+>     s t@(TVar v)     = error ("codeFunctor: uninstantiated functor variable " ++
+>                               show (pretty t) ++ " found as part of " ++ show (pretty f) )
+
+> decodeFunctor :: String -> Func
+> decodeFunctor s = snd (p s)
+>   where
+>     p ('e':xs)  = (xs,TCon "Empty")
+>     p ('p':xs)  = (xs,TCon "Par")
+>     p ('r':xs)  = (xs,TCon "Rec")
+>     p ('m':xs)  = (xs,TCon "Mu")
+>     p ('f':xs)  = (xs,TCon "FunctorOf")
+>     p ('c':xs)  = (xs,TCon "Const" :@@: TVar "t") -- use decodeType
+>     p ('S':xs)  = mapSnd plus (popp xs)
+>     p ('P':xs)  = mapSnd prod (popp xs)
+>     p ('A':xs)  = mapSnd appl (popp xs)
+>     p xs | isDigit (head xs) = mapSnd TCon (decodeTyCon xs)
+>     popp = p `op` p
+>     plus (t,t') = TCon "+" :@@: t :@@: t'
+>     prod (t,t') = TCon "*" :@@: t :@@: t'
+>     appl (t,t') = TCon "@" :@@: t :@@: t'
+>     op w w' xs = (zs,(y,z))
+>       where (ys,y) = w  xs
+>             (zs,z) = w' ys
+
+> codeTyCon :: ConID -> String
+> codeTyCon c | c == listConstructor = "0"
+>             | otherwise            = show (length c) ++ c
+
+> decodeTyCon :: String -> (ConID,String)
+> decodeTyCon s | n > 0  = splitAt n text
+>               | n == 0 = (listConstructor,text)
+>               | True   = error "Functorize.decodeTyCon: impossible: negative length"
+>    where (num,text) = span isDigit s
+>          n :: Int
+>          n = read num -- error if lenght num = 0 || (read num) :: Float > maxInt
+
+\end{verbatim}
+Just a test expression --- not used.
+\begin{verbatim}
+
+> testfunctors :: [Func]
+> testfunctors = map decodeFunctor [fList,fTree,fRoseTree,
+>                                   fVarTree,fVNumber,fBoolAlg]
+>      where fList     = "SePpr"
+>            fTree     = "SpPrr"
+>            fRoseTree = "PpA"++fList++"r"
+>            fVarTree  = "Sc"++fTree
+>            fVNumber  = "SeSrSPrrPrr"
+>            fBoolAlg  = "Se"++fVNumber
 
 \end{verbatim}

@@ -53,6 +53,7 @@ packpolylib:
 
 # outdated
 dist:
+	$(MAKE) -C src dist
 	-rm -r ../polyp$(version)
 	mkdir ../polyp$(version)
 	cp -r * ../polyp$(version)

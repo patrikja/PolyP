@@ -5,7 +5,8 @@ prog = ../bin/hbcpolyp
 hc = hbc
 hbcmakedepends = hbcmake -g
 
-SUFFIXES= .hi .hs .lhs .o
+.SUFFIXES:
+.SUFFIXES: .hs .lhs .$(hisuf) .$(osuf)
 
 default: $(prog)
 
