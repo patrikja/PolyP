@@ -145,7 +145,7 @@ The algorithm implements the following (successful) cases:
 >            (HpApp af ax, HpApp bf bx) ->
 >              --(b ==> a)            >>
 >              isInstance ngs af bf >>= 
->	       continueIfNoError (isInstance ngs ax bx)
+>              continueIfNoError (isInstance ngs ax bx)
 >            (HpCon conA, HpCon conB) | conA==conB -> ok
 >            _ -> 
 >              err mismatch a b
@@ -154,7 +154,7 @@ The algorithm implements the following (successful) cases:
 >               (err "Cyclic types not allowed" t1 t2)
 >               (t1 `instantiateWith` t2)
 >         t1 `instantiateWith` t2 = (t1 ==> t2) >> 
->				    ok
+>                                   ok
 >         isGen v = isGenericApproximation v ngs
 >         ok = return TOk
 >         err msg t1 t2 = return (TBad msg t1 t2)
@@ -248,6 +248,34 @@ As all of these are in the \texttt{TypeBasis.Basis} so it would
 suffice to pass this along. Probably all uses of unification does have
 a the basis accessible, so the change should not be too big.
 
+External usages of unify: (000127)
+\begin{itemize}
+\item InferKind: this uses unify for kind unification which much
+  simpler that the full polytypic unification. If unify is extended
+  with a context there will have to be a residual (simple) kindunify
+  for this case.
+\item LabelType: in the type inference at (:@:), Case and labelVal -
+  in all cases the environment is immediately available.
+\item Main: only in the debugging code, here we could use the empty
+  environment (TypeBasis.emptyBasis)
+\item 
+\end{itemize}
+
+Internal usages of punify
+\begin{itemize}
+\item unify: puniy
+\item punify: punify'
+\item punify': punify1
+\item punify1: punify2
+\item punify2: unifyVar, punify', punifyMu, punifyFOf 
+\item punifyMu: punify'
+\item punifyFOf: punifyFOf'
+\item punifyFOf': *** here the punifyfuns argument is needed
+\end{itemize}
+All these usages need an extra argument (the basis or a suitable
+subset).
+
+
 All functions except punify use the result type \texttt{STErr s
 (ErrMsg (HpType s))} which is used as if it were \texttt{STErr2 s ()},
 where \texttt{STErr2} has better error reporting than
@@ -285,12 +313,12 @@ the children pairwise.
 > punify2 (a,C cA ) (b,C cB)  | cA==cB    = ok <@- noErrMsg
 >                             | otherwise = failHere a b EDifferentConstructors
 > punify2 (a,A f x) (b,A g y) = -- [1]  lifE (a ==> b) >> 
->				punify' f g >>=
->				continueIfNoErr (punify' x y)
+>                               punify' f g >>=
+>                               continueIfNoErr (punify' x y)
 > punify2 (a,Mu f ) (b,Mu g ) = -- [1]  lifE (a ==> b) >> 
->				punify' f g 
+>                               punify' f g 
 > punify2 (a,FOf d) (b,FOf e) = -- [1]  lifE (a ==> b) >> 
->				punify' d e
+>                               punify' d e
 > -- alternatively we could unify fOf d with fOf e ?
 
 Now there is the classical mismatch case, and a new error case due to
@@ -333,7 +361,7 @@ datatype constructor.
 > punifyFOf' :: HpTy s -> HpType s -> HpType s -> STErr s (Either (HpType s) (ErrMsg (HpType s)))
 > punifyFOf' (C d)   a b = failHere a b (ENoFunctorEnv d) <@ Right
 
-			   case lookupEnv d punifyfuns of 
+                           case lookupEnv d punifyfuns of 
                             Nothing   -> failHere a b (ENoFunctorFor d) <@ Right
                             Just fOfd -> (lifE $ typeIntoHeap fOfd)     <@ Left
 

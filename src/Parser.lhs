@@ -267,7 +267,7 @@ This implementation is {\em very} inefficient.
 
 > infixop'  :: Parser String
 > infixop'  = infixop  <| (`notElem` preludeops)
-			  
+                          
 > infixcon'  :: Parser String
 > infixcon' = infixcon <| (`notElem` preludecons)
 
@@ -370,6 +370,10 @@ In \verb|(1)| \verb|pExpr| is too general.
 >     f xs  = tpl xs 
 
 \end{verbatim}
+
+When parsing tuples, a "one-tuple" is treated as just a parenthesized
+expression.
+
 \subsection{Literals}
 \begin{verbatim}
 
@@ -427,6 +431,10 @@ means that if we can transform the abstract syntax of types to that of
 a context, we can start parsing a type and --- if it is followed by an
 arrow --- transform it to a context and parse the rest.
 
+Qualified types are parsed by \texttt{pType0}, unqualified types by
+\texttt{pType1} which is a chain of \texttt{pType2}s with arrows in
+between. A \texttt{pType2} is an application of \texttt{pType3}s
+
 \begin{verbatim}
 
 > type2context :: Type -> Parser [Qualifier Type]
@@ -450,7 +458,8 @@ arrow --- transform it to a context and parse the rest.
 liftop (:=>) pContext pType1
 
 > pType1 :: Parser Type
-> pType1 = pType2 `chainr` (symbol "->" <@- (-=>))
+> pType1 = pType2 `chainr` (symbol "->" <@- (-=>)) 
+>                 `chainl` (infixfunccon <@ \op f g-> op :@@: f :@@: g)
  
 > pType2 :: Parser Type
 > pType2 = pType3 `chainl` return (:@@:)

@@ -53,6 +53,9 @@ environment.
 \section{Interface}
 \begin{verbatim}
 
+> emptyBasis :: Basis s
+> emptyBasis = tBasis2Basis emptyTBasis
+
 > emptyTBasis :: TBasis
 > emptyTBasis = ((emptyTypeEnv,emptyKindEnv),emptyFuncEnv)
 

@@ -28,7 +28,7 @@ funzip :: Bifunctor f => f (a,c) (b,d) -> (f a b,f c d)
 funzip x = (fmap2 fst fst x, fmap2 snd snd x)
 
 -- Note: a different kind of typing compared to pzipWith
-fzipWith :: ((a,a')->c) -> ((b,b')->d) -> f (a,a') (b,b') -> Maybe (f c d)
+fzipWith :: ((a,a')->c) -> ((b,b')->d) -> (f a b, f a' b') -> Maybe (f c d)
 fzipWith f g = mapMaybe (fmap2 f g) . fzip 
 
 -- Bifunctor f => ...
