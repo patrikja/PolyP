@@ -1,5 +1,6 @@
 # PolyPFLAGS = extra flags to PolyP
 #   example: PolyPFLAGS = -p ArrTypes.hs -r start
+# HUGSFLAGS = extra flags to hugs and runhugs
 
 # Extension names: .phs -- input polyp modules
 #                  .Phs2 -- one big import-chased polyp file
@@ -17,7 +18,7 @@ PolyP = polyp
 CHASE = chase
 
 %.run: %.hs
-	$(runhugs) $<
+	$(runhugs) $(HUGSFLAGS) $<
 
 %.hs: %.Hs2
 	cat $(wildcard type$*.hs) $< > $@
@@ -29,7 +30,7 @@ CHASE = chase
 	$(CHASE) $(CHASEFLAGS) $< > $@
 
 %.out2: %.hs
-	$(runhugs) $< > $@
+	$(runhugs) $(HUGSFLAGS) $< > $@
 
 %.check: %.out2
 	diff $*.out2 $*.out > $*.check
