@@ -17,7 +17,7 @@
 > import StateFix -- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 > import TypeBasis(Basis,TBasis,
 >                  tBasis2Basis,extendTypeAfterTBasis,
->                  extendTypeEnv,extendTypeTBasis,
+>                  extendTypeEnv,extendTypeTBasis,extendFixTBasis,
 >                  getNonGenerics,getRamTypes,instantiate,inventTypes,
 >                  lookupType,makeNonGeneric)
 > import TypeGraph(HpQType,HpType, HpTExpr, HpTEqn, 
@@ -72,12 +72,17 @@ expressions containing \texttt{FunctorOf}.
 \begin{verbatim}
 
 > labelProgram :: PrgEqns -> LErr (TBasis,PrgTEqns)
-> labelProgram (dataDefs, bindss) = 
+> labelProgram (dataDefs, infixDecls, bindss) = 
 >         case inferDataDefs startTBasis dataDefs of
->           (_,Err msg) -> ((startTBasis,(dataDefs,[])),Err msg)
->           (tbasis, _) ->
->               mapLErr (mapSnd (pair dataDefs))  
->                       (labelTopBlocks bindss tbasis)
+>           (_,Err msg) -> ((startTBasis,(dataDefs,infixDecls,[])),Err msg)
+>           (tbasis, _) -> 
+>               mapLErr (\(tb,bindss) -> (tb,(dataDefs,infixDecls,bindss)))
+>                       (labelTopBlocks bindss $ inferFixities tbasis infixDecls)
+
+> inferFixities tbasis ixs = foldr extend tbasis ixs
+>   where
+>	extend (InfixDecl a f ops) tb = extendFixTBasis (map e ops) tb
+>	    where e op = (op, (a,f))
 
 \end{verbatim}
 \section{Blocks of equations}

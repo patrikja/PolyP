@@ -37,6 +37,7 @@ For the PolyP version - see \verb|../lib/PolyPrel.hs|.
 > polypass :: [(VarID,QType)] 
 > polypass = [("inn",innType),("out",outType),
 >             ("constructorName",fcnameType),
+>             ("constructorFixity",fcfixType),
 >             ("datatypeName",dnameType)]
 
 > preludeFuns :: [VarID]
@@ -151,8 +152,8 @@ Gofer's {\tt cc.prelude}.
 > eitherTextType = "(a -> b) -> (c -> b) -> Either a c -> b"
 
 > innType, outType, eitherType, 
->   intType, floatType, charType, boolType, strType, 
->   fcnameType:: QType
+>   intType, floatType, charType, boolType, strType, fixType,
+>   fcnameType, fcfixType :: QType
 
 > innType = regular :=> fada -=> da
 > outType = regular :=> da -=> fada
@@ -162,7 +163,9 @@ Gofer's {\tt cc.prelude}.
 > charType= [] :=> TCon "Char"
 > boolType= [] :=> TCon "Bool"
 > strType = [] :=> TCon listConstructor :@@: TCon "Char"
+> fixType = [] :=> TCon "Fixity"
 > fcnameType= regular :=> da  -=> deQualify strType
+> fcfixType = regular :=> da -=> deQualify fixType
 > dnameType = regular :=> da  -=> deQualify strType
 
 > fab, da, fada, fofd :: Type

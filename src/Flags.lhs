@@ -21,7 +21,7 @@
 #ifdef __POLYPPRELUDE__
 > defaultPreludeFileName = __POLYPPRELUDE__
 #else
-> defaultPreludeFileName = "Prelude.phi"
+> defaultPreludeFileName = "PolyPrelude.phi"
 #endif
 
 > preludeFileName :: String
@@ -35,7 +35,7 @@
 >                       version          = False,
 >                       help             = False,
 >                       requests         = [],
->                       preludeFileNames = [preludeFileName],
+>                       preludeFileNames = [preludeFileName, "Prelude.phi"],
 >                       polypDir         = thePolyPDir,
 >                       fileargs         = []}
 

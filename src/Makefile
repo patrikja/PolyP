@@ -9,7 +9,7 @@ default:	ghc
 .SUFFIXES:
 
 POLYPDIR = $(dir $(shell pwd))
-POLYPPRELUDE = $(POLYPDIR)lib/Prelude.phi
+POLYPPRELUDE = $(POLYPDIR)lib/PolyPrelude.phi
 # The C-preprocessor
 CPP = gcc -E -C -P -traditional -x c-header
 #CPP = cpp -P -C -traditional

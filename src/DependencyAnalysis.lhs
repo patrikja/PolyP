@@ -6,7 +6,7 @@
 > import Env(lookupEnv,newEnv,extendsEnv)
 > import Folding(cataEqn,freeVarsEqn)
 > import Grammar(Eqn,Eqn'(..),Expr'(..),PrgEqns,getNameOfBind,
->                isDataDef,isExplType)
+>                isDataDef,isExplType,isInfixDecl)
 > import GraphLibrary(Graph,Tree(..),scc')
 > import MyPrelude(splitUp)
 > import PrettyPrinter(pshow,prQualified,QType,Eqn)
@@ -117,13 +117,13 @@ program as a whole.
 > dependencyEqn
 >   = cataEqn ( (Var, Con, (:@:), Lambda, Literal, 
 >                 WildCard, Case, letrec, Typed)
->             , (VarBind, DataDef, Polytypic, ExplType)
+>             , (VarBind, DataDef, Polytypic, ExplType, InfixDecl)
 >             )
 >   where letrec [qs] body = Letrec (dependencyEqns qs) body
 >         letrec _ _ = error "DependencyAnalysis.dependencyEqn: impossible: input list not of length 1"
 
-> dependencyProgram eqns = (dataDefs,bindss)
->   where [dataDefs, binds] = splitUp [isDataDef] eqns
+> dependencyProgram eqns = (dataDefs,infixDecls,bindss)
+>   where [dataDefs, infixDecls, binds] = splitUp [isDataDef, isInfixDecl] eqns
 >         bindss = (dependencyEqns . map dependencyEqn ) binds
 
 \end{verbatim}

@@ -16,15 +16,19 @@ constructorsAndArities = map (mapFst inn) fconstructorsAndArities
 constructors  :: Regular d => [d a]
 constructors  =  map inn fconstructors
 
-polytypic fconstructors :: [f a b] =
-  case f of 
-    g + h   -> map InL fconstructors ++ map InR fconstructors
-    g * h   -> [head fconstructors :*: head fconstructors]
-    Empty   -> [EmptyF]
-    Par     -> [ParF undefined]
-    Rec     -> [RecF undefined]
-    d @ g   -> [CompF undefined]
-    Const t -> [ConstF undefined]
+polytypic fconstructors :: [f a b]
+    = case f of 
+	g + h	-> map InL fconstructors ++ map InR fconstructors
+	g	-> [fconstructorArgs]
+
+polytypic fconstructorArgs :: f a b
+    = case f of
+	g * h   -> fconstructorArgs :*: fconstructorArgs
+	Empty   -> EmptyF
+	Par     -> ParF undefined
+	Rec     -> RecF undefined
+	d @ g   -> CompF undefined
+	Const t -> ConstF undefined
 
 polytypic fconstructorsAndArities :: [(f a b,Int)] =
   case f of 

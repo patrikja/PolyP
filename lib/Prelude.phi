@@ -78,22 +78,6 @@ unlines :: [String] -> String
 unwords :: [String]->String
 words   :: String->[String]
 zip     :: [a] -> [b] -> [(a,b)]
-unParF  :: ParF a b -> a
-unRecF  :: RecF a b -> b
-unCompF :: CompF d g a b -> d (g a b)
-unConstF:: ConstF t a b -> t
-unProdF :: ProdF f g a b -> (f a b, g a b)
-unSumF  :: SumF f g a b -> Either (f a b) (g a b)
-unFunF  :: FunF f g a b -> f a b -> g a b
-foldSum :: (f a b -> c) -> (g a b -> c) -> SumF f g a b -> c
-foldProd:: (f a b -> g a b -> c) -> ProdF f g a b -> c
-(-+-)   :: (f a b -> h c d) -> (g a b -> i c d) -> SumF f g a b -> SumF h i c d
-(-*-)   :: (f a b -> h c d) -> (g a b -> i c d) -> ProdF f g a b -> ProdF h i c d
-(->-)   :: (f c d -> f a b) -> (g a b -> g c d) -> FunF f g a b -> FunF f g c d
-(-++-)  :: (f a b -> c) -> (g a b -> d) -> SumF f g a b -> Either c d
-(-**-)  :: (f a b -> c) -> (g a b -> d) -> ProdF f g a b -> (c, d)
-(->>-)  :: (c -> f a b) -> (g a b -> d) -> FunF f g a b -> c -> d
-gmap    :: Regular d => (a -> b) -> d a -> d b
 -- Prelude data types
 data Bool        =  False | True
 data Either a b  =  Left a | Right b
@@ -104,11 +88,3 @@ data Ordering    =  LT | EQ | GT
 -- data (), (,), (,,)
 -- data Char, Double, Float, Int, Integer, IOError, Void
 -- data IO a
-data SumF f g a b  = InL (f a b) | InR (g a b)
-data ProdF f g a b = f a b :*: g a b
-data FunF f g a b  = FunF (f a b -> g a b)
-data EmptyF a b    = EmptyF
-data ParF a b      = ParF a
-data RecF a b      = RecF b
-data CompF d g a b = CompF (d (g a b))
-data ConstF t a b  = ConstF t

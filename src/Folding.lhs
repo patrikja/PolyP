@@ -32,6 +32,7 @@ the same for types.
 >                                        -- data type def.
 >   , VarID -> t -> t -> [(t, x)] -> q   -- polytypic def.
 >   , [VarID] -> t -> q
+>   , Associativity -> Int -> [ConID] -> q
 >   )
 
 > cataExpr :: ( ExprFuns t x q , EqnFuns t x q ) -> 
@@ -53,12 +54,13 @@ the same for types.
 >     f (Typed a b ) = typed (f a) b
 >     mapBoth g (a,b) = (g a, g b) 
 > 
-> cataEqn t@( _ , (varBind, dataDef, polyTypic, explType) ) = f
+> cataEqn t@( _ , (varBind, dataDef, polyTypic, explType, infixDecl) ) = f
 >   where
 >     f (VarBind a mt b c ) = varBind a mt (map fet b) (fet c)
 >     f (DataDef a b c d  ) = dataDef a b c d
 >     f (Polytypic a b c d) = polyTypic a b c (map (mapSnd fet) d)
 >     f (ExplType vs ty)    = explType vs ty
+>     f (InfixDecl a f ops) = infixDecl a f ops
 >     f (TypeSyn  _ _ _)    = error "Folding.cataEqn: TypeSyn not allowed"
 >     f (Class    _ _ _)    = error "Folding.cataEqn: Class not allowed"
 >     f (Instance _ _ _)    = error "Folding.cataEqn: Instance not allowed"
@@ -100,7 +102,7 @@ explicit types are there to stop Gofer from complaining about
 
 > freeVars
 >   = ( (var, con, app, lambda, literal, wildCard, case', letrec, typed)
->     , (varBind, dataDef, polyTypic, explType)
+>     , (varBind, dataDef, polyTypic, explType, infixDecl)
 >     )
 >   where
 >     nil = ([],[])
@@ -123,6 +125,7 @@ explicit types are there to stop Gofer from complaining about
 >     polyTypic name _ _ alts= ([name],freelist)
 >        where freelist = concat (map (snd.snd) alts)
 >     explType _ _ = nil
+>     infixDecl _ _ _ = nil
 > 
 >     concat' [] = nil
 >     concat' ((a,b):xs) = let (a', b') = concat' xs
@@ -136,7 +139,7 @@ explicitly typed expressions) to another.
 > mmapEqn :: (Functor m, Monad m) => (t -> m u) -> Eqn' t -> m (Eqn' u)
 > mmapEqn f = cataEqn ((var,con,app,lambda,literal,
 >                       wildCard,case',letrec, typed f)
->                     , (varBind f,dataDef,polytypic f, explType f)
+>                     , (varBind f,dataDef,polytypic f, explType f,infixDecl)
 >                     ) 
 >   where
 >      typed :: (Functor m, Monad m) => (t -> m u) -> m (Expr' u) -> 
@@ -165,6 +168,7 @@ explicitly typed expressions) to another.
 >         return (Polytypic n u fun' cs)
 >        where polycase (func,me) = g func <*> me
 >      explType g vs t = map1 (ExplType vs) (g t)
+>      infixDecl a f ops = return $ InfixDecl a f ops
 
 > mmapMaybe :: (Functor m, Monad m) => (a -> m b) -> Maybe a -> m (Maybe b)
 > mmapMaybe _ Nothing = map0 Nothing
@@ -177,7 +181,7 @@ A normal map over (typed) expressions.
 > mapEqn :: (t -> u) -> Eqn' t -> Eqn' u
 > mapEqn g = cataEqn ((Var,Con,(:@:),Lambda,Literal,
 >                       WildCard,Case,Letrec,typed g)
->                     , (varBind g,DataDef,polytypic g,explType g)
+>                     , (varBind g,DataDef,polytypic g,explType g,InfixDecl)
 >                     ) 
 >    where typed f e = Typed e . f 
 >          polytypic f n t fun cs =
@@ -221,7 +225,7 @@ not instatiated along with the program.
 > stripFuns = (exprfuns,eqnfuns)
 >   where exprfuns = (Var,Con,(:@:),Lambda,Literal,WildCard,Case,Letrec,
 >                     const) -- instead of Typed
->         eqnfuns  = (VarBind,DataDef,Polytypic,ExplType)
+>         eqnfuns  = (VarBind,DataDef,Polytypic,ExplType,InfixDecl)
 
          eqnfuns  = (varBind,DataDef,Polytypic,ExplType)
          varBind v t ps e = VarBind v noType ps e

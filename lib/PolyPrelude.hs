@@ -6,24 +6,39 @@ module PolyPrelude where
 ---
 
 class FunctorOf f d | d -> f where
-    inn             :: f a (d a) -> d a
-    out             :: d a -> f a (d a)
+    inn			:: f a (d a) -> d a
+    out			:: d a -> f a (d a)
 
-    datatypeName    :: d a -> String
-    constructorName :: d a -> String
+    datatypeName	:: d a -> String
+    constructorName	:: d a -> String
+    constructorFixity	:: d a -> Fixity
+    -- Defaults
+    constructorFixity _ = defaultFixity
+
+data Fixity = Fixity	{ associativity :: Associativity
+			, precedence	:: Int
+			}
+    deriving (Eq, Show)
+
+defaultFixity = Fixity LeftAssoc 9
+
+data Associativity = NonAssoc | LeftAssoc | RightAssoc
+    deriving (Eq, Show)
 
 ---
 --  Default FunctorOf instances
 ---
 
 instance FunctorOf (SumF EmptyF (ProdF ParF RecF)) [] where
-    inn (InL EmptyF)                    = []
-    inn (InR ((ParF a) :*: (RecF b)))   = a : b
-    out []                              = InL EmptyF
-    out (a : b)                         = InR ((ParF a) :*: (RecF b))
-    datatypeName                        = const "[]"
-    constructorName []                  = "[]"
-    constructorName (_:_)               = ":"
+    inn (InL EmptyF)			= []
+    inn (InR ((ParF a) :*: (RecF b)))	= a : b
+    out []				= InL EmptyF
+    out (a : b)				= InR ((ParF a) :*: (RecF b))
+    datatypeName			= const "[]"
+    constructorName []			= "[]"
+    constructorName (_:_)		= ":"
+    constructorFixity []		= defaultFixity
+    constructorFixity (_:_)		= Fixity RightAssoc 5
  
 instance FunctorOf (SumF EmptyF ParF) Maybe where
     inn (InL EmptyF)            = Nothing

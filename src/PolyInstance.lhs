@@ -26,17 +26,17 @@ cata f = f . fmap2 id (cata f) . out
 > import Env(Env,lookupEnv)
 > import Grammar(Eqn'(..),Expr'(..),Type(..),Qualified(..),
 >                Literal(..),Eqn,TEqn,Expr,Func,QType,VarID,ConID,
->                PrgTEqns, Context, Qualifier)
+>                PrgTEqns, Context, Qualifier, Associativity(..))
 > import Folding(cataType,stripTEqn,mapEqn)
 > import Functorise(Struct)
 > import TypeGraph(simplifyContext)
-> import TypeBasis(FuncEnv)
 > import InferType(qTypeEval)
 > import MyPrelude(mapFst,mapSnd,unique,fMap)
 > import PrettyPrinter(pshow,Typelike(..))
-> import TypeBasis(TBasis,FuncEnv,TypeEnv,getFuncEnv,getTypeEnv)
+> import TypeBasis(TBasis,FuncEnv,TypeEnv,FixEnv,getFuncEnv,getTypeEnv,getFixEnv)
 > import List(union,(\\),mapAccumL,nub,groupBy,sortBy)
-> import Monad(mplus)
+> import Monad(mplus,liftM)
+> import Maybe(isNothing, isJust, fromJust)
 
 \end{verbatim} 
 
@@ -51,9 +51,10 @@ corresponding Haskell program. The name is inherited from the original PolyP cod
 Implementation:
 \begin{verbatim}
 
-> instantiateProgram (tbasis,(datadefs,eqnss)) = 
+> instantiateProgram (tbasis,(datadefs,infixdecls,eqnss)) = 
 >     datadefs
->     ++ functorOfInstances datadefs funcenv
+>     ++ infixdecls
+>     ++ functorOfInstances datadefs (getFixEnv tbasis) funcenv
 >     ++ rewritePolytypicConstructs (getTypeEnv tbasis) funcenv eqnss
 >  where funcenv = realFuncEnv $ getFuncEnv tbasis
 
@@ -87,8 +88,8 @@ the datatype and its functor.
 
 \begin{verbatim}
 
-> functorOfInstances :: [Eqn] -> FuncEnv -> [Eqn]
-> functorOfInstances datadefs funcenv = concatMap functorOfInstance datadefs
+> functorOfInstances :: [Eqn] -> FixEnv -> FuncEnv -> [Eqn]
+> functorOfInstances datadefs fixenv funcenv = concatMap functorOfInstance datadefs
 >  where
 >     findFunc conid = maybe [] ((:[]).snd) $ lookupEnv conid funcenv
 >        where err = error $ "PolyInstance.functorOfInstances: No functor for datatype " ++ conid
@@ -98,6 +99,7 @@ the datatype and its functor.
 >                                               ++ outEqn func cons
 >                                               ++ dataName name
 >                                               ++ constrName cons
+>						++ constrFix cons
 >                                )]
 >        where
 
@@ -109,6 +111,16 @@ the datatype and its functor.
 >                                               Nothing
 >                                               [foldl (\p _ -> p :@: WildCard) (Con conid) ts]
 >                                               $ Literal (StrLit conid)
+>	    constrFix cons
+>		    | all isNothing fixies  = []
+>		    | otherwise		    = eqns
+>		where
+>		    fixies = map (flip lookupFixity fixenv . fst) cons
+>		    eqns = zipWith fixDef cons $ map (maybe defaultFixity id) fixies
+>		    fixDef (conid, ts) f =
+>			VarBind "constructorFixity" Nothing
+>				[foldl (\p _ -> p :@: WildCard) (Con conid) ts]
+>				f
 
 >           -- Compute equations for inn and out
 >           innEqn f c = map (\(p,e) -> VarBind "inn" Nothing [p] e) $ inn f c
@@ -180,16 +192,16 @@ the datatype and its functor.
 >           fromFunction (TCon "FunF" :@@: g :@@: h)    = Var "fromFun" :@: toFunction g
 >                                                                       :@: fromFunction h
 
->           -- Helpers
->           unF (TCon "ParF") = Var "unParF"
->           unF (TCon "RecF") = Var "unRecF"
->           unF (TCon "ConstF") = Var "unConstF"
->           unF (TCon "CompF" :@@: d :@@: g) = Var "." :@: (Var "gmap" :@: unF g) :@: Var "unCompF"
+           -- Helpers
+           unF (TCon "ParF") = Var "unParF"
+           unF (TCon "RecF") = Var "unRecF"
+           unF (TCon "ConstF") = Var "unConstF"
+           unF (TCon "CompF" :@@: d :@@: g) = Var "." :@: (Var "gmap" :@: unF g) :@: Var "unCompF"
 
->           nuF (TCon "ParF") = Con "ParF"
->           nuF (TCon "RecF") = Con "RecF"
->           nuF (TCon "ConstF") = Con "ConstF"
->           nuF (TCon "CompF" :@@: d :@@: g) = Var "." :@: Con "CompF" :@: (Var "gmap" :@: nuF g)
+           nuF (TCon "ParF") = Con "ParF"
+           nuF (TCon "RecF") = Con "RecF"
+           nuF (TCon "ConstF") = Con "ConstF"
+           nuF (TCon "CompF" :@@: d :@@: g) = Var "." :@: Con "CompF" :@: (Var "gmap" :@: nuF g)
 
 >           addP p = mapFst (p:)
 >           addE e = mapSnd (e:)
@@ -200,6 +212,16 @@ the datatype and its functor.
 
 >           prodSpineWalk (TCon "ProdF" :@@: f :@@: g) = f : prodSpineWalk g
 >           prodSpineWalk f = [f]
+
+> lookupFixity conid fixenv = liftM quote $ lookupEnv conid fixenv
+>   where
+>	quote (a, p) = Con "Fixity" :@: quoteAssoc a :@: quoteInt p
+>	quoteAssoc NonAssoc = Con "NonAssoc"
+>	quoteAssoc LeftAssoc = Con "LeftAssoc"
+>	quoteAssoc RightAssoc = Con "RightAssoc"
+>	quoteInt n = Literal $ IntLit n
+
+> defaultFixity = Con "Fixity" :@: Con "LeftAssoc" :@: Literal (IntLit 9)
 
 > -- Should be in this file but I didn't want to change the other files.
 > (f -*- g) (a,b) = (f a, g b)

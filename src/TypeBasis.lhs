@@ -2,7 +2,7 @@
 \begin{verbatim}
 
 > module TypeBasis where
-> import Grammar(QType,Kind,VarID,ConID,Func)
+> import Grammar(QType,Kind,VarID,ConID,Func,Associativity)
 > import Folding(dmmapQualified)
 > import Functorise(Struct)
 > import MyPrelude(pair)
@@ -32,12 +32,13 @@ The basis consists of five subenvironments:
 \begin{verbatim}
 
 > newtype Basis s  = Basis (TBasis,HpTBasis s)
-> type TBasis      = ((TypeEnv, KindEnv), FuncEnv)
+> type TBasis      = (((TypeEnv, FixEnv), KindEnv), FuncEnv)
 > type HpTBasis s  = (HpTypeEnv s, NonGenerics s)
 
 > type TypeEnv     = Env VarID QType
 > type KindEnv     = Env ConID Kind
 > type FuncEnv     = Env ConID (Struct,Func)
+> type FixEnv	   = Env ConID (Associativity, Int)
 > type HpTypeEnv s = Env VarID (HpQType s)
 
 \end{verbatim}
@@ -57,7 +58,7 @@ environment.
 > emptyBasis = tBasis2Basis emptyTBasis
 
 > emptyTBasis :: TBasis
-> emptyTBasis = ((emptyTypeEnv,emptyKindEnv),emptyFuncEnv)
+> emptyTBasis = (((emptyTypeEnv,emptyFixEnv),emptyKindEnv),emptyFuncEnv)
 
 > emptyTypeEnv :: TypeEnv
 > emptyTypeEnv = newEnv
@@ -65,6 +66,8 @@ environment.
 > emptyKindEnv = newEnv
 > emptyFuncEnv :: FuncEnv
 > emptyFuncEnv = newEnv
+> emptyFixEnv :: FixEnv
+> emptyFixEnv = newEnv
 
 > tBasis2Basis :: TBasis -> Basis s
 > tBasis2Basis tbasis = Basis (tbasis,(newEnv,allGeneric))
@@ -145,7 +148,9 @@ variables are non-generic.
 >      lookupKindinrom name rom )
 
 > getTypeEnv :: TBasis -> TypeEnv
-> getTypeEnv = fst . fst
+> getTypeEnv = fst . fst . fst
+> getFixEnv :: TBasis -> FixEnv
+> getFixEnv = snd . fst . fst
 > getKindEnv :: TBasis -> KindEnv
 > getKindEnv = snd . fst
 > getFuncEnv :: TBasis -> FuncEnv
@@ -158,17 +163,20 @@ variables are non-generic.
 >   = (rom,extendsEnv bindings kindEnv)
 
 > extendTypeTBasis :: [(VarID,QType)] -> TBasis -> TBasis
-> extendTypeTBasis      l ((ts,ks),fs) = ((extendsEnv l ts     ,ks),fs)
+> extendTypeTBasis      l (((ts,xs),ks),fs) = (((extendsEnv l ts, xs), ks), fs)
 > extendTypeAfterTBasis :: [(VarID,QType)] -> TBasis -> TBasis
-> extendTypeAfterTBasis l ((ts,ks),fs) = ((extendsAfterEnv l ts,ks),fs)
+> extendTypeAfterTBasis l (((ts,xs),ks),fs) = (((extendsAfterEnv l ts,xs),ks),fs)
 
 > extendKindTBasis :: [(VarID,Kind)] -> TBasis -> TBasis
-> extendKindTBasis      l ((ts,ks),fs) = ((ts,extendsEnv      l ks),fs)
+> extendKindTBasis      l (((ts,xs),ks),fs) = (((ts,xs),extendsEnv      l ks),fs)
 > extendKindAfterTBasis :: [(VarID,Kind)] -> TBasis -> TBasis
-> extendKindAfterTBasis l ((ts,ks),fs) = ((ts,extendsAfterEnv l ks),fs)
+> extendKindAfterTBasis l (((ts,xs),ks),fs) = (((ts,xs),extendsAfterEnv l ks),fs)
+
+> extendFixTBasis :: [(ConID, (Associativity, Int))] -> TBasis -> TBasis
+> extendFixTBasis l (((ts,xs),ks),fs) = (((ts,extendsEnv l xs),ks),fs)
 
 > extendFuncTBasis :: [(VarID,(Struct,Func))] -> TBasis -> TBasis
-> extendFuncTBasis      l ((ts,ks),fs) = ((ts,ks),extendsEnv      l fs)
+> extendFuncTBasis      l (((ts,xs),ks),fs) = (((ts,xs),ks),extendsEnv      l fs)
 
 > makeNonGeneric extraNgs (Basis (rom,(typeEnv, ngs)))
 >   = Basis (rom,(typeEnv, addtoNGS extraNgs ngs))

@@ -15,7 +15,7 @@
 > --import Folding
 > import PrettyPrintExtra(Pretty(..),ppVerticalList,ppCommaList,
 >                         ppTuple,ppParentheses,ppApp,ppPackedList,showDoc,
->                         (<>),($$),nest,text,Doc,sep)
+>                         (<>),(<+>),($$),nest,text,Doc,sep)
 > import Grammar
 #endif
 
@@ -53,8 +53,20 @@ A third way is to abandon show and use pshow = showDoc . pretty instead.
 > instance Pretty a => Show   (Eqn' a) where
 >   showsPrec _ = (++) . showDoc . pretty
 
+> instance Pretty Associativity where
+>   pretty = prAssoc
+
+> instance Show Associativity where
+>   showsPrec _ = (++) . showDoc . pretty
+
 > instance Pretty a => Pretty (Expr' a) where
 >   pretty = prExpr
+
+> instance Pretty Int where
+>   pretty n = text (show n)
+
+> instance (Pretty a, Pretty b) => Pretty (a,b) where
+>   pretty (x,y) = ppTuple [pretty x, pretty y]
 
 > instance Pretty Char where
 >   pretty c = text [c]
@@ -94,7 +106,7 @@ restriction that forbids instances for \texttt{Qualified Type}.
 
 > prModule :: Pretty a => Module' a -> Doc
 > prModule (Module name exps imps eqns)
->     = (text ("module " ++ name) <> exports <> text " where")
+>     = (text ("module " ++ name) <> exports <+> text "where")
 >        $$ imports
 >        $$ ppVerticalList eqns
 >  where
@@ -119,8 +131,8 @@ restriction that forbids instances for \texttt{Qualified Type}.
 >   <> prExpr body
 
 > prEqn (DataDef tyCon vars (alt:alts) ds)
->   =  text "data "
->   <> ( sep ( ppApp (map text (tyCon : vars))
+>   =  text "data"
+>   <+> ( sep ( ppApp (map text (tyCon : vars))
 >            : prAlt '=' alt
 >            : map (prAlt '|') alts
 >            ++ [prDeriving ds])
@@ -146,8 +158,17 @@ restriction that forbids instances for \texttt{Qualified Type}.
 >   where text' s | isOperatorName s = text ('(':s++")")
 >                 | otherwise        = text s
 
+> prEqn (InfixDecl ass fix ops)
+>   = prAssoc ass <+> text (show fix) <+> ppCommaList (map text' ops)
+>	where
+>	    text' s | isOperatorName s = text s
+>		    | otherwise	       = text ('`':s++"`")
 
 > prEqn _ = error "PrettyPrinter.prEqn: not implemented"
+
+> prAssoc NonAssoc	= text "infix"
+> prAssoc LeftAssoc	= text "infixl"
+> prAssoc RightAssoc	= text "infixr"
 
 > prTypeFirst :: Pretty t => VarID -> t -> Doc -> Doc
 > prTypeFirst name t d = 

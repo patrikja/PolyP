@@ -32,10 +32,10 @@ they receive be non-space.
 >                     mapl,ErrorMonad(failEM),mZero,(+++))
 > import ParseLibrary(Parser,item,lit,sat,digit,opt,optional,
 >                     some_offside,mustbe,symbol,sepby,string,
->                     chainl,chainr,
+>                     chainl,chainr,number,
 >                     many,some,strip, parse)
 > import Grammar(Expr'(..),Eqn'(..),Type(..),Qualified(..),Literal(..),ImpExp(..),
->                Import,Export,
+>                Import,Export,Associativity(..),
 >                Expr,Eqn,Func,QType,Qualifier,VarID,ConID,Module'(..),Module,
 >                qualify,noType,spineWalk,spineWalkType,(-=>),
 >                tupleConstructor,listConstructor,isTupleCon,
@@ -63,7 +63,7 @@ The module parser accepts but ignores the module head, exports and imports.
 > pModule' = pModuleHead >>= \(name, exps) ->
 >            pImpDecls >>= \imps ->
 >            pEqns >>= \eqns ->
->                                return $ Module name exps imps eqns
+>		return $ Module name exps imps eqns
 
 > pModuleHead :: Parser (ConID, [Export])
 > pModuleHead = (   (symbol "module" >> pConID)
@@ -115,8 +115,16 @@ Definitions have no {\tt where} part.
 > pEqns = some_offside pEqn
 
 > pEqn :: Parser Eqn
-> pEqn = pDataDef+++ pPolytypic+++ pVarBind+++ pExplType
- 
+> pEqn = pDataDef+++ pPolytypic+++ pVarBind+++ pExplType+++ pInfix
+
+> pInfix :: Parser Eqn
+> pInfix = do	ass <- symbol "infix" <@- NonAssoc
+>			+++ symbol "infixl" <@- LeftAssoc
+>			+++ symbol "infixr" <@- RightAssoc
+>		f <- opt number 9
+>		ops <- pCommaList (infixop +++ pBackQuoted (pConID +++ pVarID))
+>		return $ InfixDecl ass f ops
+
 > pVarBind :: Parser Eqn
 > pVarBind = (pLeft << mustbe "=") >>= \(name,pats)->
 >             pExpr <@ VarBind name noType pats

@@ -16,6 +16,7 @@
 > import GraphLibrary
 > import InferKind
 > import InferType
+> import IO
 > import LabelType
 > import MonadLibrary
 > import MyPrelude
@@ -32,21 +33,22 @@
 > import TypeError
 > import TypeGraph
 > import UnifyTypes
-> import System(getProgName)
+> import System
 > import List
 #else
 > import DependencyAnalysis(dependencyProgram)
 > import Grammar(Module'(..),Module,ImpExp(..),Import,Export,Eqn'(..),Eqn,PrgEqns,PrgTEqns,TEqn,ConID,QType,Qualified(..),Qualifier,Type,VarID,getHeadOfEqn)
 > import List(intersperse,nubBy,isPrefixOf,nub,nubBy,deleteBy,(\\))
+> import IO(hPutStrLn)
 > import LabelType(labelProgram)
 > import MonadLibrary(handleError, LErr, showLErr, mapLErr)
-> import MyPrelude(putErrStr,putErrStrLn,fatalError,fMap,stopNow,flushErr,mapSnd)
+> import MyPrelude(errorfile,putErrStr,putErrStrLn,fatalError,fMap,stopNow,flushErr,mapSnd)
 > import Parser(parse,pModule)
 > import PolyInstance(instantiateProgram)
 > import PrettyPrinter(Pretty(..),($$),(<>),text,pshow,Doc)
 > import Env(assocsEnv)
 > import StateFix -- [(runST [,RunST])] in hugs, ghc, hbc
-> import System(getProgName)
+> import System(getProgName,exitWith,ExitCode(..))
 > import qualified IO(stderr)
 > import TypeBasis(TBasis,TypeEnv,getTypeEnv,getFuncEnv)
 > import Flags(Flags(..),flags)
@@ -90,10 +92,10 @@ In verbose mode every stage of the program generation presents a summary:
 \end{itemize}
 \begin{verbatim}
 
-> report :: IO ()
+> report :: IO ExitCode
 > report = (putErrStrLn "{-" >>  -- Resync the emacs haskell mode: -}
 >           handleArgs)   >>=  
->           report' 
+>           report'
 
 > handleArgs :: IO String
 > handleArgs = if version flags 
@@ -113,14 +115,18 @@ In verbose mode every stage of the program generation presents a summary:
 >                  putErrStr ("-- Main: Failed to open file `"++fN++"'.\n") >>
 >                  flushErr
 
-> report' :: PrgName -> IO ()
+> report' :: PrgName -> IO ExitCode
 > report' n = readFile n >>= report'' n
 
-> report'' :: PrgName -> PrgText -> IO ()
-> report'' n p = r0 >> r1 >> r2 >> r3 >> putErrStrLn "-}" >> r4 >> r5 >> flush
+> report'' :: PrgName -> PrgText -> IO ExitCode
+> report'' n p = r0 >> r1 >> r2 >> r3 >> putErrStrLn "-}" >> r4 >> r5 >> flush >> return ec
 >   where r4 = putStr sp >> putErrStr (handleError id (fMap (\_->"") err))
 >         r5 = writeFile (hiFile n) hi >> putErrStr (handleError id (fMap (\_ -> "") err2))
 >         (hi,err2) = mapLErr (showInterface $ fst lp) im
+>	  exitCode err = handleError (const $ ExitFailure 1) (fMap (const ExitSuccess) err)
+>	  ec = case (exitCode err, exitCode err2) of
+>		(ExitSuccess, ExitSuccess)  -> ExitSuccess
+>		_			    -> ExitFailure 1
 >         (sp,err) = mapLErr pshow im
 >         im = mapLErr (addClasses $ getTypeEnv $ fst $ fst lp) im0
 >         im0 = mapLErr (Module name exps (("PolyPrelude",[]):imps)) ip
@@ -171,8 +177,8 @@ The program doesn't handle mutual recursive datatypes.
 \begin{verbatim}
 
 > dependencyReport' :: PrgEqns -> [[String]]
-> dependencyReport' (datas,eqnss) = map (:[]) (getnames datas) ++ 
->                                   map getnames eqnss
+> dependencyReport' (datas,_,eqnss) = map (:[]) (getnames datas) ++ 
+>                                     map getnames eqnss
 >   where getnames = map getHeadOfEqn
 
 > dependencyReport :: PrgEqns -> IO ()
@@ -186,11 +192,12 @@ The program doesn't handle mutual recursive datatypes.
 \begin{verbatim}
 
 > typeReport' :: LErr (TBasis,PrgTEqns) -> LErr Doc
-> typeReport' ((tb,(ds,qss)),err) = 
->    (reportFuncEnv tb  $$ reportEqs qss, err)
+> typeReport' ((tb,(ds,ixs,qss)),err) = 
+>    (reportFuncEnv tb  $$ reportIxs ixs $$ reportEqs qss, err)
 >   where reportFuncEnv = stack . map reportFunc . assocsEnv . getFuncEnv
 >         reportFunc (d,(_,f)) = text ("FunctorOf "++d++" = ") <> pretty f
 >         --reportDatas = text . concat . intersperse "," . map getHeadOfEqn  
+>	  reportIxs = stack . map pretty
 >         reportEqs = stack . map (stack' . map (pretty . getEqnType))
 >         getEqnType (Polytypic n t _ _)      = ExplType [n] t
 >         getEqnType (VarBind n (Just t) _ _) = ExplType [n] t
@@ -224,28 +231,32 @@ These are still preliminary versions.
 
 #ifdef __DEBUG__
 > prettify :: PrgText -> PrgText
-> prettify = concat . map pshow . parseProgram
+> prettify = pshow . parseProgram
 
 > parseanddep :: PrgText -> PrgEqns
-> parseanddep = dependencyProgram . parseProgram
+> parseanddep = dependencyProgram . moduleEqns . parseProgram
+>   where moduleEqns (Module _ _ _ eqns) = eqns
 
 > prettyordered :: PrgText -> PrgText
-> prettyordered pgm = concatMap (unlines . map pshow) (datas:eqnss)
->   where (datas,eqnss) = parseanddep pgm
+> prettyordered pgm = concatMap (unlines . map pshow) (datas:infixdecls:eqnss)
+>   where (datas,infixdecls,eqnss) = parseanddep pgm
 
 > labelling :: PrgText -> PrgText
-> labelling = (\((b,p),e) -> showEqns (concat (fst p:snd p)) ++ showTBasis (b,e))
+> labelling = (\((b,(d,x,q)),e) -> showEqns (concat (d:x:q)) ++ showTBasis (b,e))
 >           . labelProgram 
->           . dependencyProgram 
+>           . dependencyProgram
+>	    . moduleEqns
 >           . parseProgram
+>   where moduleEqns (Module _ _ _ eqns) = eqns
 
 \end{verbatim}
 \section{Type inference}
 \begin{verbatim}  
 
 > showTBasis :: LErr TBasis -> String
-> showTBasis (~((tenv,kenv),fenv),err) = concat (
+> showTBasis (~(((tenv,xenv),kenv),fenv),err) = concat (
 >    ("Kinds:\n":map showpair (assocsEnv kenv) ) ++
+>    ("Fixities:\n":map showpair (assocsEnv xenv) ) ++
 >    ("Types:\n":map showpair (assocsEnv tenv) ) ++ [errtext] )
 >   where showpair (name,t) = ' ':name ++ " :: " ++ pshow t
 >         errtext = handleError id (fMap (\_->"") err)
@@ -297,7 +308,7 @@ These are still preliminary versions.
 >         isPlain _         = False
 
 > showInterface :: (TBasis, PrgTEqns) -> Module -> String
-> showInterface (((tenv,_),_), (datadefs,_)) (Module _ exps _ eqns) =
+> showInterface ((((tenv,_),_),_), (datadefs,infixdecls,_)) (Module _ exps _ eqns) =
 >     "-- Functions\n" ++
 >     concatMap pshow (concatMap toExplType allFuns) ++
 >     "-- Datatypes\n" ++
@@ -341,7 +352,7 @@ Two possible approaches:
 \begin{verbatim}
  
 > main :: IO ()
-> main = report 
+> main = report >>= exitWith
 
 main = seq IO.stderr report 
 

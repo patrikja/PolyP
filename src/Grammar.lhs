@@ -41,6 +41,9 @@ Modules
 > type Export = ImpExp
 > type Import = ImpExp
 
+> data Associativity = NonAssoc | LeftAssoc | RightAssoc
+>   deriving (Eq)
+
 The datatype \verb|Eqn'| is mutually recursive with the type for
 expressions as the expressions in the variable bindings can contain
 let-expressions which in turn contains equations. The type parameter
@@ -56,6 +59,7 @@ corresponding {\tt VarBind}s.
 >    | Polytypic VarID t t [(t, Expr' t)]
 >    | DataDef ConID [VarID] [(ConID, [Type])]   [ConID]
 >    | ExplType [VarID] t
+>    | InfixDecl Associativity Int [VarID]
 
 >    | TypeSyn ConID [VarID] Type
 >    | Class    [Context] Context [Eqn' t] 
@@ -121,7 +125,7 @@ mutually recursive definitions.
 > type Expr    = Expr' QType
 > type Pat     = Pat'  QType
 > type Eqn     = Eqn'  QType
-> type PrgEqns = ([Eqn],[[Eqn]])
+> type PrgEqns = ([Eqn],[Eqn],[[Eqn]])
 
 > data Qualified t = [Qualifier t] :=> t 
 >                    deriving (Eq)
@@ -147,7 +151,7 @@ Expressions labelled with types can be expressed with elements of
 
 > type TExpr   = Expr' QType
 > type TEqn    = Eqn'  QType
-> type PrgTEqns = ([Eqn],[[TEqn]])
+> type PrgTEqns = ([Eqn],[Eqn],[[TEqn]])
 
 \end{verbatim}
 \section{Literals}
@@ -198,6 +202,10 @@ all arguments.
 > isDataDef :: Eqn' t -> Bool
 > isDataDef (DataDef _ _ _ _) = True
 > isDataDef _               = False
+
+> isInfixDecl :: Eqn' t -> Bool
+> isInfixDecl (InfixDecl _ _ _) = True
+> isInfixDecl _			= False
 
 > isExplType :: Eqn' t -> Bool
 > isExplType (ExplType _ _) = True

@@ -61,4 +61,7 @@
 >                   [(last ds)<>text ")"]) 
 >   where ds = map pretty xs
 
+> infixr <+>
+> x <+> y = x <> text " " <> y
+
 \end{verbatim}
