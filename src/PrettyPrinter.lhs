@@ -144,10 +144,12 @@ output Haskell code violates the monomorphism restriction.
 > prAlt :: Pretty t => Char -> (ConID,[t]) -> Doc
 > prAlt sepchar (constr, types)
 >   =  text (sepchar : " ")
->   <> text constr
->   <> if null types
->      then text ""
->      else ppPackedList " " (map ppParentheses types) "" " "
+>   <> if isOperatorName constr 
+>      then pretty (types!!0) <> text (" "++constr++" ") <> pretty (types!!1)
+>      else text constr
+>        <> if null types                                         
+>   	    then text ""                                          
+>   	    else ppPackedList " " (map ppParentheses types) "" " "
 
 \end{verbatim}
 \section{Expressions}

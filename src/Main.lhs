@@ -7,7 +7,7 @@
 > import List(intersperse)
 > import LabelType(labelProgram)
 > import MonadLibrary(handleError, LErr, showLErr, mapLErr)
-> import MyPrelude(putErrStr,putErrStrLn,fatalError,fMap,stopNow)
+> import MyPrelude(putErrStr,putErrStrLn,fatalError,fMap,stopNow,flushErr)
 > import Parser(parse,pModule)
 > import PolyInstance(instantiateProgram)
 > import PrettyPrinter(Pretty(..),($$),text,pshow)
@@ -69,13 +69,14 @@ In verbose mode every stage of the program generation presents a summary:
 
 > checkExists :: String -> IO ()
 > checkExists fN = (readFile fN >> return ()) `catch` \_ -> 
->                  putErrStr ("-- Main: Failed to open file `"++fN++"'.\n")
+>                  putErrStr ("-- Main: Failed to open file `"++fN++"'.\n") >>
+>                  flushErr
 
 > report' :: PrgName -> IO ()
 > report' n = readFile n >>= report''
 
 > report'' :: PrgText -> IO ()
-> report'' p = r1 >> r2 >> r3 >> putErrStrLn "-}" >> r4 >> putErrStrLn ""
+> report'' p = r1 >> r2 >> r3 >> putErrStrLn "-}" >> r4 >> flush
 >   where r4 = putStr sp >> putErrStr (handleError id (fMap (\_->"") err))
 >         (sp,err) = mapLErr showEqns ip
 >         ip = mapLErr instantiateProgram lp
@@ -85,6 +86,7 @@ In verbose mode every stage of the program generation presents a summary:
 >         pqs= dependencyProgram qs 
 >         r1 = parserReport qs
 >         qs = parseProgram p
+>	  flush = putErrStrLn "" >> flushErr
 
 > showVersion :: IO ()
 > showVersion = putStrLn versionText

@@ -29,6 +29,8 @@
 >		else const (return ())
 > putErrStrLn s = putErrStr (s++"\n")
 #endif
+> flushErr :: IO ()
+> flushErr = IO.hFlush IO.stderr
 
 > putStrNow :: String -> IO ()
 > putStrNow s = putStr s >> IO.hFlush IO.stdout

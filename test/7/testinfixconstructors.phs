@@ -1,0 +1,4 @@
+data Number = VarNum | Z | S Number | Number :+: Number | Number :*: Number 
+  deriving Show
+
+main = print (Z :+: Z)

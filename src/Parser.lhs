@@ -123,7 +123,8 @@ side.
 
 > pDataDefAlt :: Parser (ConID,[Type])
 > pDataDefAlt
->   = pConID <*> many pType3 
+>   = (pType2 >>= \a-> infixcon >>= \c-> pType2 >>= \b-> return (c,[a,b]))
+>     +++ (pConID <*> many pType3)
 
 > pDeriving :: Parser [ConID]
 > pDeriving 

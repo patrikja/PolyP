@@ -5,6 +5,7 @@ targets = 1/innoutonlist.hs                   	\
 	  4/simpledataconversion.hs		\
 	  5/polytoptyped.hs			\
 	  6/parsefloat.hs			\
+	  7/testinfixconstructors.hs	        \
 	  8/testconstnames.hs
 
 check:: $(targets:.hs=.check)
