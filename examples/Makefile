@@ -26,11 +26,8 @@ default: $(targets)
 # testThread.phs     typeThread.hs
 # testZip.phs	
 
-# Parse.phs
 # Show.phs
 # Substructures.phs
-# deriving.phs
-# parse.phs
 # stub.phs
 
 
@@ -72,9 +69,10 @@ test%.check : test%.phs
 genfiles = $(targets) $(targets:.hs=.check) tmp.phs tmp.hs Separate.hs
 
 print:
-	cat ../polylib/Base.phs    ../polylib/Sum.phs       ../polylib/Crush.phs \
-	    ../polylib/Flatten.phs ../polylib/Propagate.phs ../polylib/Thread.phs \
-	    ../polylib/Zip.phs     ../polylib/ConstructorName.phs ../polylib/EqOrd.phs \
+	cat ../polylib/Base.phs    ../polylib/Sum.phs       ../polylib/Crush.phs	\
+	    ../polylib/Flatten.phs ../polylib/Propagate.phs ../polylib/Thread.phs	\
+	    ../polylib/Zip.phs     ../polylib/ConstructorName.phs			\
+            ../polylib/EqOrd.phs ../polylib/Equal.phs					\
 	    Show.phs > All.phs ; \
 	enscript -2Gr All.phs 
 
