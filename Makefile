@@ -1,6 +1,6 @@
-# Makefile for PolyP 0.6
+# Makefile for PolyP 0.7
 
-version=0.6
+version=0.7
 
 default: install
 
@@ -82,4 +82,4 @@ check.% : %
 # These targets are not real files
 .PHONY: default install hugs ghc hbc clean distclean packpolylib dist disthugs
 
-# for some reason, sheckhbc, checkghc, chechhugs should not be in that list
+# for some reason, checkhbc, checkghc, chechhugs should not be in that list
