@@ -47,6 +47,8 @@ newtype RecF a b      = RecF   {unRecF   :: b}         deriving Show
 newtype CompF d g a b = CompF  {unCompF  :: d (g a b)} deriving Show
 newtype ConstF t a b  = ConstF {unConstF :: t}         deriving Show
 
+infixr 5 :*:
+
 unSumF (InL x)	    = Left x
 unSumF (InR y)	    = Right y
 unProdF (x :*: y)   = (x,y)
