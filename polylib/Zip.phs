@@ -46,7 +46,7 @@ bindM x f  =  maybe Nothing f x
 
 (@@)     :: (a -> Maybe b) -> (c -> Maybe a) -> c -> Maybe b
 g @@ f = \a-> f a `bindM` g
- zeroM :: Maybe a
+zeroM :: Maybe a
 zeroM = Nothing
 
 innM :: Regular d => FunctorOf d a (d a) -> Maybe (d a)

@@ -47,7 +47,8 @@ A possible variant:
 > pzipWith :: Regular d => ((a, b) -> Maybe c) -> (d a, d b) -> Maybe (d c)
 > pzipWith  = pzipWith' (mapMaybe inn.fprop) (const zeroM)
 
-Note: |fzipWith| has a different kind of typing compared to |pzipWith|.
+Note: the parameters to |fzipWith| do not have the the same types as
+the arguments to |pzipWith|.
 
 %{
 %align 19
@@ -104,7 +105,7 @@ an instance of |Eq|.
 > 
 > (@@)     :: (a -> Maybe b) -> (c -> Maybe a) -> c -> Maybe b
 > g @@ f = \a-> f a `bindM` g
- 
+
 > zeroM :: Maybe a
 > zeroM = Nothing
 > 
