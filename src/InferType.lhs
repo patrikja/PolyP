@@ -10,7 +10,7 @@
 > import TypeBasis(Basis,FuncEnv,getTBasis,getFuncEnv,instantiate)
 > import Env(Env,newEnv,rangeEnv,lookupEnv,extendsEnv)
 > import MyPrelude(fMap, trace,debug)
-> import MonadLibrary(STErr,mliftErr,unDone,(@@),mplus,
+> import MonadLibrary(STErr,mliftErr,unDone,(@@),(+++),
 >                     mapl,(<@),(<@-),accumseq,accumseq_)
 > import StateFix -- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 > import Grammar(Eqn'(..),Expr'(..),
@@ -83,7 +83,7 @@ changed by \texttt{hpQTypeEval}.
 >                       HpQType s -> HpQType s -> STErr s ()
 > checkTypedInstance basis ngs small big 
 >   = checkInstance ngs small big 
->   `mplus`
+>   +++
 >     do smallsimple <- mliftErr $
 >	  do smallcopy <- TypeBasis.instantiate ngs small
 >	     hpQTypeEval (getFuncEnv (getTBasis basis)) smallcopy

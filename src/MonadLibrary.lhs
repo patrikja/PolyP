@@ -12,7 +12,7 @@
 >		      changeError,
 >                     OutputT,output,runOutput,mliftOut,
 >                     mapl,foreach,liftop,map0,map1,map2,mfoldl,mfoldr,
->		      mZero,mplus,
+>		      mZero,
 >		      accumseq,accumseq_,mguard) where
 > import StateFix
 > import MyPrelude(pair,mapFst,fMap)
