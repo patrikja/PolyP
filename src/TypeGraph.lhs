@@ -2,7 +2,7 @@
 \begin{verbatim}
 
 > module TypeGraph where
-> import MyPrelude(variablename,pair,mapSnd)
+> import MyPrelude(variablename,pair,mapSnd,splitUp)
 > import Grammar
 > import PrettyPrinter(Pretty(..),text)
 > import MonadLibrary(State,StateM,(<@),liftop,(<@-),fetchST,executeST,mliftSTM,
@@ -10,6 +10,8 @@
 >                     ST,MutVar,newVar,writeVar,readVar, (===))
 > import Env(Env,Cache,lookupEqEnv,rememberST,newEnv,lookaside,remember)
 > import Folding(mmapEqn,mmapQualified,dmmapQualified,mcataType)
+
+> infixr 6 ##
 
 \end{verbatim}
 \section{The types of types}
@@ -64,6 +66,7 @@ We need a version of \verb|lookaside| that uses pointer equality,
 
 > follow    :: NodePtr s -> ST s (NodePtr s)
 > fetchNode :: NodePtr s -> ST s (NodePtr s, HpNode s)
+> checkCon  :: HpType  s -> ST s (Maybe ConID)
 
 > qtypeOutOfHeap :: NonGenerics s -> HpQType s -> ST s QType
 > typeOutOfHeap  :: NonGenerics s -> HpType s  -> ST s Type
@@ -73,6 +76,9 @@ We need a version of \verb|lookaside| that uses pointer equality,
 > typeIntoHeap  :: Type  -> ST s (HpType s)
 > kindIntoHeap  :: Kind  -> ST s (HpKind s)
 > eqnIntoHeap   :: Eqn   -> ST a (HpTEqn a)
+
+> (##) :: [Qualifier a] -> [Qualifier a] -> ST s [Qualifier a]
+> mkQFun :: HpQType s -> HpQType s -> ST s (HpQType s)
 
 \end{verbatim}
 \section{Implementation}
@@ -129,6 +135,10 @@ complexity.)
 >   = readVar ptr >>= \node -> case node of
 >       HpVar inst | not (inst === ptr) -> follow inst
 >       _                               -> return ptr
+
+> checkCon pc = fetchNode pc >>= \(_,n) -> case n of
+>                  (HpCon c) -> return (Just c)
+>                  _         -> return Nothing
 
 \end{verbatim}
 \subsection{Cata and flatten for heap types}
@@ -401,5 +411,23 @@ pointer structure looks like.
 >              HpCon c -> return ('C':c)
 >              HpApp p1 p2 -> liftop (++) (showNodePtr p1) (showNodePtr p2 <@ ('@':))
 
+> mkQFun (ps:=>tA) (qs:=>tB) =
+>   ps ## qs    >>= \pqs->
+>   mkFun tA tB >>= \tA2B->
+>   return (pqs:=>tA2B)
+
+> ps ## qs = return (ppolys ++ qpolys ++ pothers ++ qothers)
+>   where [ppolys,pothers] = splitUp [isPoly] ps
+>         [qpolys,qothers] = splitUp [isPoly] qs
+
+> isPoly :: Qualifier a -> Bool
+> isPoly ("Poly",_) = True
+> isPoly _          = False
+
 \end{verbatim}
+We would like to remove duplicates and do some simplification of
+contexts but it will only work for directly comparable values. (i.e.
+not for mutable variables).
+%
+
 

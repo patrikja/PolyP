@@ -8,7 +8,6 @@
 > infixl 9 :@:
 > infixl 9 :@@:
 > infixr 9 -=>
-> infixr 5 ##
 > infix  4 :=>
 
 \end{verbatim}
@@ -246,17 +245,6 @@ all arguments.
 > isTupleCon (c:cs) = c=='('
 > isTupleCon []     = error "Grammar.isTupleCon: impossible: empty constructor"
 
-
-
 > context2type (c,ts) = foldl (:@@:) (TCon c) ts
 
-> ps ## qs = ps ++ (qs \\ ps)
-
 \end{verbatim}
-We would like to remove duplicates and do some simplification of
-contexts but it will only work for directly comparable values. (i.e.
-not for mutable variables) To make it better we need to specialise it
-to heap types and make it monadic.
-
-{\em Check where \#\# is actually used. }
-

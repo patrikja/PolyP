@@ -10,8 +10,7 @@
 >                TEqn, TExpr, PrgEqns, PrgTEqns, QType, Qualified((:=>)),
 >                deQualify,qualify,isPolytypic,getNameOfVarBind)
 > import InferKind(inferDataDefs)
-> import InferType((###),inferLiteral,
->                  patBindToVarBind,tevalAndSubst)
+> import InferType(inferLiteral,patBindToVarBind,tevalAndSubst)
 > import MonadLibrary(STErr, (<@),(<@-), mliftErr, unDone, LErr, mapLErr,
 >                     convertSTErr, Error(..), mapl, foreach)
 > import MyPrelude(pair,mapFst,mapSnd,splitUp,  maytrace)
@@ -23,8 +22,8 @@
 >                  getNonGenerics,getRamTypes,instantiate,inventTypes,
 >                  lookupType,makeNonGeneric,ramKindToRom,ramTypeToRom)
 > import TypeGraph(HpQType,HpType, HpTExpr, HpTEqn, 
->                  mkVar, mkFun, eqnIntoHeap,
->                  blockOutOfHeap)
+>                  mkVar, mkFun, (##), mkQFun,
+>                  eqnIntoHeap, blockOutOfHeap)
 > import UnifyTypes(unify, checkInstance)
 
 > infix 9 |->
@@ -124,14 +123,14 @@ inference.
 >     lift mkVar           >>= \tApp -> 
 >     lift (mkFun tX tApp) >>= \tF'  -> 
 >     unify tF tF'         >>
->     return ((ps ### qs):=>tApp) <@ 
+>     lift (ps ## qs)      >>= \pqs ->
+>     return (pqs :=> tApp) <@ 
 >     pair (f' :@: x')
 
 > basis |-> (Lambda pat expr)
->   = basis `labelPat` pat >>= \((pat',ps:=>tPat), basis') -> 
->     basis' |-> expr      >>= \(expr',qs:=>tExpr) -> 
->     lift (mkFun tPat tExpr) >>= \tFun ->
->     return ((ps ### qs) :=> tFun) <@ 
+>   = basis `labelPat` pat >>= \((pat',tPat), basis') -> 
+>     basis' |-> expr      >>= \(expr',tExpr) -> 
+>     lift (mkQFun tPat tExpr) <@ 
 >     pair (Lambda pat' expr')
 
 > basis |-> e@(Literal lit)
@@ -142,22 +141,24 @@ inference.
 
 > basis |-> (Case expr alts)
 >   = basis |-> expr >>= \(expr',ps:=>tExpr) -> 
->     lift mkVar     >>= \a -> 
->     foreach alts (inferCaseAlt basis (tExpr,a)) <@ unzip
+>     lift mkVar     >>= \tA -> 
+>     foreach alts (inferCaseAlt basis (tExpr,tA)) <@ unzip
 >              >>= \(alts',qss) -> 
->     return (foldr1 (###) (ps:qss) :=> a) <@ 
+>     lift (foldM (##) [] (ps:qss))  >>= \pqs->
+>     return (pqs :=> tA) <@ 
 >     pair (Case expr' alts')
 >  where 
->    inferCaseAlt basis' (tExpr,a) = \(lhs, rhs) ->
+>    inferCaseAlt basis' (l,a) (lhs, rhs) = 
 >       basis' `labelPat` lhs >>= \((lhs',qs:=>tLhs), basis'') -> 
 >       basis'' |-> rhs       >>= \(rhs',rs:=>tRhs) -> 
->       unify tExpr tLhs      >>
->       unify a     tRhs      >>
->       return ((lhs',rhs'),qs ### rs)
+>       unify l tLhs          >>
+>       unify a tRhs          >>
+>       lift (qs ## rs)  <@
+>       pair (lhs',rhs')
 
 \end{verbatim}
 Maybe the similarity with $\lambda$-expressions could be exploited:
-unify the type lhs -> rhs with tExpr -> a. (That would make the two
+unify the type lhs -> rhs with l -> a. (That would make the two
 unifications one, less efficient but more beautiful.) The same idea
 could perhaps be used in the parser.
 \begin{verbatim}

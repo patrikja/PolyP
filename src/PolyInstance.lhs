@@ -15,6 +15,7 @@ functions.
 > import Functorize(inn_def,out_def,either_def,fcname_def,
 >                   makeFunctorStruct,Struct,Req,eqReq,
 >                   codeFunctors)
+> import InferType(qTypeEval)
 > import MonadLibrary(State, executeST, mapl,(<@),(@@),unDone,
 >                     OutputT,output,runOutput,mliftOut,map0,map1,map2)
 > import MyPrelude(maytrace,pair,mapFst,mapSnd,combineUniqueBy,  debug)
@@ -73,12 +74,15 @@ requests contain the names of the functions and their instantiated
 types. 
 
 The resulting program will have the same structure as the old but with
-lots of instance declarations added.  
+lots of instances added.  
 
 Given a request {\tt (name, typeinfo)} the following functions will
-generate an equation of the form {\tt newname = expr}.
+generate an equation of the form {\tt name_suffix = expr}.
+
 % ----------------------------------------------------------------
+
 \section{Instantiating a polytypic variable binding}
+
 Traverse the expression tree and replace variables by instance names.
 Keep track of the environment when traversing {\tt let}-bindings.
 \subsection{The variable case}
@@ -193,18 +197,23 @@ both the type at the definition and the type at the instance.
 > handleReq funcenv defenv typeenv (name,tinst) = 
 >   case classifyDef defenv name of
 >     (PolyDef eqn) -> traverse typeenv (pickPolyEqn funcenv eqn tinst) tinst
->     (VarDef  eqn) -> traverse typeenv (pairType typeenv eqn tinst) tinst
+>     (VarDef  eqn) -> traverse typeenv (pairType funcenv typeenv eqn tinst) tinst
 >     SpecDef       -> specPolyInst funcenv name tinst
 >     PreDef        -> ([],[])
 >     Unknown       -> error ("handleReq: unknown function requested: "++name++
 >                             "\n  (Probably error in type inference)\n")
 
-> pairType :: TypeEnv -> Eqn' t -> QType -> (Eqn' t, Subst, QType)
-> pairType typeenv q@(VarBind name t _ _) tinst = 
->      (q,matchfuns (maydebug $ tdef name,maydebug $ tinst),tdef name)
+*** the original type t may be thrown away here
+
+> pairType :: FuncEnv -> TypeEnv -> Eqn -> QType -> (Eqn, Subst, QType)
+> pairType funcenv typeenv (VarBind name t as e) tinst = 
+>      (VarBind name Nothing as e,
+>       matchfuns (maydebug $ tdef name,maydebug $ tinst),
+>       tdef name)
 >    where tdef na = maybe (err na) id (lookupEnv na typeenv)
->          err n = error ("pairType: type not in environment:"++n)
-> pairType _ _ _ = error "PolyInstance.pairType: impossible: nor a VarBind"
+>          err n = error ("PolyInstance.pairType: type not in environment:"++n)
+>          tsim = qTypeEval (evaluateFunInQType funcenv tinst)
+> pairType _ _ _ _ = error "PolyInstance.pairType: impossible: not a VarBind"
 
 \end{verbatim}
 \subsection{Inn and out}
@@ -362,23 +371,39 @@ This description implies that we need:
 \item A function to match functor expressions.
 \item A function to lookup a matching case in a polytypic definition.
 \end{itemize}
+We also want to generate a correctly instantiated type.
+
 % ----------------------------------------------------------------
 \section{Implementation}
-{\em Check the tdef in VarBind n tdef ...}
 Get the correct equation out of the poly case.
+
+{\em The t in VarBind n tdef needs to be type-evaluated.}
+
 \begin{verbatim}
 
 > pickPolyEqn :: FuncEnv -> TEqn -> QType -> (TEqn, Subst, QType)
 > pickPolyEqn funcenv (Polytypic n tdef (_:=>TVar fname) cs) t =
->     (VarBind n (Just tdef) [] e, s, tdef) 
+>     (VarBind n (Just tsim) [] e, s, tdef) 
 >   where f = getFunctor funcenv fname tdef t
->         (e,s) = functorCase f cs
+>         mp = functorCase f cs
+>         (e,s) = maybe err id mp
+>         err = error ("PolyInstance.functorCase: no match for "++
+>                      show (pretty f)  ++ 
+>                      " in polytypic " ++ n)
+>         tsim = qTypeEval (evaluateFunInQType funcenv t)
+
+FunctorOf Datatype must be simplified 
+
+replace all occurences of FunctorOf d, by functorOf d
+
+substQType 
+
 > pickPolyEqn _ _ _ = error "PolyInstance.pickPolyEqn: impossible: not Polytypic"
 
-> functorCase :: Func -> [(QType, e)] -> (e, Subst)
-> functorCase f [] = error ("functorCase: no match for "++show (pretty f))
+> functorCase :: Func -> [(QType, e)] -> Maybe (e, Subst)
+> functorCase f [] = Nothing
 > functorCase f ((_:=>p,eqn):cs) = case match (p,f) of
->    (Just s) -> (eqn,s)
+>    (Just s) -> Just (eqn,s)
 >    Nothing  -> functorCase f cs
 
 \end{verbatim}
@@ -391,17 +416,28 @@ is the functor instance corresponding to the named functor.
 > getFunctor funcenv fname (ps:=>t) (qs:=>tinst) = 
 >     case [ fun | (("Poly",TVar fn:_),(_,fun:_)) <- zip ps qs, fn==fname] of
 >       (fun:_) -> evaluateTopFun funcenv fun
->       _       -> error ("getFunctor: "++
+>       _       -> error ("PolyInstance.getFunctor: "++
 >                         "Poly not found in polytypic definition: "++
 >                         fname) -- ++ " "++ (show2 ps)++show2 qs)
 > --  where show2 = show . pretty
 
-> evaluateTopFun funcenv (TCon "FunctorOf" :@@: TCon d) = functorOf d funcenv
+> evaluateTopFun :: FuncEnv -> Func -> Func
+> evaluateTopFun funcenv (TCon "FunctorOf" :@@: TCon d) = functorOf funcenv d
 > evaluateTopFun funcenv f = f
 
-> functorOf :: VarID -> FuncEnv -> Func
-> functorOf d fenv = snd (maybe err id (lookupEnv d fenv))
->   where err = error ("functorOf: unknown datatype:"++d)
+> evaluateFunInQType :: FuncEnv -> QType -> QType
+> evaluateFunInQType    funcenv =  map (evaluateFunInType funcenv)
+
+> evaluateFunInType :: FuncEnv -> Type -> Type
+> evaluateFunInType    funcenv =  ev
+>   where ev :: Type -> Type
+>         ev (TCon "FunctorOf" :@@: TCon d) = functorOf funcenv d
+>         ev (f :@@: x)                     = ev f :@@: ev x
+>         ev y                              = y
+
+> functorOf :: FuncEnv -> VarID -> Func
+> functorOf fenv d = snd (maybe err id (lookupEnv d fenv))
+>   where err = error ("PolyInstance.functorOf: unknown datatype: "++d)
 
 \end{verbatim}
 Usage chain: (functorOf needs the datatype environment)
@@ -478,7 +514,9 @@ Make sure match works for variables too. (insert dictionaries?)
 
 \begin{verbatim}
 
-> type Subst = [(VarID,Type)]
+ type Subst = [(VarID,Type)]
+
+> type Subst = Env VarID Type
 
 > getFunctors :: QType -> QType -> [Func] -- used by traverseEqn
 > getFunctors (ps:=>t) (qs:=>tinst) = 
@@ -503,15 +541,15 @@ Make sure match works for variables too. (insert dictionaries?)
 Variables in the first type get bound to expressions in the second type.
 \begin{verbatim}
 
-> match' :: (Type,Type) -> Subst -> Maybe Subst
-> match' (TVar tv, TVar uv) = Just
+> match' :: (Type,Type) -> ( Subst -> Maybe Subst )
+> match' (TVar tv, TVar uv) | tv == uv = Just
 > match' (TCon tc, TCon uc) | tc == uc = Just
-> match' (tf :@@: tg,uf :@@: ug) = match' (tf,uf) @@ match' (tg,ug)
-> match' (TVar tv, u) = addbind tv u 
-> match' _ = const Nothing
+> match' (tf :@@: tg,uf :@@: ug)       = match' (tf,uf) @@ match' (tg,ug)
+> match' (TVar tv, u)                  = addbind tv u 
+> match' _                             = const Nothing
 
 > addbind :: a -> b -> [(a, b)] -> Maybe [(a, b)]
-> addbind v t s = Just ((v,t):s)
+> addbind v t = Just . ((v,t):)
 
 \end{verbatim}
 % ----------------------------------------------------------------
@@ -523,9 +561,8 @@ To apply a substitution we simply fold over the abstract syntax of types:
 > appSubst s = cataType (s, TCon, (:@@:)) 
 
 > substQType :: Subst -> QType -> QType
-> substQType s = map (appSubst (f s))
->   where f s' v = maybe (TVar v) id (lookup' v)
->           where lookup' w = lookupEnv w (extendsEnv s' newEnv)
+> substQType env = map (appSubst s)
+>   where s v = maybe (TVar v) id (lookupEnv v env)
 
 \end{verbatim}
 % ----------------------------------------------------------------
@@ -609,7 +646,7 @@ Solved(?) problems:
     latter. In doing that the corresponding part of the context must
     be removed.
   \item It may be enough to remove constant contexts from the type 
-    environment. (Done)
+    environment. (Done)*** Where?!
   \end{itemize}
 \item Sometimes a function does not get the correct instantiated name
   on the left hand side. (Probably related to the above.)
@@ -651,7 +688,7 @@ evaluateTopFun :: FuncEnv -> Type -> Type
   functorOf
 type FuncEnv = Env ConID (Struct,Func)
   Env.Env Grammar.ConID Functorize.Struct Grammar.Func
-functorOf :: VarID -> FuncEnv -> Func
+functorOf :: FuncEnv -> VarID -> Func
 
 getFunctors :: QType -> QType -> [Func] -- used by traverseEqn
 matchfuns :: (QType, QType) -> [(String, Func)] -- used by traverse

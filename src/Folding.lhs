@@ -220,8 +220,10 @@ not instatiated along with the program.
 > stripFuns = (exprfuns,eqnfuns)
 >   where exprfuns = (Var,Con,(:@:),Lambda,Literal,WildCard,Case,Letrec,
 >                     const) -- instead of Typed
->         eqnfuns  = (varBind,DataDef,Polytypic,ExplType)
->         varBind v t ps e = VarBind v noType ps e
+>         eqnfuns  = (VarBind,DataDef,Polytypic,ExplType)
+
+         eqnfuns  = (varBind,DataDef,Polytypic,ExplType)
+         varBind v t ps e = VarBind v noType ps e
 
 \end{verbatim}
 % ----------------------------------------------------------------

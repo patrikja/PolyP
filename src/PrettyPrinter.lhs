@@ -36,7 +36,7 @@ import MonadLibrary(Error)
 
 > prEqn :: Pretty a => Eqn' a -> Doc
 > prEqn (VarBind name mt pats body) 
->   =  maybe id (\t-> ((prEqn (ExplType [name] t)) $$)) mt $
+>   =  maybe id (prTypeFirst name) mt $
 >      prApp (Var name : pats)
 >   <> text " = " 
 >   <> prExpr body
@@ -72,7 +72,17 @@ import MonadLibrary(Error)
 
 > prEqn _ = error "PrettyPrinter.prEqn: not implemented"
 
+> prTypeFirst :: Pretty t => VarID -> t -> Doc -> Doc
+> prTypeFirst name t d = 
+>       text "{-"
+>    $$ prEqn (ExplType [name] t)
+>    $$ text "-}"
+>    $$ d
+
 \end{verbatim}
+The type is commented out, as it is not always correct.
+(***Currently: 980805: almost always incorrect!)
+
 \subsection{Substructures}
 \begin{verbatim}
 

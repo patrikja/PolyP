@@ -469,10 +469,6 @@ datatype and try to unify this functor with the rhs.
 >                         failEM ("unifyFun: "++baderr)
 >    baderr = "Application expected (this should not happen!)"
 
-> checkCon pc = fetchNode pc >>= \(_,n) -> case n of
->                  (HpCon c) -> return (Just (maytrace ("["++c++"]") c))
->                  _         -> return Nothing
-
 #endif /* 0 */
 \end{verbatim}
 

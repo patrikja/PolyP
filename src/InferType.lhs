@@ -5,9 +5,10 @@
 > import InferKind(inferDataDefs)
 > import UnifyTypes(unify,checkInstance)
 > import TypeGraph(HpType,HpKind,NodePtr,HpNode(..),HpQType,
->                  mkFun,mkCon,mkVar,mkFOfd,
->                  (==>),fetchNode,qtypeIntoHeap,
->                  spineWalkHpType,getChild)
+>                  mkFun,mkCon,mkVar,mkFOfd,mkQFun,
+>                  (==>),fetchNode,checkCon,
+>                  qtypeIntoHeap,qtypeOutOfHeap,
+>                  spineWalkHpType,getChild, (##))
 > import TypeBasis(Basis,TBasis,KindBasis,
 >                  extendTypeTBasis,extendTypeAfterTBasis,
 >                  getNonGenerics,makeNonGeneric,lookupType,ramTypeToRom,
@@ -24,10 +25,7 @@
 > import ParseLibrary(parse)
 > import Parser(pType1)
 > import PrettyPrinter(Pretty(..))
-
-> infixr 6 ###
-> (###) :: [a] -> [a] -> [a]
-> (###) = (++)
+> import Monad(foldM)
 
 \end{verbatim}
 \section{Programs}
@@ -141,10 +139,6 @@ the \verb|STErr|-monad.
 The algorithm is split up into different cases corresponding to the
 alternatives in the abstract syntax of expressions. 
 
-Let unify take the whole QType as argument and return the new list of
-predicates. Adapt mkFun, mkVar to QTypes. (How to do with inferPat in
-Case exression?)
-
 \begin{verbatim}
 
 > basis |- (Var name) = name `lookupType` basis
@@ -155,31 +149,31 @@ Case exression?)
 >     mliftErr mkVar           >>= \tApp -> 
 >     mliftErr (mkFun tX tApp) >>= \tF'  -> 
 >     unify tF tF'             >> 
->     return (ps ### qs :=> tApp)
-
-
-
-
+>     mliftErr (ps ## qs)      >>= \pqs ->
+>     return (pqs :=> tApp)
 
 > basis |- (Lambda pat expr)
->   = inferPat basis pat >>= \(ps:=>tPat, basis')-> 
->     basis' |- expr     >>= \(qs:=>tExpr)  -> 
->     mliftErr (mkFun tPat tExpr) >>= \tFun ->
->     return (ps ### qs :=> tFun)
+>   = inferPat basis pat >>= \(tPat, basis')-> 
+>     basis' |- expr     >>= \tExpr-> 
+>     mliftErr (mkQFun tPat tExpr)
 
 > basis |- (Literal lit) = inferLiteral basis lit
 > basis |- WildCard      = mliftErr (mkVar <@ qualify)
 
 > basis |- (Case expr alts)
->   = basis |- expr      >>= \(ps:=>tExpr) -> 
->     mliftErr mkVar     >>= \a -> 
->     foreach alts (\(lhs, rhs) ->
->       inferPat basis lhs >>= \((qs:=>tLhs), basis') -> 
->       basis' |- rhs      >>= \(rs:=>tRhs) -> 
->       unify tExpr tLhs   >> 
->       unify tRhs a       >>
->       return (qs ### rs)) >>= \qss ->
->     return (foldr1 (###) (ps:qss) :=> a)
+>   = basis |- expr            >>= \(ps:=>tExpr) -> 
+>     mliftErr mkVar           >>= \tA -> 
+>     foreach alts (infAlt (tExpr,tA)) >>= \qss ->
+>     mliftErr (foldM (##) [] (ps:qss))  >>= \pqs->
+>     return (pqs :=> tA)
+>  where -- infAlt :: (HpType s,HpType s) -> (Expr,Expr) -> 
+>        --           STErr s [Qualifier (HpType s)]
+>        infAlt (l,r) (lhs,rhs) = 
+>           inferPat basis lhs >>= \((qs:=>tLhs), basis') -> 
+>           basis' |- rhs      >>= \(rs:=>tRhs) -> 
+>           unify l tLhs       >> 
+>           unify tRhs r       >>
+>           mliftErr (qs ## rs)
 
 > basis |- (Letrec eqnss expr)
 >   = inferBlocks basis eqnss >>= \basis' -> 
@@ -355,7 +349,7 @@ in the context list.
 > tevalAndSubst hpty' (_:=>hpfi) = 
 >   instantiate [] hpty' >>= \hpty@((_,pf:_):_:=>pt) ->
 >   pf ==> hpfi          >> -- substitution by destructive update
->   qtypeEval hpty       >> -- type evaluation  
+>   hpQTypeEval hpty     >> -- type evaluation  
 >   return hpty
 
 \end{verbatim}
@@ -363,21 +357,31 @@ in the context list.
 The type evaluation should also evaluate the context as sketched
 below.  The idea is that 
 \begin{verbatim}
-qtypeEval ({f|->g+h} Poly f => f a b -> b) = 
-qtypeEval (Poly (g+h) => (g+h) a b -> b) = 
+hpQTypeEval ({f|->g+h} Poly f => f a b -> b) = 
+hpQTypeEval (Poly (g+h) => (g+h) a b -> b) = 
 (Poly g,Poly h) => Either (g a b) (h a b) -> b
 
-qtypeEval ({f|->Par} Poly f => f a b -> b) = 
-qtypeEval (Poly Par => (Par) a b -> b) = 
+hpQTypeEval ({f|->Par} Poly f => f a b -> b) = 
+hpQTypeEval (Poly Par => (Par) a b -> b) = 
 () => a -> b
 \end{verbatim}
 
 \begin{verbatim}
 
-> qtypeEval :: HpQType s -> ST s (HpQType s)
-> qtypeEval (l :=> t) = (map concat (mapl tevalC l)) >>= \l' ->
->                       typeEval t >> -- side effect on t
->                       return (l':=>t)
+> qTypeEval :: QType -> QType
+> qTypeEval qt = 
+#ifdef __HBC__
+>    runST $ RunST mqt
+#else /* not __HBC__ */
+>    runST         mqt
+#endif /* __HBC__ */
+>   where mqt :: ST s QType
+>         mqt = qtypeIntoHeap qt >>= hpQTypeEval >>= qtypeOutOfHeap []
+
+> hpQTypeEval :: HpQType s -> ST s (HpQType s)
+> hpQTypeEval (l :=> t) = (map concat (mapl tevalC l)) >>= \l' ->
+>                         hpTypeEval t >> -- side effect on t
+>                         return (l':=>t)
 
 > tevalC :: Qualifier (HpType s) -> ST s [Qualifier (HpType s)]
 > tevalC ("Poly", fun : _ ) = map (map poly) (funEval fun)
@@ -390,7 +394,7 @@ qtypeEval (Poly Par => (Par) a b -> b) =
 
 \end{verbatim}
 
-If the functors were sytactic objects as they are parsed this
+If the functors were syntactic objects as they are parsed this
 definition would do it.
 
 \begin{verbatim}
@@ -449,15 +453,15 @@ f@(HpVar v) -> -- a functor variable
 >   where args = map (getChild . snd) pnargs
 >         def | null args  = return [pf]
 >             | otherwise  = error "InferType.funEval': Expected functor variable, found application."
->         errNoBifun c = error ("InferType: funEval': found "++c++
->                               ", expected a Bifunctor constructor.")
+>         errNoBifun c = error ("InferType.funEval': found "++c++
+>                               "but expected a Bifunctor constructor.")
 
 > funEvalArgs :: String -> [HpType s] -> [HpType s -> ST s [HpType s]] -> ST s [HpType s]
 > funEvalArgs c args argfuns 
 >   | numfuns == numargs 
 >      = map concat (accumulate (zipWith ($) argfuns args))
 >   | otherwise
->      = error ("InferType: funEval': Bifunctor constructor "++ c ++
+>      = error ("InferType.funEval': Bifunctor constructor "++ c ++
 >               "expects "++show numfuns ++" arguments, found instead "++
 >                           show numargs ++" arguments.")
 >       where 
@@ -466,13 +470,18 @@ f@(HpVar v) -> -- a functor variable
 
 \end{verbatim}
 
+If d is not a fixed datatype D: 
   build FunctorOf d
   return it in a singleton list
+otherwise
+  remove it
 
 \begin{verbatim}
 
 > dataEval :: HpType s -> ST s [HpType s]
-> dataEval = map (:[]) . mkFOfd
+> dataEval d = checkCon d >>= 
+>              maybe (map (:[]) (mkFOfd d))
+>                    (return . const [])
 
 > consttypeEval :: HpType s -> ST s [HpType s]
 > consttypeEval _ = return []
@@ -510,16 +519,16 @@ The evaluation is done by side-effecting the pointer structure.
 
 \begin{verbatim}
 
-> typeEval :: NodePtr s -> ST s ()
-> typeEval' :: [(NodePtr s,HpNode s)] -> ST s [NodePtr s]
+> hpTypeEval :: NodePtr s -> ST s ()
+> hpTypeEval' :: [(NodePtr s,HpNode s)] -> ST s [NodePtr s]
 
-> typeEval = (sequence . map typeEval) @@ typeEval' @@ spineWalkHpType 
+> hpTypeEval = (sequence . map hpTypeEval) @@ hpTypeEval' @@ spineWalkHpType 
 
-> typeEval' [] = error "InferType.typeEval': impossible: nothing to apply"
-> typeEval' pargs = case f of
+> hpTypeEval' [] = error "InferType.hpTypeEval': impossible: nothing to apply"
+> hpTypeEval' pargs = case f of
 >     HpVar _   -> def
 >     HpCon c   -> maybe def eval (lookupEnv c typeSynEnv)
->     HpApp _ _ -> error "InferType.typeEval': impossible: HpApp found after spine removal"
+>     HpApp _ _ -> error "InferType.hpTypeEval': impossible: HpApp found after spine removal"
 >   where f:args = map snd pargs
 >         nargs = length args
 >         children = map getChild args
@@ -529,7 +538,7 @@ The evaluation is done by side-effecting the pointer structure.
 >         again ptr = 
 >           root ==> ptr >>
 >           spineWalkHpType root >>= \pargs2->
->           typeEval' (pargs2++rest)
+>           hpTypeEval' (pargs2++rest)
 >         (root,_):rest = drop nargs pargs
 
 \end{verbatim}
