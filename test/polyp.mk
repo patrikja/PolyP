@@ -10,11 +10,12 @@
 ################################################################
 runhugs = runhugs
 
-PolyPDIR = ${HOME}/poly/PolyP
-PolyP = $(PolyPDIR)/bin/ghcpolyp
+-include ../boilerplate.mk
+
+PolyP = $(POLYPDIR)/bin/ghcpolyp
 #PolyP = polyp
-# CHASE = perl $(PolyPDIR)/bin/chase
-CHASE = $(PolyPDIR)/bin/chase
+# CHASE = perl $(POLYPDIR)/bin/chase
+CHASE = $(POLYPDIR)/bin/chase
 #CHASE = chase
 
 %.run: %.hs
@@ -39,7 +40,7 @@ CHASE = $(PolyPDIR)/bin/chase
 	lhs2TeX -code -lcodeOnly=True $< | cut -c3- > $@
 
 %.out2: %.hs
-	$(runhugs) $(HUGSFLAGS) -P:$(PolyPDIR)/lib:$(PolyPDIR)/polylib $< > $@
+	$(runhugs) $(HUGSFLAGS) -P:$(POLYPDIR)/lib:$(POLYPDIR)/polylib $< > $@
 
 %.out2: %.lhs
 	$(runhugs) $(HUGSFLAGS) $< > $@

@@ -1,0 +1,47 @@
+This text describes some aspects of the PolyP compiler which cross-cut
+several modules.
+
+
+Adding support for function space in polytypic definitions
+
+This affects
+* parsing: Parser.lhs
+  * concrete syntax for the arrow case ('>')
+    pFunc, infixfunccon, constrdef
+
+* type evaluation: InferType.lhs
+  all is in terms of 
+    hpQTypeEval: hpTypeEval: hpTypeEval': typeSynEnv
+
+  extended typeSynEval with the arrow case
+  also extended funEvalEnv similarly
+
+* functor matching: PolyInstance: match': no change necessary
+
+* FunctorOf: Functorise.lhs
+   Added convFun, funFunctor, isFunCon, isFunType
+
+* codeFunctor
+
+
+----------------------------------------------------------------
+Functor environment
+
+The functor environment is calculated from the list of datatype
+definitions and propagated to type inference and polytypic instance
+generation. Trace:
+
+  PolyInstance:
+    functorOf      
+    evaluateTopFun 
+    getFunctor     
+    pickPolyEqn    
+    handleReq      
+    polyInst       
+    polyInstPrg    
+    instantiateProgram: using getFuncEnv and tbasis input
+  LabelType.labelProgram
+  InferKind.inferDataDefs
+  Functorise.makeFunctorStruct'
+
+

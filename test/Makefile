@@ -1,4 +1,5 @@
 export targets
+HUGSFLAGS = -98
 targets = 1/innoutonlist.hs                   	\
 	  2/simplemutreclist.hs               	\
 	  3/explicitfunctorsimplification.hs  	\

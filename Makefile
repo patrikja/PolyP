@@ -47,11 +47,11 @@ hugs ghc hbc: bin/chase
 
 # Run some regression tests
 #   -s makes the testcompilations silent (unless there is an error)
-check:
+check: boilerplate.mk
 	$(MAKE) -e -s -C examples check
 	$(MAKE) -e -s -C test check
 
-check.% : %
+check.% : %  boilerplate.mk
 	$(MAKE) -e -s -C examples check PolyP=../bin/$*polyp
 	$(MAKE) -e -s -C test check PolyP=../bin/$*polyp
 
@@ -68,7 +68,8 @@ bin/chase: src/chase.in
 	cat src/chase.in >> bin/chase
 	chmod +x bin/chase
 
-
+boilerplate.mk:
+	echo POLYPDIR=$(POLYPDIR) > boilerplate.mk
 
 oldhugs:
 # Make the source for older (before ~1998) versions of hugs
