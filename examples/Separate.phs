@@ -1,9 +1,10 @@
--- Functions for separate. Patrik Jansson, May 9, 1996
+-- Functions for separate. Patrik Jansson, July 18, 1999
 --  (a self-contained polytypic example)
 {-
-There has to be a value main in every PolyP file. It is the starting
-  point for the code generation - everything possibly reachable from
-  main is instantiated.
+The default starting point for code generation in a PolyP file is the
+  value main. Everything possibly reachable from main is instantiated.
+  In this case we choose to test separate on a list, a tree and a rose
+  tree.
 -}
 main = print (separate "1738",
 	      separate (Leaf 'a'),
@@ -40,9 +41,6 @@ polytypic fmap2 :: (a -> c) -> (b -> d) -> f a b -> f c d
       	      d @ g   ->  pmap (fmap2 p r)       
       	      Const t ->  id                    
       
-cata :: Regular d => (FunctorOf d a b -> b) -> (d a -> b)
-cata i   = i   . fmap2 id (cata i  ) . out
-
 {- 
 Non-polytypic help functions. In Haskell the datatype for sums is
   predefined together with its catamorphism: either.
@@ -52,21 +50,28 @@ Non-polytypic help functions. In Haskell the datatype for sums is
 (-*-) :: (a -> c) -> (b -> d) -> (a,b) -> (c,d)
 (-+-) :: (a -> c) -> (b -> d) -> Either a b -> Either c d
 
-(f -*- g) = \p -> (f (fst p), g (snd p))
-(f -+- g) = either (Left . f) (Right . g)
+f -*- g = \p -> (f (fst p), g (snd p))
+f -+- g = either (Left . f) (Right . g)
 
 {-
 The definition of flatten is taken from ../polylib/Flatten.phs.
 -}
 flatten :: Regular d => d a -> [a]
-flatten  =  cata fflatten
+flatten  =  fflatten . fmap2 singleton flatten . out
 
-polytypic fflatten :: f a [a] -> [a]
+{-
+-- Alternative deinition in terms of a catamorphism:
+flatten  =  cata (fflatten . fmap2 singleton id)
+cata :: Regular d => (FunctorOf d a b -> b) -> (d a -> b)
+cata i   = i   . fmap2 id (cata i  ) . out
+-}
+
+polytypic fflatten :: f [a] [a] -> [a]
   = case f of
       g + h     ->  fflatten `either` fflatten
       g * h     ->  \(x,y) -> fflatten x ++ fflatten y
       Empty     ->  nil
-      Par       ->  singleton
+      Par       ->  id
       Rec       ->  id
       d @ g     ->  concat . flatten . pmap fflatten 
       Const t   ->  nil

@@ -1,4 +1,4 @@
-module BaseM(pmapM,fmap2M,cataM,anaM,hyloM,paraM) where
+module BaseM(pmapM,fmap2M,cataM,anaM,hyloM,paraM,(@@),mapm) where
 import PolyPTypes
 
 pmapM :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
