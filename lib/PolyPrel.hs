@@ -11,6 +11,7 @@
 (<)     :: Ord a => a->a->Bool
 (<=)    :: Ord a => a->a->Bool
 (==)    :: Eq a => a->a->Bool
+(/=)    :: Eq a => a->a->Bool
 (>)     :: Ord a => a->a->Bool
 (>=)    :: Ord a => a->a->Bool
 (>>)    :: Monad m => m a -> m b -> m b
