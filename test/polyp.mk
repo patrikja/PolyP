@@ -10,18 +10,21 @@
 ################################################################
 runhugs = runhugs
 
-PolyPDIR = ${HOME}
-# PolyP = $(PolyPDIR)/bin/polyp
-PolyP = polyp
+PolyPDIR = ${HOME}/poly/PolyP
+PolyP = $(PolyPDIR)/bin/ghcpolyp
+#PolyP = polyp
 # CHASE = perl $(PolyPDIR)/bin/chase
-# CHASE = $(PolyPDIR)/bin/chase
-CHASE = chase
+CHASE = $(PolyPDIR)/bin/chase
+#CHASE = chase
 
 %.run: %.hs
 	$(runhugs) $(HUGSFLAGS) $<
 
-%.hs: %.Hs2
-	cat $(wildcard type$*.hs) $< > $@
+type%.hs :
+	echo import MyPolyPrel > $@
+
+%.hs: %.Hs2 type%.hs
+	cat type$*.hs $< > $@
 
 %.Hs2: %.Phs2
 	$(PolyP) $(PolyPFLAGS) ${PolyPREQUESTS} $< > $@ 
@@ -45,4 +48,5 @@ clean::
 	rm -f $(targets:.hs=.check)
 
 veryclean:: clean
-	rm -f $(targets) $(targets:.hs=.Hs2) $(targets:.hs=.Phs2) $(targets:.hs=.out2) 
+	rm -f $(targets) $(targets:.hs=.Hs2) $(targets:.hs=.Phs2) $(targets:.hs=.out2) $(patsubst %.hs,type%.hs,$(targets))
+
