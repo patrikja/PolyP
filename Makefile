@@ -1,5 +1,5 @@
 # The Makefile is for the following PolyP-version
-export polyp_version = 1.5
+export polyp_version = 1.6
 
 help: 
 	@echo Makefile for PolyP by Patrik Jansson

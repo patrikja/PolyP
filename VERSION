@@ -1,5 +1,5 @@
 PolyP 
-version 1.5
+version 1.6
 written in Haskell 98 + ST (works with 1.4 + ST)
 to be used with hbc, ghc or hugs
 
