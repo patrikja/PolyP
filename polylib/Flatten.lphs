@@ -16,12 +16,12 @@
 > 
 > polytypic fflatten ::  f [a] [a] -> [a]
 >   = case f of
->       g + h        ->  fflatten `either` fflatten
->       g * h        ->  \(x,y) -> fflatten x ++ fflatten y
+>       g + h        ->  fflatten `foldSum` fflatten
+>       g * h        ->  \(x:*:y) -> fflatten x ++ fflatten y
 >       Empty        ->  nil
->       Par          ->  id
->       Rec          ->  id
->       d @ g        ->  concat . flatten . pmap fflatten 
+>       Par          ->  unParF
+>       Rec          ->  unRecF
+>       d @ g        ->  concat . flatten . pmap fflatten . unCompF
 >       Const t      ->  nil
 
 %align
