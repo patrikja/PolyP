@@ -15,7 +15,9 @@ export HASKELLVERSION = 98
 export ghc  = ghc
 export hbc  = hbc
 export hugs = runhugs
-export PolyP = polyp
+# Use some version of the PolyP compiler in the bin directory
+#   with polyp (somewhere on the path) as a fall-back option
+export PolyP := $(firstword $(wildcard bin/*polyp) polyp)
 
 # For a quick test of PolyP - use hugs to avoid compilation
 
@@ -50,6 +52,7 @@ POLYLIBDIR = $(POLYPDIR)/polylib
 PERL       = $(shell which perl)
 
 bin/chase: src/chase.in
+	mkdir -p bin
 	echo '#!'$(PERL) > bin/chase
 	echo '$$POLYLIBDIR='\'$(POLYLIBDIR)\'\; >>bin/chase
 	cat src/chase.in >> bin/chase
@@ -81,8 +84,8 @@ veryclean:	clean
 	$(MAKE) -C book veryclean
 
 distclean:	veryclean
-	rm -fr  bin/hugspolyp bin/ghcpolyp bin/hbcpolyp bin/polyp
-	-rm -r   CVS */CVS
+	rm -f  bin/hugspolyp bin/ghcpolyp bin/hbcpolyp bin/polyp bin/chase
+
 
 # Distribution
 polyp$(polyp_version):
@@ -116,7 +119,7 @@ fromwww:
 	lynx -source 'http://www.cs.chalmers.se/~patrikj/poly/polyp.tar.gz'\
            > polyp.tar.gz
 	gunzip < polyp.tar.gz | tar xf -
-	cd polyp$(polyp_version); $(MAKE) check.hbc
+	cd polyp$(polyp_version); $(MAKE) check.ghc
 
 WEBSITE = http://www.cs.chalmers.se/~patrikj/poly/polyp/
 WEBDIR  = $(HOME)/pub/www/poly/polyp

@@ -11,7 +11,7 @@ runhugs = runhugs
 
 PolyPDIR = ${HOME}
 # PolyP = $(PolyPDIR)/bin/polyp
-PolyP = polyp
+# PolyP = polyp
 # CHASE = perl $(PolyPDIR)/bin/chase
 # CHASE = $(PolyPDIR)/bin/chase
 CHASE = chase
