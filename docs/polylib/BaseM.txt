@@ -1,0 +1,149 @@
+---------------------------------------------------------------
+-- Monadic polytypic functions
+--   980504 Patrik Jansson
+---------------------------------------------------------------
+module BaseM(pmapM,fmapM,cataM,anaM,hyloM,paraM) where
+
+-- pmapM :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
+pmapM fM   = mapm inn . fmapM fM  (pmapM fM)   . out
+
+-- fmapM :: (Bifunctor f, Monad m) => (a -> m c) -> (b -> m d) -> 
+--                                    f a b -> m (f c d)
+
+polytypic fmapM :: (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
+  = \p r -> case f of
+	      g + h     ->  summapM  (fmapM p r) (fmapM p r)
+	      g * h     ->  prodmapM (fmapM p r) (fmapM p r)
+	      Empty     ->  return
+	      Par       ->  p                     
+	      Rec       ->  r                     
+	      d @ g     ->  pmapM (fmapM p r)
+	      Const t   ->  return                    
+
+summapM f g = (mapm Left . f) `either` (mapm Right . g)
+prodmapM f g p = f (fst p) >>= \x-> g (snd p) >>= \y-> return (x,y) 
+
+-- cataM :: Regular d => (FunctorOf d a b -> m b) -> (d a -> m b)
+-- anaM  :: Regular d => (b -> m (FunctorOf d a b)) -> (b -> m (d a))
+-- hyloM :: Bifunctor f => (f a b -> m d)-> (c -> m (f a b)) -> c -> m d
+cataM iM    = iM      @@ fmapM idM (cataM iM   ) . out
+anaM     oM = mapm inn . fmapM idM (anaM     oM) @@ oM
+hyloM iM oM = iM      @@ fmapM idM (hyloM iM oM) @@ oM
+
+-- new names for symmetry
+innM = idM . inn
+outM = idM . out
+idM  = return
+
+{- ekvivalent definitions
+cataM iM = applyM iM . fmapM idM (cataM iM  ) . out
+anaM  oM = applyM (mapm inn . fmapM idM (anaM oM)) . oM
+cataM iM    = iM      @@ fmapM idM (cataM iM   ) @@ outM
+anaM     oM = innM    @@ fmapM idM (anaM     oM) @@   oM
+-}
+
+-- paraM :: Regular d => (d a -> FunctorOf d a b -> m b) -> d a -> m b
+paraM iM x = applyM (iM x) (fmapM idM (paraM iM) (out x))
+
+----------------------------------------------------------------
+-- Monad operations (that are not in PolyPs prelude)
+
+-- mapm :: Monad m => (a->b) -> m a -> m b
+mapm f mx = mx >>= \x -> return (f x)
+-- applyM :: Monad m => (a->m b) -> m a -> m b
+applyM f x = x >>= f
+-- (@@) :: Monad m => (b->m c) -> (a->m b) -> (a->m c)
+f @@ g = \y -> g y >>= f
+
+{-
+f @@ g = (>>= f) . g
+f @@ g = applyM f . g
+(@@) = (.) . (flip (>>=))
+(@@) = (.) . applyM
+-- the flipped @@ = applyM g . f
+-}
+
+--==============================================================
+-- Calculations of pmapM, fmapM, summapM, prodmapM
+{- calculation of pmapM
+  pmapM fM = thread . pmap fM
+  {- Expand thread  =  cata (mapm inn . fthread) -}
+  pmapM fM = cata (mapm inn . fthread) . pmap fM
+  {- cata-pmap-fusion -}
+  pmapM fM = cata (mapm inn . fthread . fmap fM id)
+  {- Expand cata i   = i   . fmap id (cata i  ) . out -}
+  pmapM fM = mapm inn . fthread . fmap fM id . fmap id (pmapM fM) . out
+  {- fmap is a functor, id is unit of composition -}
+  pmapM fM = mapm inn . fthread . fmap fM (pmapM fM) . out
+  {- define fmapM f g = fthread . fmap f g -}
+  pmapM fM = mapm inn . fmapM fM (pmapM fM) . out
+-}
+
+{- calculation of fmapM
+  fmapM fM gM = fthread . fmap fM gM
+  {- fuse the polytypic cases for fthread and for fmap fM gM
+
+  polytypic fthread :: Monad m => f (m a) (m b) -> m (f a b)
+    = case f of
+	g + h     ->  sumthread  . (fthread -+- fthread)
+	g * h     ->  prodthread . (fthread -*- fthread)
+	Empty     ->  return
+	Par       ->  id
+	Rec       ->  id
+	d @ g     ->  thread     . (pmap fthread)
+	Const t   ->  return
+
+  polytypic fmap :: (a -> c) -> (b -> d) -> f a b -> f c d
+    = \p r -> case f of                             
+		g + h   ->  (fmap p r) -+- (fmap p r)
+		g * h   ->  (fmap p r) -*- (fmap p r)
+		Empty   ->  id                    
+		Par     ->  p                     
+		Rec     ->  r                     
+		d @ g   ->  pmap (fmap p r)       
+		Const t ->  id                    
+  -}
+  polytypic fmapM :: (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
+    = \p r -> case f of
+	g + h     ->  sumthread  . (fthread -+- fthread) . (fmap p r) -+- (fmap p r)
+	g * h     ->  prodthread . (fthread -*- fthread) . (fmap p r) -*- (fmap p r)
+	Empty     ->  return                             . id                    
+	Par       ->  id				       . p                     
+	Rec       ->  id				       . r                     
+	d @ g     ->  thread     . (pmap fthread)	       . pmap (fmap p r)       
+	Const t   ->  return			       . id                    
+  {- (-+-), (-*-) are bifunctors, pmap is a functor, id, (.) monoid -}
+  polytypic fmapM :: (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
+    = \p r -> case f of
+	g + h     ->  sumthread  . (fthread.fmap p r -+- fthread.fmap p r)
+	g * h     ->  prodthread . (fthread.fmap p r -*- fthread.fmap p r)
+	Empty     ->  return
+	Par       ->  p                     
+	Rec       ->  r                     
+	d @ g     ->  thread     . (pmap (fthread . fmap p r))
+	Const t   ->  return                    
+  {- fmapM f g = fthread . fmap f g , pmapM f = thread . pmap f 
+     summapM f g = sumthread . f -+- g, prodmapM f g = prodthread . f -*- g -}
+  polytypic fmapM :: (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
+    = \p r -> case f of
+	g + h     ->  summapM  (fmapM p r) (fmapM p r)
+	g * h     ->  prodmapM (fmapM p r) (fmapM p r)
+	Empty     ->  return
+	Par       ->  p                     
+	Rec       ->  r                     
+	d @ g     ->  pmapM (fmapM p r)
+	Const t   ->  return                    
+-}
+
+{- calculation of summapM
+  summapM f g =  sumthread . f -+- g
+  {- Expand sumthread  =  mapm Left `either` mapm Right -}
+  summapM f g = mapm Left `either` mapm Right . f -+- g
+  {- either-(-+-)-fusion -}
+  summapM f g = (mapm Left . f) `either` (mapm Right . g)
+-}
+{- calculation of prodmapM
+  prodmapM f g = prodthread . f -*- g 
+  {- Expand prodthread (mx,my) = mx >>= \x-> my >>= \y-> return (x,y) -}
+  prodmapM f g (a,b) = f a >>= \x-> g b >>= \y-> return (x,y) 
+-}
