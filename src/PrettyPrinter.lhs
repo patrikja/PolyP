@@ -18,7 +18,7 @@ import MonadLibrary(Error)
 
 > instance Show Type where
 >   showsPrec _ = (++) . showDoc . pretty
-> instance Pretty t => Show (Qualified t) where
+> instance Show (Qualified Type) where
 >   showsPrec _ = (++) . showDoc . pretty
 > instance Pretty a => Show (Eqn' a) where
 >  showsPrec _ = (++) . showDoc . pretty
@@ -77,14 +77,9 @@ import MonadLibrary(Error)
 >       prEqn (ExplType [name] t)
 >    $$ d
 
-       text "{-"
-    $$ prEqn (ExplType [name] t)
-    $$ text "-}"
-    $$ d
-
 \end{verbatim}
-The type is commented out, as it is not always correct.
-(***Currently: 980805: almost always incorrect!)
+The type is printed as a sanity check, and to avoid that the 
+output Haskell code violates the monomorphism restriction.
 
 \subsection{Substructures}
 \begin{verbatim}
@@ -176,22 +171,29 @@ The type is commented out, as it is not always correct.
 {\em Insert types on all functions.}
 \begin{verbatim}
 
-> instance Pretty t => Pretty (Qualified t) where
+> instance Pretty (Qualified Type) where
 >   pretty = prQualified
 
-> prQualified :: Pretty t => Qualified t -> Doc
+> prQualified :: Qualified Type -> Doc
 > prQualified (cs:=>t) = prQ cs t
 > 
-> prQ :: Pretty t => [Qualifier t] -> t -> Doc
+> prQ :: [Qualifier Type] -> Type -> Doc
 > prQ []  t = pretty t
-> prQ [c] t = sep [prContext c <> text " =>", nest 2 (pretty t)]
+> prQ [c] t = sep [prContext c   <> text " =>", nest 2 (pretty t)]
 > prQ cs  t = sep [prContexts cs <> text " =>", nest 2 (pretty t)]
 
-> prContexts :: (Pretty t) => [(String, [t])] -> Doc
+> prContexts :: [(String, [Type])] -> Doc
 > prContexts cs = ppTuple (map prContext cs)
 
-> prContext :: (Pretty t) => (String, [t]) -> Doc
-> prContext (c,ts) =  sep (text c: map (nest 2.ppParentheses) ts)
+> prContext :: (String, [Type]) -> Doc
+> prContext ("Poly",[TCon "FunctorOf" :@@: d]) 
+>                        = prContext' ("Regular",[d])
+> prContext ("Poly",[f]) = prContext' ("Bifunctor",[f])
+> prContext p            = prContext' p
+
+> prContext' :: (String, [Type]) -> Doc
+> prContext' (c,ts) =  
+>   sep (text c : map (nest 2 . prT) ts)
 
 > instance Pretty Type where 
 >   pretty = prType
@@ -271,9 +273,18 @@ The type is commented out, as it is not always correct.
 > isSimple _            = False
 
 > isSimpleType :: Type -> Bool
-> isSimpleType (TVar _)      = True
-> isSimpleType (TCon _)      = True
-> isSimpleType (_ :@@: _)    = False
+> isSimpleType (TVar _) = True
+> isSimpleType (TCon _) = True
+> isSimpleType (TCon c :@@: _) | c == listConstructor   
+>                       = True
+> isSimpleType t        = tupletypetest fun == length args
+>   where (fun:args) = spineWalkType t
+
+\end{verbatim}
+Variables, constructors, tuple types and list types are considered simple 
+and thus do not need to be parenthesized when used as type arguments.
+
+\begin{verbatim}
 
 > isOperator :: Expr' a -> Bool
 > isOperator (Var x) = isOperatorName x

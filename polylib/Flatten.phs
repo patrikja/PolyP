@@ -4,7 +4,8 @@
 ---------------------------------------------------------------
 module Flatten(flatten,fflatten,fl_par,fl_rec,fl_all) where
 import Base(cata,pmap,fmap)
--- flatten :: Regular d => d a -> [a]
+
+flatten :: Regular d => d a -> [a]
 flatten  =  cata fflatten
 
 -- Bifunctor f => ...
@@ -18,9 +19,9 @@ polytypic fflatten :: f a [a] -> [a]
       d @ g     ->  concat . flatten . pmap fflatten 
       Const t   ->  nil
 
--- fl_par :: Bifunctor f => f a b -> [a]
--- fl_rec :: Bifunctor f => f a b -> [b]
--- fl_all :: Bifunctor f => f a a -> [a]
+fl_par :: Bifunctor f => f a b -> [a]
+fl_rec :: Bifunctor f => f a b -> [b]
+fl_all :: Bifunctor f => f a a -> [a]
 fl_par =          fflatten . fmap id  nil
 fl_rec = concat . fflatten . fmap nil (singleton.singleton)
 fl_all =          fflatten . fmap id  singleton
@@ -28,8 +29,10 @@ fl_all =          fflatten . fmap id  singleton
 ---------------------------------------------------------------
 -- Help functions for lists
 
-singleton x = [x]
-nil x = []
+singleton :: a -> [a]
+singleton    x =  [x]
+nil :: a -> [b]
+nil    x =  []
 
 {-
 -- alternative definitions

@@ -4,7 +4,7 @@ A short tutorial:
 The file Separate.phs contains a simple polytypic program including
 commments. To translate it to Haskell run
 
-  polyp Separate.phs  | cat typeSeparate.hs - > Separate.hs
+  polyp Separate.phs > Separate.hs
 
 This will (if everything works out) write the translated PolyP program
 to the file Separate.hs.

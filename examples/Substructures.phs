@@ -1,8 +1,7 @@
--- Not tested yet
 module Substructures(substructures) where
 import Base(para)
 import Flatten(fl_rec)
 
--- substructures :: d a -> [d a]
 -- all substructures as a list
+substructures :: Regular d => d a -> [d a]
 substructures = para (\x -> \y -> x : concat (fl_rec y))

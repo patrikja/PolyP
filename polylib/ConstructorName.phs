@@ -4,15 +4,15 @@
 -- module ConstructorName where
 -- import Base(inn,out)
 ---------------------------------------------------------------
-constructorName :: d a -> String
+constructorName :: Regular d => d a -> String
 constructorName = fconstructorName . out
--- fconstructorName :: f a b -> [Char]  is built in
+-- fconstructorName :: Bifunctor f => f a b -> [Char]  is built in
 
-constructorNames :: d a -> [String]
+constructorNames :: Regular d => d a -> [String]
 constructorNames x = 
   map fconstructorName (fconstructors `asTypeOf` [out x])
 
-constructors  :: [d a]
+constructors  :: Regular d => [d a]
 constructors  =  map inn fconstructors
 
 polytypic fconstructors :: [f a b] =
@@ -20,7 +20,7 @@ polytypic fconstructors :: [f a b] =
     g + h -> map Left fconstructors ++ map Right fconstructors
     g     -> [undefined]
 
--- constructor2Int :: d a -> Int
+constructor2Int :: Regular d => d a -> Int
 constructor2Int = fconstructor2Int . out
 
 polytypic fconstructor2Int :: f a b -> Int =
@@ -31,8 +31,8 @@ polytypic fconstructor2Int :: f a b -> Int =
 plus1 :: Int -> Int
 plus1 x = 1 + x
 
--- int2constructor :: Int -> d a
+int2constructor :: Regular d => Int -> d a
 int2constructor n = constructors !! n
 
--- int2fconstructor :: Int -> f a b
+int2fconstructor :: Bifunctor f => Int -> f a b
 int2fconstructor n = fconstructors !! n

@@ -5,7 +5,8 @@
 ---------------------------------------------------------------
 module Propagate(propagate,fprop,sumprop,prodprop,mapMaybe) where
 import Base(cata,inn,pmap)
--- propagate  :: Regular d => d (Maybe a) -> Maybe (d a)
+
+propagate  :: Regular d => d (Maybe a) -> Maybe (d a)
 propagate  =  cata (mapMaybe inn . fprop)
 
 -- Bifunctor f => ...
@@ -19,10 +20,10 @@ polytypic fprop :: f (Maybe a) (Maybe b) -> Maybe (f a b)
       d @ g     ->  propagate . (pmap fprop)
       Const t   ->  Just
 
---sumprop  :: Either (Maybe a) (Maybe b) -> Maybe (Either a b)
+sumprop  :: Either (Maybe a) (Maybe b) -> Maybe (Either a b)
 sumprop  =  mapMaybe Left `either` mapMaybe Right
 
---prodprop :: (Maybe a,Maybe b) -> Maybe (a,b)
+prodprop :: (Maybe a,Maybe b) -> Maybe (a,b)
 prodprop p = case p of
                (Just x,Just y) ->  Just (x,y)
                _               ->  Nothing
@@ -30,5 +31,6 @@ prodprop p = case p of
 ---------------------------------------------------------------
 --  Maybe functions
 
+mapMaybe :: (a->b) -> Maybe a -> Maybe b
 mapMaybe f = maybe Nothing (Just.f)
 

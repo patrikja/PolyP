@@ -4,7 +4,8 @@
 ---------------------------------------------------------------
 module Sum(psum,fsum,size) where 
 import Base(cata,pmap)
--- psum :: Regular d => d Int -> Int
+
+psum :: Regular d => d Int -> Int
 psum = cata fsum
 
 -- Bifunctor f => ...
@@ -18,5 +19,5 @@ polytypic fsum :: f Int Int -> Int
       d @ g    ->  psum . pmap fsum 
       Const t  ->  \x -> 0
 
--- size :: Regular d => d a -> Int
+size :: Regular d => d a -> Int
 size = psum . pmap (\_->1)

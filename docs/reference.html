@@ -1,13 +1,28 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<title>PolyP reference manual</title>
+</head>
+
+<body>
+<h1>PolyP reference manual</h1>
+
 This text is a reference manual for PolyP.
 (Patrik Jansson, 1998)
 
+
+<h2>Compiler phases</h2>
+
 Invoking the compiler phases:
 
-  chase [-i ImportDir] PolyPModule.phs  > PolyPcode.Phs
+<pre>
+  chase [-i ImportDir] PolyPModule.phs  &gt; PolyPcode.Phs
 
-  polyp [-p ExplTypes.hs] PolyPcode.Phs > Haskellcode.Hs
+  polyp [-p ExplTypes.hs] PolyPcode.Phs &gt; Haskellcode.Hs
 
-  [cat HelpTypes.hs Haskellcode.Hs      > Haskellcode.hs]
+  [cat Prefix.hs Haskellcode.Hs         &gt; Haskellcode.hs]
+</pre>
 
 The import chaser <CODE>chase</CODE> takes a polytypic program module
 and inlines the text of all imported modules (recursively).
@@ -19,8 +34,8 @@ involved modules and should normally be directed to a file (ending in
 If your input consists of just one file and does not need any others
 the <code>chase</code> is unnecessary.
 
-(Unless you paste the polytypic prelude into your file by hand, you will
-almost always need <code>chase</code>.)
+(But unless you paste the polytypic prelude into your file by hand,
+ you will virtually always need <code>chase</code>.)
 
 The flag <code>-i</code> can be used (any number of times) to specify
 directories that are to be searched for the imported modules.
@@ -29,7 +44,7 @@ The polytypic library directory <code>POLYPDIR/polylib</code> is a
 typical candidate here.
 
 
-<!-- New section -->
+<h2>The main translation phase</h2>
 
 The main compilation (or translation) is done by calling <code>polyp
 P.Phs</code>.
@@ -52,16 +67,16 @@ The simplest way to do this is to put them in a separate file and then
 
 The different phases of the PolyP compilation give progress reports in a
 Haskell comment in the output file:
+<ul>
+<li>the parser reports the names of the successfully parsed declarations,
 
-the parser reports the names of the successfully parsed declarations,
-
-the dependency analysis reports a dependency ordered list of groups of
+<li>the dependency analysis reports a dependency ordered list of groups of
 mutually recursive declarations,
 
-the type checker reports the types of all top level declarations
+<li>the type checker reports the types of all top level declarations
 
-and the instance generation just reports the generated code.
-
+<li>and the instance generation just reports the generated code.
+</ul>
 The error messages from PolyP unfortunately don't give line numbers
 where the error occurred, but it is often possible to pinpoint the
 location quite accurately by studying the reports:
@@ -88,7 +103,7 @@ included in the output.
 The definitions of these functions should be placed in a separate file
 and prepended to the PolyP output or loaded in hugs in some other way.
 
-<!-- New section -->
+<h2>Polytypic program construction tips</h2>
 
 When writing polytypic programs with PolyP there are some things to
 think about:
@@ -135,3 +150,17 @@ think about:
 
 </ul>
 
+
+<hr>
+<!-- hhmts start -->
+Last modified: Fri Aug  7 10:58:48 MET DST 1998
+<!-- hhmts end -->
+by
+<address>
+<a href="http://www.cs.chalmers.se/~patrikj/"
+ >Patrik Jansson</a> /
+<a href="mailto:patrikj@cs.chalmers.se"
+               >patrikj@cs.chalmers.se</a>
+</address>
+</body>
+</html>

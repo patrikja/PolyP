@@ -4,7 +4,7 @@
 ---------------------------------------------------------------
 module Base(pmap,fmap,cata,ana,hylo,para,(-*-),(-+-)) where
 
--- pmap :: Regular d => (a -> b) -> d a -> d b
+pmap :: Regular d => (a -> b) -> d a -> d b
 pmap f   = inn . fmap f  (pmap f)   . out
 
 polytypic fmap :: (a -> c) -> (b -> d) -> f a b -> f c d
@@ -17,14 +17,14 @@ polytypic fmap :: (a -> c) -> (b -> d) -> f a b -> f c d
       	      d @ g   ->  pmap (fmap p r)       
       	      Const t ->  id                    
       
--- cata :: Regular d => (FunctorOf d a b -> b) -> (d a -> b)
--- ana  :: Regular d => (b -> FunctorOf d a b) -> (b -> d a)
--- hylo :: Bifunctor f => (f a b -> d)-> (c -> f a b) -> c -> d
+cata :: Regular d => (FunctorOf d a b -> b) -> (d a -> b)
+ana  :: Regular d => (b -> FunctorOf d a b) -> (b -> d a)
+hylo :: Bifunctor f => (f a b -> d)-> (c -> f a b) -> c -> d
 cata i   = i   . fmap id (cata i  ) . out
 ana    o = inn . fmap id (ana    o) . o
 hylo i o = i   . fmap id (hylo i o) . o
 
--- para :: Regular d => (d a -> FunctorOf d a b -> b) -> d a -> b
+para :: Regular d => (d a -> FunctorOf d a b -> b) -> d a -> b
 para i x = i x (fmap id (para i) (out x))
 
 ---------------------------------------------------------------

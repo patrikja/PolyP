@@ -4,7 +4,7 @@
 ---------------------------------------------------------------
 module Crush(crush,fcrush) where 
 import Base(cata,pmap)
--- crush :: Regular d => (a->a->a) -> a -> d a -> a
+crush :: Regular d => (a->a->a) -> a -> d a -> a
 crush op e =  cata (fcrush op e)
 
 -- Bifunctor f => ...

@@ -24,7 +24,7 @@ default: $(targets)
 # testShow.phs
 # testSubstructures.phs
 # testSum.phs
-# testThread.phs     typeThread.hs
+# testThread.phs
 # testZip.phs	
 
 # Show.phs
@@ -50,7 +50,8 @@ test%.hs : test%.phs
           && hugs $@) \
          || (mv $@ tmp.hs; more tmp.hs)
 
-# make check should only print lines starting with --!!!
+# If the PolyP installation works as it should
+# make check should only print lines starting with "--!!!"
 
 check:: $(targets:.hs=.check) $(wildcard ../polylib/*.phs)
 
