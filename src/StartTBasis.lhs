@@ -8,9 +8,9 @@
 >                    preludedatadefs,sumdatadef) where
 > import Parser(pType0,pType1,pTypeFile)
 > import ParseLibrary(parse)
-> import MyPrelude(mapSnd,splitUp,maytrace)
-> import Grammar(Eqn,Eqn'(..),Qualified(..),Type(..),VarID,(-=>),QType,
->                deQualify,isDataDef,
+> import MyPrelude(mapSnd,splitUp,maytrace,variablename)
+> import Grammar(Eqn,Eqn'(..),Qualified(..),Type(..),VarID,
+>                (-=>),QType,Kind,qualify,deQualify,isDataDef,
 >                tupleConstructor,listConstructor,functionConstructor)
 > import MonadLibrary(Error,unDone,(<@),(<@-),unLErr)
 > import Env(newEnv,extendsEnv)
@@ -98,13 +98,23 @@ Second try: added data-declarations also.
 > haskellass :: [(String,QType)]
 > haskellass = haskellConstructorAssoc ++ preludeAssocs
 
+> maxTupleSize = 7
+
 > haskellConstructorAssoc :: [(String,QType)]
-> haskellConstructorAssoc = map (mapSnd (unDone . parse pType0))
->              [(listConstructor,"[a]"),(":","a->[a]->[a]"),
->               (tupleConstructor 0,"()"),
->               (tupleConstructor 2,"a->b->(a,b)"),
->               (tupleConstructor 3,"a->b->c->(a,b,c)")
->               ]
+> haskellConstructorAssoc = 
+>       map (mapSnd (unDone . parse pType0))
+>              [(listConstructor,"[a]"),(":","a->[a]->[a]")]
+>    ++ map (\n-> (tupleConstructor n, tupleType n)) (0:[2..maxTupleSize])
+
+> tupleType :: Int -> QType
+> tupleType 1 = error "StartTBasis.tupleType: There are no 1-tuples"
+> tupleType n = qualify $ foldr1 (-=>) (tyvars ++ [tuple])
+>   where tuple = foldl1 (:@@:) (TCon (tupleConstructor n):tyvars)
+>         tyvars = map (TVar . variablename) [0..n-1]
+
+> tupleKind :: Int -> Kind
+> tupleKind 1 = error "StartTBasis.tupleKind: There are no 1-tuples"
+> tupleKind n = foldr1 (-=>) (replicate (n+1) starKind)
 
 \end{verbatim}
 The operator \verb|@@| is not in the Haskell prelude, but it is in
@@ -117,24 +127,26 @@ Gofer's {\tt cc.prelude}.
 >                           extendsEnv kindass newEnv ) 
 >                          dataDefs
 >   where 
->     s2s     = star -=> star
->     s2s2s   = star -=> s2s
+>     s2s     = starKind -=> starKind
+>     s2s2s   = starKind -=> s2s
 >     kindass = kindhaskellass ++ kindpolypass
 >
 >     kindhaskellass = 
 >               [(functionConstructor, s2s2s),
->                (listConstructor,     s2s),
->                (tupleConstructor 0,  star),
->                (tupleConstructor 2,  s2s2s),
->                (tupleConstructor 3,  star -=> s2s2s)] 
->            ++ map (\x->(x,star)) 
+>                (listConstructor,     s2s)]
+>            ++ map (\n-> (tupleConstructor n, tupleKind n))
+>                   (0:[2..maxTupleSize])
+>            ++ map (\x->(x,starKind)) 
 >                ["Char","Double","Float","Int","Integer",
 >                 "IOError","Void","Ordering"]
 >            ++ [("IO",s2s)]
 >
 
 >     kindpolypass = [("Mu", s2s2s -=> s2s),("FunctorOf", s2s -=> s2s2s)]
->     star = TCon "*" 
+
+> starKind :: Kind
+> starKind = TCon "*" 
+
 
 > pT = unDone . parse pType1
 

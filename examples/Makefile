@@ -63,7 +63,9 @@ test%.check : test%.phs
 	@$(CHASE) $< >tmp.phs
 	@-($(PolyP) tmp.phs | cat $(wildcard type$*.hs) - >test$*.hs \
           && runhugs test$*.hs > test$*.check) || echo >test$*.check
-	@diff test$*.check test$*.out
+	@diff -w test$*.check test$*.out
+# The -w argument to diff is to ignore white space differences
+# caused by the change of printing of hugs in 1998. "(1, 2)" -> "(1,2)"
 
 genfiles = $(targets) $(targets:.hs=.check) tmp.phs tmp.hs Separate.hs
 

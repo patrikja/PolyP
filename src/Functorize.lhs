@@ -6,7 +6,8 @@
 > import Char(isDigit,toLower)
 > import Env(lookupEnv)
 > import Grammar(Eqn'(..),Expr'(..),Expr,Type(..),Qualified(..),Literal(..),
->                Eqn,Func,QType, ConID,VarID,tupleConstructor,listConstructor)
+>                Eqn,Func,QType, ConID,VarID,spineWalkType,
+>                tupleConstructor,listConstructor,isTupleCon)
 > import Folding(cataType)
 > import MyPrelude(mapFst,mapSnd,pair,variablename)
 > import StartTBasis(innType,outType,fcnameType,leftname,rightname,eitherType)
@@ -33,7 +34,9 @@ datatype definition:
 > type Struct = PList (ConID,Int)
 
 \end{verbatim}
-The following section needs to be reworked. (Use material from Masters Thesis)
+
+*** Triples and beyond should probably be translated to nested pairs
+in inn, out, or forbidden below.
 
 \begin{verbatim}
 
@@ -42,26 +45,27 @@ The following section needs to be reworked. (Use material from Masters Thesis)
 >   = ( ((def,1),map (mapSnd length) alts) , convAlts def alts)
 > makeFunctorStruct _ = error "Functorize.makeFunctorStruct: impossible: not a DataDef"
 
-> convAlts :: ConID -> [(ConID, [Type])] -> Type
-> convAlts def alts = foldr1 plus (map (convAlt def) alts)
+> convAlts :: ConID -> [(ConID, [Type])] -> Func
+> convAlts def alts = foldr1 plus (map (convProd def . snd) alts)
 >   where x `plus` y = TCon "+" :@@: x :@@: y
 
-> convAlt :: ConID -> (ConID, [Type]) -> Type
-> convAlt def (_, []) = TCon "Empty" 
-> convAlt def (_, ts) = foldr1 prod (map (convType def) ts)
->     where prod x y = TCon "*" :@@: x :@@: y
+> convProd :: ConID -> [Type] -> Func
+> convProd def [] = TCon "Empty" 
+> convProd def ts = foldr1 prodFunctor (map (convType def) ts)
 
-> convType :: ConID -> Type -> Type
+> prodFunctor :: Func -> Func -> Func
+> prodFunctor f g = TCon "*" :@@: f :@@: g
+
+> convType :: ConID -> Type -> Func
 > convType def (TVar _) = TCon "Par" -- indexed if multiple params
 > convType def t | isConstantType t = TCon "Const" :@@: t
-
-Skall ga ned i tradet rekursivt.
-
 > convType def (TCon con :@@: TVar _)  -- should compare variable with lhs
 >   | con == def = TCon "Rec"
-> convType def (TCon con :@@: t) = 
+> convType def t | isTupleCon tup   = convProd def ts
+>      where (TCon tup:ts) = spineWalkType t
+> convType def (TCon con :@@: t)    = 
 >    TCon "@" :@@: TCon con :@@: convType def t
-> convType def _ = error "Functorize.convType: Type not regular enough"
+> convType def _ = error ("Functorize.convType: Can't calculate FunctorOf "++ def ++" as the type is not regular enough.")
 
 > isConstantType :: Type -> Bool
 > isConstantType = null . typeVars
@@ -71,6 +75,7 @@ Skall ga ned i tradet rekursivt.
 
 \end{verbatim}
 Far too many bad functors get through this a the moment.
+
 \section{Predefined instances}
 For every functor we need {\tt out}, {\tt inn} and {\tt constructorName}.
 
@@ -82,21 +87,7 @@ defined (uncurry0,1,2 ...).
 \subsection{Generating {\tt inn}}
 {\tt innD = uncurryk1 C1 `either` uncurryk2 C2 `either` ... `either` uncurrykn Cn}
 
-requires {\tt either} and {\tt uncurryi} for some i.
-\begin{verbatim}
-
-> inn_def :: VarID -> Struct -> (QType,([Req],[Eqn]))
-> inn_def na ((name,_),ss) = (innType,
->                             (reqs,[VarBind na Nothing [] 
->                                      (eitherfs (map constrs ss))]))
->   where 
->     noPoly = [] :=> undefined
->     reqs   = map (`pair` noPoly) needed 
->     needed = (if length ss > 1 then ("either":) else id) 
->              (map (uncurryn.snd) ss)
->     constrs (c,n) = Var (uncurryn n) :@: (Con c)
-
-\end{verbatim} 
+The definition requires {\tt either} and {\tt uncurryi} for some {\tt i}.
 {\tt geninnD = uncurryk1 e1 `either` uncurryk2 e2 `either` ... `either` uncurrykn en}
 
 A very similar function can be used to handle the {\tt \{ Ci -> ei
@@ -111,21 +102,23 @@ The {\tt inn} function is recovered by supplying an empty list as {\tt
 
 \begin{verbatim}
 
-> {-
+> inn_def :: VarID -> Struct -> (QType,([Req],[Eqn]))
+> inn_def v s = geninn_def v [] s
+
 > type CEList = [(ConID, Expr)]
 
-> geninn_def :: VarID -> CEList -> Struct -> ([Req],[Eqn])
-> geninn_def n cres ((name,_),ss) = (reqs,[VarBind n (Just innType) [] 
->                                      (eitherfs (map constrs' ss))])
+> geninn_def :: VarID -> CEList -> Struct -> (QType,([Req],[Eqn]))
+> geninn_def n cres ((name,_),ss) = (innType,
+>                                    (reqs,[VarBind n (Just innType) [] 
+>                                            (eitherfs (map constrs' ss))]))
 >   where 
 >     noPoly = [] :=> undefined
 >     reqs   = map (`pair` noPoly) needed 
 >     needed = (if length ss > 1 then ("either":) else id) 
 >              (map (uncurryn.snd) ss)
->     constrs (c,n)  = mkunc n :@: c
+>     constrs (c,n)  = funcurry n :@: c
 >     constrs' = constrs 
 >              . mapFst (\c->maybe (Con c) id (lookupEnv c cres))
-> -}
 
  funcurry = Var . uncurryn -- hbc takes it but Hugs doesn't !
 
