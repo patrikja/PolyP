@@ -5,7 +5,8 @@
 > import InferKind(assureType)
 > import UnifyTypes(unify,checkInstance)
 > import TypeGraph(HpType,HpKind,NodePtr,HpNode(..),HpQType,
->                  mkFun,mkCon,mkVar,(==>),fetchNode,typeIntoHeap,
+>                  mkFun,mkCon,mkVar,mkFOfd,
+>                  (==>),fetchNode,typeIntoHeap,
 >                  spineWalkHpType,getChild)
 > import TypeBasis(Basis,TBasis,KindBasis,
 >                  extendTypeTBasis,extendTypeAfterTBasis,
@@ -13,10 +14,10 @@
 >                  extendTypeEnv,ramKindToRom,getKindEnv,instantiate,
 >                  extendKindEnv,extendKindTBasis)
 > import StartTBasis(startTBasis,charType,intType,floatType,boolType,strType)
-> import Env(newEnv,lookupEnv,extendsEnv)
+> import Env(Env,newEnv,lookupEnv,extendsEnv)
 > import MyPrelude(pair,splitUp)
 > import MonadLibrary(STErr,mliftErr,convertSTErr,Error(..),unDone,(@@),
->                     foreach,mapl,(<@),(<@-),LErr)
+>                     foreach,mapl,(<@),(<@-),LErr,map2)
 > import StateFix-- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 > import Grammar -- (Qualified,Type(..),PrgEqns)
 > import Folding(freeVarsPat,cataType)
@@ -342,16 +343,142 @@ calculated types.
 > checkPoly _ _ = error "InferType: checkPoly: impossible: not Polytypic"
 
 \end{verbatim}
-The functor variable in the case must be the first in the context
-list.
+
+The functor variable in the polytypic case is assumed to be the first
+in the context list.
+
 \begin{verbatim}
 
+> tevalAndSubst :: HpQType s -> HpQType s -> -- type, functor
+>                  ST s (HpQType s)          -- evaluated type
 > tevalAndSubst hpty' (_:=>hpfi) = 
 >   instantiate [] hpty' >>= \hpty@((_,pf:_):_:=>pt) ->
->   pf ==> hpfi >>   typeEval pt >>   return hpty
+>   pf ==> hpfi          >> -- substitution by destructive update
+>   qtypeEval hpty       >> -- type evaluation  
+>   return hpty
 
 \end{verbatim}
-\subsection{Doing this in the heap}
+
+The type evaluation should also evaluate the context as sketched
+below.  The idea is that 
+\begin{verbatim}
+qtypeEval ({f|->g+h} Poly f => f a b -> b) = 
+qtypeEval (Poly (g+h) => (g+h) a b -> b) = 
+(Poly g,Poly h) => Either (g a b) (h a b) -> b
+
+qtypeEval ({f|->Par} Poly f => f a b -> b) = 
+qtypeEval (Poly Par => (Par) a b -> b) = 
+() => a -> b
+\end{verbatim}
+
+\begin{verbatim}
+
+> qtypeEval :: HpQType s -> ST s (HpQType s)
+> qtypeEval (l :=> t) = (map concat (mapl tevalC l)) >>= \l' ->
+>                       typeEval t >> -- side effect on t
+>                       return (l':=>t)
+
+> tevalC :: Qualifier (HpType s) -> ST s [Qualifier (HpType s)]
+> tevalC ("Poly", fun : _ ) = map (map poly) (funEval fun)
+>    where poly :: HpType s -> Qualifier (HpType s)
+>          poly f = ("Poly", [f])
+> tevalC c                  = return [ c ]
+
+> funEval :: HpType s -> ST s [HpType s] -- functors
+> funEval = funEval' @@ spineWalkHpType 
+
+\end{verbatim}
+
+If the functors were sytactic objects as they are parsed this
+definition would do it.
+
+\begin{verbatim}
+ funEval (g+h)     = funEval g ++ funEval h
+ funEval (g*h)     = funEval g ++ funEval h
+ funEval (d@g)     = [FunctorOf d] ++ funEval g
+ funEval (Par)     = []
+ funEval (Rec)     = []
+ funEval (Const t) = []
+ funEval (f)       = [f]  -- functor variable
+\end{verbatim}
+
+In practice we have to work a little harder: not only are the functors
+encoded in the type for types, but also this type is encoded using
+pointers. We can encode the varying part of the above function sketch
+in a table:
+
+\begin{verbatim}
+
+> funEvalEnv :: Env String [HpType s -> ST s [HpType s]]
+> funEvalEnv = extendsEnv 
+>   [("+",[funEval, funEval])
+>   ,("*",[funEval, funEval])
+>   ,("@",[dataEval,funEval])
+>   ,("Par",[])
+>   ,("Rec",[])
+>   ,("Empty",[])
+>   ,("Const",[consttypeEval])
+>   ] newEnv
+
+\end{verbatim}
+
+\begin{verbatim}
+spineWalkHpType gives (f:args)
+HpCon c -> -- a functor constructor encountered
+  lookupEnv c funEvalEnv gives funs
+  if not found => error
+  make sure the argument list has same length as args
+  zipWith ($) funs args
+  sequence and concatenate the results
+f@(HpVar v) -> -- a functor variable
+  make sure it has no arguments (it could be m g, but that is no Bifunctor)
+  return [f]  
+(HpApp _ _) -> impossible ...
+\end{verbatim}
+
+
+\begin{verbatim}
+
+> funEval' :: [(NodePtr s,HpNode s)] -> ST s [NodePtr s]
+> funEval' [] = error "InferType: funEval': impossible: nothing to apply"
+> funEval' ((pf,f):pnargs) = case f of
+>     HpVar _   -> def
+>     HpCon c   -> maybe (errNoBifun c) (funEvalArgs c args) (lookupEnv c funEvalEnv)
+>     HpApp _ _ -> error "InferType: funEval': impossible: HpApp found after spine removal"
+>   where args = map (getChild . snd) pnargs
+>         def | null args  = return [pf]
+>             | otherwise  = error "InferType: funEval': Expected functor variable, found application."
+>         errNoBifun c = error ("InferType: funEval': found "++c++
+>                               ", expected a Bifunctor constructor.")
+
+> funEvalArgs :: String -> [HpType s] -> [HpType s -> ST s [HpType s]] -> ST s [HpType s]
+> funEvalArgs c args argfuns 
+>   | numfuns == numargs 
+>      = map concat (accumulate (zipWith ($) argfuns args))
+>   | otherwise
+>      = error ("InferType: funEval': Bifunctor constructor "++ c ++
+>               "expects "++show numfuns ++" arguments, found instead "++
+>                           show numargs ++" arguments.")
+>       where 
+>         numfuns = length argfuns
+>         numargs = length args
+
+\end{verbatim}
+
+  build FunctorOf d
+  return it in a singleton list
+
+\begin{verbatim}
+
+> dataEval :: HpType s -> ST s [HpType s]
+> dataEval = map (:[]) . mkFOfd
+
+> consttypeEval :: HpType s -> ST s [HpType s]
+> consttypeEval _ = return []
+
+\end{verbatim}
+
+\subsection{Type evaluation in the heap}
 For all the cases: 
 \begin{itemize}
 \item Get a fresh copy $t_i$ of the type $t$ with handle $h_i$ to the
@@ -360,10 +487,10 @@ For all the cases:
 \item Perform the substitution by unifying the handle with $f_i$.
 \item Apply hpteval to the type $t_i$. (It will also need to know about
   $f_i$ to know which transformation rule to apply and $h_i$ so that only
-  the correct occurenses of the matching rule will be used.)
+  the correct occurrences of the matching rule will be used.)
 \item Check that the inferred type is an instance of this type.
 \end{itemize}
-New idea: Treat \verb|:+:| ... as type synonyms! In this way the
+New idea: Treat \verb|+| ... as type synonyms! In this way the
 unification algorithm will have to be extended, but teval completely
 disappears.
 
@@ -385,22 +512,22 @@ constructors and applications.
 
 > typeEval = (sequence . map typeEval) @@ typeEval' @@ spineWalkHpType 
 
-> typeEval' pargs@((_,f):_) = case f of
->     HpVar _ -> def
->     HpCon c -> maybe def eval (lookupEnv c typeSynEnv)
+> typeEval' [] = error "InferType: typeEval': impossible: nothing to apply"
+> typeEval' pargs = case f of
+>     HpVar _   -> def
+>     HpCon c   -> maybe def eval (lookupEnv c typeSynEnv)
 >     HpApp _ _ -> error "InferType: typeEval': impossible: HpApp found after spine removal"
->   where (ps,_:args) = unzip pargs
+>   where f:args = map snd pargs
 >         nargs = length args
 >         children = map getChild args
 >         def = return children
->         eval (arity,syn) | arity > nargs = def
+>         eval (arity,syn) | arity > nargs = def -- partial application
 >                          | otherwise     = applySynonym syn children >>= again
 >         again ptr = 
 >           root ==> ptr >>
 >           spineWalkHpType root >>= \pargs2->
 >           typeEval' (pargs2++rest)
 >         (root,_):rest = drop nargs pargs
-> typeEval' [] = error "InferType: typeEval': impossible: nothing to apply"
 
 \end{verbatim}
 These should be precalculated (maybe moved to another module).
