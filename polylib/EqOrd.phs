@@ -3,7 +3,7 @@
 --   980409 Patrik Jansson 
 ---------------------------------------------------------------
 module EqOrd where
-import Base(fmap)
+import Base(fmap2)
 import ConstructorName(constructor2Int)
 import Flatten(flatten,fl_all)
 import Zip(pzip,fzip,pzipWith')
@@ -31,7 +31,7 @@ pord :: (Regular d, Ord a) => (d a,d a) -> Ordering
 pord (x,y) = maybe (compare (constructor2Int x) (constructor2Int y))
                    (foldr ordop EQ
                    .fl_all
-                   .fmap (uncurry compare) pord
+                   .fmap2 (uncurry compare) pord
                    )
                    (fzip (out x, out y))
 

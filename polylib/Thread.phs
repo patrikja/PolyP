@@ -2,7 +2,7 @@
 -- Threads a monad through a value
 --   970424 Patrik Jansson  
 ---------------------------------------------------------------
-module Thread(thread,pmapM,fthread,fmapM) where
+module Thread(thread,pmapM,fthread,fmap2M) where
 import Base(cata,inn,pmap)
 
 thread :: (Regular d, Monad m) => d (m a) -> m (d a)
@@ -11,9 +11,9 @@ thread  =  cata (mapm inn . fthread)
 pmapM :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
 pmapM f = thread . pmap f
 
-fmapM :: (Bifunctor f, Monad m) => (a -> m c) -> (b -> m d) -> 
+fmap2M :: (Bifunctor f, Monad m) => (a -> m c) -> (b -> m d) -> 
                                    f a b -> m (f c d)
-fmapM f g = fthread . fmap f g
+fmap2M f g = fthread . fmap2 f g
 
 -- Bifunctor f => ...
 polytypic fthread :: Monad m => f (m a) (m b) -> m (f a b)

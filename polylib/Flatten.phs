@@ -3,7 +3,7 @@
 --   980409 Patrik Jansson
 ---------------------------------------------------------------
 module Flatten(flatten,fflatten,fl_par,fl_rec,fl_all) where
-import Base(cata,pmap,fmap)
+import Base(cata,pmap,fmap2)
 
 flatten :: Regular d => d a -> [a]
 flatten  =  cata fflatten
@@ -22,9 +22,9 @@ polytypic fflatten :: f a [a] -> [a]
 fl_par :: Bifunctor f => f a b -> [a]
 fl_rec :: Bifunctor f => f a b -> [b]
 fl_all :: Bifunctor f => f a a -> [a]
-fl_par =          fflatten . fmap id  nil
-fl_rec = concat . fflatten . fmap nil (singleton.singleton)
-fl_all =          fflatten . fmap id  singleton
+fl_par =          fflatten . fmap2 id  nil
+fl_rec = concat . fflatten . fmap2 nil (singleton.singleton)
+fl_all =          fflatten . fmap2 id  singleton
 
 ---------------------------------------------------------------
 -- Help functions for lists

@@ -2,19 +2,19 @@
 -- Monadic polytypic functions
 --   980504 Patrik Jansson
 ---------------------------------------------------------------
-module BaseM(pmapM,fmapM,cataM,anaM,hyloM,paraM) where
+module BaseM(pmapM,fmap2M,cataM,anaM,hyloM,paraM) where
 
 pmapM :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
-pmapM fM   = mapm inn . fmapM fM  (pmapM fM)   . out
+pmapM fM   = mapm inn . fmap2M fM  (pmapM fM)   . out
 
-polytypic fmapM :: Monad m => (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
+polytypic fmap2M :: Monad m => (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
   = \p r -> case f of
-	      g + h     ->  summapM  (fmapM p r) (fmapM p r)
-	      g * h     ->  prodmapM (fmapM p r) (fmapM p r)
+	      g + h     ->  summapM  (fmap2M p r) (fmap2M p r)
+	      g * h     ->  prodmapM (fmap2M p r) (fmap2M p r)
 	      Empty     ->  return
 	      Par       ->  p                     
 	      Rec       ->  r                     
-	      d @ g     ->  pmapM (fmapM p r)
+	      d @ g     ->  pmapM (fmap2M p r)
 	      Const t   ->  return                    
 
 
@@ -29,9 +29,9 @@ prodmapMr f g p = g (snd p) >>= \y-> f (fst p) >>= \x-> return (x,y)
 cataM :: Regular d => (FunctorOf d a b -> m b) -> (d a -> m b)
 anaM  :: Regular d => (b -> m (FunctorOf d a b)) -> (b -> m (d a))
 hyloM :: Bifunctor f => (f a b -> m b)-> (c -> m (f a c)) -> c -> m b
-cataM iM    = iM      @@ fmapM idM (cataM iM   ) . out
-anaM     oM = mapm inn . fmapM idM (anaM     oM) @@ oM
-hyloM iM oM = iM      @@ fmapM idM (hyloM iM oM) @@ oM
+cataM iM    = iM      @@ fmap2M idM (cataM iM   ) . out
+anaM     oM = mapm inn . fmap2M idM (anaM     oM) @@ oM
+hyloM iM oM = iM      @@ fmap2M idM (hyloM iM oM) @@ oM
 
 -- new names for symmetry
 idM :: Monad m => a -> m a
@@ -44,41 +44,41 @@ outM = idM . out
 pmapMl = pmapM
 
 paraM :: Regular d => (d a -> FunctorOf d a b -> m b) -> d a -> m b
-paraM iM x = applyM (iM x) (fmapM idM (paraM iM) (out x))
+paraM iM x = applyM (iM x) (fmap2M idM (paraM iM) (out x))
 
 -- Reverse order traversals
 pmapMr :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
-pmapMr fM   = mapm inn . fmapMr fM  (pmapMr fM)   . out
+pmapMr fM   = mapm inn . fmap2Mr fM  (pmapMr fM)   . out
 
-polytypic fmapMr :: Monad m => (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
+polytypic fmap2Mr :: Monad m => (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
   = \p r -> case f of
-	      g + h     ->  summapM   (fmapMr p r) (fmapMr p r)
-	      g * h     ->  prodmapMr (fmapMr p r) (fmapMr p r)
+	      g + h     ->  summapM   (fmap2Mr p r) (fmap2Mr p r)
+	      g * h     ->  prodmapMr (fmap2Mr p r) (fmap2Mr p r)
 	      Empty     ->  return
 	      Par       ->  p                     
 	      Rec       ->  r                     
-	      d @ g     ->  pmapMr (fmapMr p r)
+	      d @ g     ->  pmapMr (fmap2Mr p r)
 	      Const t   ->  return                    
 
-cataMr iM    = iM      @@ fmapMr idM (cataMr iM   ) . out
-anaMr     oM = mapm inn . fmapMr idM (anaMr     oM) @@ oM
-hyloMr iM oM = iM      @@ fmapMr idM (hyloMr iM oM) @@ oM
+cataMr iM    = iM      @@ fmap2Mr idM (cataMr iM   ) . out
+anaMr     oM = mapm inn . fmap2Mr idM (anaMr     oM) @@ oM
+hyloMr iM oM = iM      @@ fmap2Mr idM (hyloMr iM oM) @@ oM
 
 ----------------------------------------------------------------
 -- Traversal either way: pmapM'
 --   (True -> left to right, False -> right to left)
 
 pmapM' :: (Regular d, Monad m) => Bool -> (a -> m b) -> d a -> m (d b)
-pmapM' ord fM   = mapm inn . fmapM' ord fM  (pmapM' ord fM)   . out
+pmapM' ord fM   = mapm inn . fmap2M' ord fM  (pmapM' ord fM)   . out
 
-polytypic fmapM' :: Monad m => Bool -> (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
+polytypic fmap2M' :: Monad m => Bool -> (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
   = \ord p r -> case f of
-      g + h     ->  summapM  (fmapM' ord p r) (fmapM' ord p r)
-      g * h     ->  opM ord . (fmapM' ord p r -*- fmapM' ord p r)
+      g + h     ->  summapM  (fmap2M' ord p r) (fmap2M' ord p r)
+      g * h     ->  opM ord . (fmap2M' ord p r -*- fmap2M' ord p r)
       Empty     ->  return
       Par       ->  p                     
       Rec       ->  r                     
-      d @ g     ->  pmapM' ord (fmapM' ord p r)
+      d @ g     ->  pmapM' ord (fmap2M' ord p r)
       Const t   ->  return                    
 
 opM :: Monad m => Bool -> (m a, m b) -> m (a,b)

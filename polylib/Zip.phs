@@ -3,12 +3,12 @@
 ---  980409 Patrik Jansson
 ---------------------------------------------------------------
 module Zip(pzip,fzip,pzipWith,pzipWith',(@@)) where
-import Base(pmap,fmap,(-+-),(-*-))
+import Base(pmap,fmap2,(-+-),(-*-))
 import Propagate(fprop,sumprop,prodprop,propagate,mapMaybe)
 -- Maybe could be replaced by any MonadZero
 
 pzip :: Regular d => (d a,d b) -> Maybe (d (a,b))
-pzip  =  ( (resultM.inn) @@ (fprop.fmap resultM pzip) @@ fzip )
+pzip  =  ( (resultM.inn) @@ (fprop.fmap2 resultM pzip) @@ fzip )
       .  (out -*- out)
 
 punzip :: Regular d => d (a,b) -> (d a,d b)
@@ -18,14 +18,14 @@ pzipWith' :: Regular d => (FunctorOf d c e -> e) ->
                           ((d a,d b)->e) -> 
                           ((a,b)->c) -> (d a,d b) -> e
 pzipWith' ins fail op (x,y)  =
-  maybe (fail (x,y)) (ins . fmap op (pzipWith' ins fail op)) 
+  maybe (fail (x,y)) (ins . fmap2 op (pzipWith' ins fail op)) 
         (fzip (out x, out y))
 
 pzipWith :: Regular d => ((a, b) -> Maybe c) -> (d a, d b) -> Maybe (d c)
 pzipWith  = pzipWith' (mapMaybe inn.fprop) (const zeroM)
 
 funzip :: Bifunctor f => f (a,c) (b,d) -> (f a b,f c d)
-funzip x = (fmap fst fst x, fmap snd snd x)
+funzip x = (fmap2 fst fst x, fmap2 snd snd x)
 
 -- Bifunctor f => ...
 polytypic fzip :: (f a b,f c d) -> Maybe (f (a,c) (b,d))
