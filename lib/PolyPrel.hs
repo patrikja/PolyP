@@ -3,6 +3,7 @@
 ($)     :: (a->b)->a->b
 (&&)    :: Bool->Bool->Bool
 (*)     :: Num a => a->a->a
+(/)     :: Num a => a->a->a
 (+)     :: Num a => a->a->a
 (++)    :: [a]->[a]->[a]
 (-)     :: Num a => a->a->a
@@ -25,6 +26,8 @@ asTypeOf:: a->a->a
 compare :: Ord a => a -> a -> Ordering
 concat  :: [[a]]->[a]
 const   :: a->b->a
+div     :: Integral a => a -> a -> a
+drop    :: Int->[a]->[a]
 either  :: (a->c) -> (b->c) -> Either a b -> c
 error   :: [Char] -> a
 filter  :: (a->Bool)->[a]->[a]
@@ -37,9 +40,13 @@ id      :: a->a
 isSpace :: Char->Bool
 length  :: [a]->Int
 lines   :: String -> [String]
+log     :: Floating a => a -> a
 lookup  :: Eq a => a -> [(a,b)] -> Maybe b
 map     :: (a->b)->[a]->[b]
+max     :: Ord a => a -> a -> a
 maximum :: Ord a => [a] -> a
+min     :: Ord a => a -> a -> a
+minimum :: Ord a => [a] -> a
 maybe   :: a -> (b -> a) -> Maybe b -> a
 negate  :: Num a => a->a
 not     :: Bool->Bool
@@ -52,6 +59,7 @@ read    :: Read a => String -> a
 return  :: Monad m => a -> m a
 show    :: Show a => a -> String
 snd     :: (a,b)->b
+splitAt :: Int -> [a] -> ([a],[a])
 tail    :: [a]->[a]
 take    :: Int->[a]->[a]
 takeWhile:: (a -> Bool) -> [a] -> [a]
