@@ -1,0 +1,94 @@
+data T a = A (a -> T a) | Not 
+data S a = Leaf a
+data R a = L a | B (R a) (R a) | C (S (T [R a]))
+
+data Bifun = Plus  Bifun Bifun
+	   | Times Bifun Bifun
+	   | Fun   Bifun Bifun
+	   | Empty
+	   | Par
+	   | Rec
+	   | At  Regular Bifun
+	   | Const Type
+  deriving Show
+
+data Regular = Name String deriving Show
+
+data Type = Other deriving Show
+
+regularOf :: Regular d => d a -> Regular
+regularOf = Name . datatypeName
+
+functorOf :: Regular d => d a -> Bifun
+functorOf = ffunctorOf . out
+
+polytypic ffunctorOf :: f a b -> Bifun
+  = case f of
+      g > h   ->  fffun  ffunctorOf ffunctorOf
+      g * h   ->  ffprod ffunctorOf ffunctorOf
+      g + h   ->  ffsum  ffunctorOf ffunctorOf
+      Empty   ->  const Empty
+      Par     ->  const Par
+      Rec     ->  const Rec
+      Const t ->  const (Const Other)
+      d @ g   ->  ffat   regularOf  ffunctorOf
+      g       ->  error "Not implemented"
+
+
+ffsum  :: (a -> Bifun) -> (b -> Bifun) ->  Either a b -> Bifun
+fffun  :: (a -> Bifun) -> (b -> Bifun) ->  (a -> b) -> Bifun
+ffprod :: (a -> Bifun) -> (b -> Bifun) ->  (a, b) -> Bifun
+
+ffsum  g h = doboth Plus g h
+fffun  g h = \f -> (\x->Fun (g x) (h (f x))) undefined
+ffprod g h = \p -> Times (g (fst p)) (h (snd p))
+
+doboth :: (c->c->c) -> (a->c) -> (b->c) -> Either a b -> c
+doboth c f g x = c ((\y -> fst (f y, x `asTypeOf` Left  y)) undefined)
+                   ((\y -> fst (g y, x `asTypeOf` Right y)) undefined)
+                 
+
+ffat :: (d a -> Regular) -> (a -> Bifun) -> d a -> Bifun
+ffat d g x = At (d x) (g (arg x))
+
+
+tval = A (const undefined)
+sval = Leaf 1738
+rval = L 'a'
+
+main = 
+  print (functorOf tval) >>
+  print (functorOf sval) >>
+  print (functorOf rval) 
+
+
+arg  :: d a -> a
+arg x = undefined
+
+
+
+
+{-
+functorOf :: Regular d => d a -> String
+functorOf = ffunctorOf . out
+
+pfunc :: Regular d => d a -> String
+pfunc x = "Mu (" ++ functorOf x ++ ")"
+
+polytypic ffunctorOf :: f a b -> String
+  = case f of
+      g > h -> fffun  ffunctorOf ffunctorOf
+      g * h -> ffprod ffunctorOf ffunctorOf
+      g + h -> ffsum  ffunctorOf ffunctorOf
+--      d @ g -> ffat   functorOf  ffunctorOf
+      Par   -> const "Par"
+      Rec   -> const "Rec"
+      Const t->const "Const"
+      g     -> const "annat"
+
+
+ffsum  g h = (\(a,b)-> a ++ "+" ++ b) . doboth g h
+fffun  g h = \f -> (\x->"("++g x++"->"++h (f x)++")") undefined
+ffprod g h = \p -> "("++g (fst p)++"*"++h (snd p)++")"
+-}
+

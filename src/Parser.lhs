@@ -89,15 +89,15 @@ The module parser accepts but ignores the module head, exports and imports.
 > pImpTuple = pParenTuple pImport
 
 > pImport :: Parser Import
-> pImport =   pVarID <@ Plain
->	 +++ pConID <@ Plain
->        +++ (pConID <*> pParenthesized 
+> pImport =  (pVarID <@ Plain)
+>        +++ ((pConID <*> pParenthesized 
 >                          (   symbol ".." <@- []
 >                          +++ pCommaList (pConID+++pVarID)
 >                          )
->            ) <@ uncurry Subs
->			+++ (pParenthesized infixcon) <@ Plain
->			+++ (pParenthesized infixop) <@ Plain
+>             ) <@ uncurry Subs)
+>        +++ ((pParenthesized infixcon) <@ Plain)
+>        +++ ((pParenthesized infixop) <@ Plain)
+>	 +++ (pConID <@ Plain)
 
 > pParenTuple :: Parser a -> Parser [a]
 > pParenTuple p = pParenthesized (pCommaList p `opt` [])
