@@ -41,15 +41,12 @@ constructor2Int = fconstructor2Int . out
 
 polytypic fconstructor2Int :: f a b -> Int =
   case f of 
-    g + h  ->  const 0 `either` (plus1 . fconstructor2Int)
+    g + h  ->  const 0 `either` ((\ n -> 1 + n) . fconstructor2Int)
     g      ->  const 0
 int2constructor :: Regular d => Int -> d a
 int2constructor n = constructors !! n
 
 int2fconstructor :: Bifunctor f => Int -> f a b
 int2fconstructor n = fconstructors !! n
-plus1 :: Int -> Int
-plus1 x = 1 + x
-
 mapFst :: (a->b) -> (a,c) -> (b,c)
 mapFst f p = (f (fst p), snd p)
