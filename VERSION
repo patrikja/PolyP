@@ -4,6 +4,7 @@ written in Haskell 98 + ST monad
 to be used with ghc, hugs or perhaps hbc
 
 Revision history: 
+ 031028: version 2   (snapshot - bug fixes)
  030521: version 2   (class based translation)
    (new numbering scheme: 2.`date`)
  990809: version 1.5 (added flag -r func:TypeConstructor)
