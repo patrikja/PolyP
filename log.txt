@@ -1,0 +1,4 @@
+030430: Eliminating tabs from source code
+  grep -r "      " . | grep -v Makefile | grep -v \.mk
+
+  
