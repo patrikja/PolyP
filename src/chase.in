@@ -2,27 +2,33 @@
 # import chasing for PolyP
 
 # Usage:
-#   perl chase file.phs
+#   perl chase [-i import-dir] file.phs
 # or if line 1 above points to your perl binary
-#   chase file.phs
+#   chase [-i import-dir] file.phs
 
 # Bugs: 
 #  import declaration must not be more than one line
 #  they must start at column zero (or after the $lineprefix)
 #  unknown imports can end up mixed with infix declarations
 
+$true = 1; $false = 0;
+# $Verbose = $true;
 $filenamesuffix = ".phs"; $lineprefix="";
 # $filenamesuffix = ".hs";  $lineprefix=""; Try it on Haskell-files
 # $filenamesuffix = ".lhs"; $lineprefix="> "; ... or literate Haskell.
 
-$true = 1; $false = 0;
-&chase($ARGV[0],"fh00",1,$true);  # start with the first filename 
-&chase($ARGV[0],"fh00",2,$false); #   on the command line
+&handle_command_line_arguments;
+# Collect @Import_dirs and @Src_files are set
+&preprocess_import_dirs;
+# Sets %ModuleIn so that $ModuleIn{modulename}==moduledirectory
+
+&chase(".",$Src_files[0],"fh00",1,$true);  # start with the first filename 
+&chase(".",$Src_files[0],"fh00",2,$false); #   on the command line
 
 sub chase {
-    local($filename,$handle,$phase,$print_module_line) = @_ ;
+    local($directory,$filename,$handle,$phase,$print_module_line) = @_ ;
     local($fresh);
-    open($handle,$filename) || die "Can't open file $filename";
+    open($handle,$directory."/".$filename) || die "Can't open file $filename";
     $stored{$filename} = $phase; # kom ihag att vi varit har (undvik loop)
 
     while (<$handle>) {               # for varje rad i filen
@@ -31,18 +37,19 @@ sub chase {
 	    $filename= $2 . $filenamesuffix;# Nasta ord + .phs ger filnamn
 	    if( $stored{$filename} ne $phase) # Om namnet ej besokts i denna fas
 	    {
-		if( -f $filename ) # om det finns en sadan fil
-		{
+		# om det finns en sadan fil i någon katalog
+		if ( defined($ModuleIn{$filename}) ) {
+		    $directory = $ModuleIn{$filename};
 		    $fresh = $handle;
 		    # get a fresh file handle name (see man perlfunc | grep fh00)
 		    print "\n"; #empty line hack for literate scripts (.lhs)
-		    &chase($filename,++$fresh,$phase,$false); # print_module_line=false
+		    &chase($directory,$filename,++$fresh,$phase,$false); # print_module_line=false
 		}
 		else
-		{   #Varna och skriv ut aktuell rad vi forsta genomlopningen
+		{   #Varna och skriv ut aktuell rad vid forsta genomlopningen
 		    if( $phase eq 1 )
 		    {
-			print STDERR "-- Warning: file `$filename' not found\n" ;
+			print STDERR "-- Warning: file `$filename' not found\n";
 			print $_ ;
 		    }
 		}
@@ -63,13 +70,49 @@ sub chase {
     close($handle);
 }
 
+# code for -i importdir facilities
+# inspired from ~/pub/www/fptools-3.01/ghc/utils/mkdependHS/mkdependHS
 
-# while($_ = $ARGV[0]) {
-#     shift(@ARGV);
-#     if ( /^-i$/ ) {
-# 	$Import_dirs = ''; # import path cleared!
-#     } elsif ( /^-i(.*)/ ) {
-# 	$Import_dirs = "$1:$Import_dirs";
-#     }
-# }
+sub handle_command_line_arguments {
+    @Import_dirs = ('.');
+    while($_ = $ARGV[0]) {
+	shift(@ARGV);
+	if ( /^-i$/ ) {
+	    push(@Import_dirs, $ARGV[0] );
+	    shift(@ARGV);
+	}
+	else {
+	    push(@Src_files, $_);
+	}
+    }
+    print STDERR "Source files: @Src_files\n"   if $Verbose;
+    print STDERR "Import dirs: @Import_dirs\n"  if $Verbose;
+    die "No source file"                        if length(@Src_files) == 0;
+    print STDERR "Ignoring extra src files\n"	if length(@Src_files) > 1;
+}
+
+sub preprocess_import_dirs {
+    # find out what's in all the @Import_dirs before we start processing.
+    local($d, $thing);
+    local($_);
+    %ModuleIn = ();
+    
+    foreach $d ( @Import_dirs ) {
+	opendir(DIR, $d) || die "chase: can't open directory $d\n";
+	
+	for ($_ = readdir(DIR); $_; $_ = readdir(DIR)) {
+	    next unless /(.*$filenamesuffix)$/;
+	    $thing = $1;
+	    print STDERR "Read file '$d/$thing'.\n" if $Verbose;
+	    if (! defined($ModuleIn{$thing})) {
+		$ModuleIn{$thing} = $d;
+	    } else {
+		print STDERR "File '$thing' found in ";
+                print STDERR "'$ModuleIn{$thing}' and '$d'";
+                print STDERR " - using the first occurrence.\n";
+	    }
+	}
+	closedir(DIR);
+    }
+}
 
