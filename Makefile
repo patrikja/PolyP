@@ -3,14 +3,6 @@ export polyp_version = 2.$(shell date +%y%m%d)
 
 default: ghc
 
-help: 
-	@echo Makefile for PolyP by Patrik Jansson
-	@echo Usage: 
-	@echo "  gmake X    where X is ghc, hbc or hugs"
-	@echo "    makes the sources and compiles them with compiler X"
-	@echo "  gmake check.X"
-	@echo "    runs some regression tests."
-
 # Choose the desired version of Haskell ...
 export HASKELLVERSION = 98
 # ... and of the compiler
@@ -21,6 +13,17 @@ export hugs = runhugs
 POLYPDIR   = $(shell pwd)
 
 INSTALLBINDIR = $(HOME)/bin
+LN_S = ln -s 
+
+help: 
+	@echo Makefile for PolyP by Patrik Jansson
+	@echo Usage: 
+	@echo "  gmake X    where X is ghc (or hbc or hugs)"
+	@echo "    makes the sources and compiles them with compiler X"
+	@echo "  gmake install"
+	@echo "    installs into " $INSTALLBINDIR
+	@echo "  gmake check.X"
+	@echo "    runs some regression tests."
 
 # Use some version of the PolyP compiler in the bin directory
 #   with polyp (somewhere on the path) as a fall-back option
@@ -38,10 +41,16 @@ hugs ghc hbc: bin/chase
 	@echo Read the files src/$@.USAGE and USAGE for details on how to run PolyP
 # compile (with the new polyp) the standard library PolyLib
 	$(MAKE) -C polylib all
-# "install"
-	-ln -s $(POLYPDIR)/bin/$@polyp $(INSTALLBINDIR)/$@polyp
-	-ln -s $(INSTALLBINDIR)/$@polyp $(INSTALLBINDIR)/polyp
-	-ln -s $(POLYPDIR)/bin/chase $(INSTALLBINDIR)/chase
+
+INSTALL = install_sh
+
+installdirs: $(INSTALLBINDIR)
+	mkinstalldirs  $(INSTALLBINDIR)
+
+install: installdirs ghc
+	install-sh -m 755 $(POLYPDIR)/bin/ghcpolyp $(INSTALLBINDIR)/ghcpolyp
+	-$(LN_S) $(INSTALLBINDIR)/ghcpolyp $(INSTALLBINDIR)/polyp
+	install-sh -m 755 $(POLYPDIR)/bin/chase $(INSTALLBINDIR)/chase
 
 # [1] For hbc and ghc the source is really compiled, but as hugs is an
 # interpreter, its makefile only provides a name for the call to
@@ -149,6 +158,6 @@ README:	index.html
 
 # These targets are not real files
 .PHONY: help install hugs ghc hbc clean distclean packpolylib \
-	www fromwww local 
+	www fromwww local installdirs
 
 # for some reason, checkhbc, checkghc, checkhugs should not be in that list
