@@ -273,7 +273,6 @@ The evaluation is done by side-effecting the pointer structure.
 >         --evalFunctorOf :: FuncEnv -> [NodePtr s] -> ST s [NodePtr s]
 >         evalFunctorOf funcenv [] = error "InferType.evalFunctorOf: FunctorOf without any argument"
 >         evalFunctorOf funcenv (d:args) = checkCon d >>= maybe def fOf
->         evalFunctorOf funcenv _ = def
 >
 >         -- fOf :: ConID -> ST s [NodePtr s]
 >	  fOf d = maybe def (again2 @@ (typeIntoHeap . debug . snd)) $ 

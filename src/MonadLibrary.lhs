@@ -273,7 +273,9 @@ instance Functor (ST a) where
 >   zero = mzeroSTErr
 #endif
 
+#ifndef __Haskell98__
 > instance MonadPlus (STErr s) where
+#endif
 >   a MONADPLUSOP b = STErr $ 
 >     convertSTErr a >>= \x -> case x of
 >   	Done y -> return (Done y)
