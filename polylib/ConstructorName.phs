@@ -1,8 +1,7 @@
 ---------------------------------------------------------------
 -- ConstructorName
---   970509 Patrik Jansson
--- module ConstructorName where
--- import Base(inn,out)
+--   990526 Patrik Jansson
+module ConstructorName where
 ---------------------------------------------------------------
 constructorName :: Regular d => d a -> String
 constructorName = fconstructorName . out
