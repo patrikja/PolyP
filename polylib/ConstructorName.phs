@@ -4,13 +4,28 @@
 -- module ConstructorName where
 -- import Base(inn,out)
 ---------------------------------------------------------------
+constructorName :: d a -> String
+constructorName = fconstructorName . out
+-- fconstructorName :: f a b -> [Char]  is built in
+
 constructors  :: [d a]
 constructors  =  map inn fconstructors
-
-constructorName = fconstructorName . out
 
 polytypic fconstructors :: [f a b] =
   case f of 
     g + h -> map Left fconstructors ++ map Right fconstructors
     g     -> [undefined]
 
+-- constructor2Int :: d a -> Int
+constructor2Int = fconstructor2Int . out
+
+polytypic fconstructor2Int :: f a b -> Int =
+  case f of 
+    g + h -> const 0 `either` (plus1 . fconstructor2Int)
+    g     -> const 0
+
+plus1 :: Int -> Int
+plus1 x = 1 + x
+
+-- int2Constructor :: Int -> d a
+int2Constructor n = constructors !! n
