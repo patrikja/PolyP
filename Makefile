@@ -27,17 +27,19 @@ clean:
 	$(MAKE) -C src clean
 	rm -f polylib/*~
 	rm -f docs/*~
-	$(MAKE) -C examples clean
+	-$(MAKE) -C examples clean
 	$(MAKE) -C book clean
 
-distclean:	clean
+veryclean:	clean
 	$(MAKE) -C src veryclean
 	rm -fr hugssrc
 	rm -fr hbcsrc
 	rm -fr ghcsrc
-	rm -fr  bin
 	$(MAKE) -C examples veryclean
 	$(MAKE) -C book veryclean
+
+distclean:	veryclean
+	rm -fr  bin/hugspolyp bin/ghcpolyp bin/hbcpolyp bin/polyp
 
 packpolylib:
 	tar cf polylib.tar polylib examples 
