@@ -39,8 +39,8 @@ pmapMl = pmapM
 pmapMr :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
 pmapMr fM  = liftM inn . fmap2Mr fM  (pmapMr fM)   . out
 
-polytypic fmap2Mr :: Monad m => (a -> m c) -> (b -> m d) -> 
-                                f a b -> m (f c d)
+polytypic fmap2Mr :: Monad m => 
+                     (a->m c) -> (b->m d) -> f a b -> m (f c d)
   = \p r -> case f of
               g + h     ->  summapM   (fmap2Mr p r) (fmap2Mr p r)
               g * h     ->  prodmapMr (fmap2Mr p r) (fmap2Mr p r)
