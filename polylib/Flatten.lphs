@@ -49,6 +49,9 @@ Function |flatten| can also be defined using |crush| (see the module
 
 %endif
 
+> substructures :: Regular d => d a -> [d a]
+> substructures x = x : fflatten (fmap2 nil substructures (out x))
+
 \paragraph{Help functions for lists}
 
 %{

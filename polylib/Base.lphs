@@ -28,12 +28,14 @@
 %align 12
 
 > cata     :: Regular d => (FunctorOf d a b -> b) -> (d a -> b)
-> ana      :: Regular d => (b -> FunctorOf d a b) -> (b -> d a)
-> hylo     :: Bifunctor f => (f a b -> b) -> (c -> f a c) -> c -> b
 > cata i   =  i   . fmap2 id (cata i  ) . out
+
+> ana      :: Regular d => (b -> FunctorOf d a b) -> (b -> d a)
 > ana    o =  inn . fmap2 id (ana    o) . o
+
+> hylo     :: Bifunctor f => (f a b -> b) -> (c -> f a c) -> c -> b
 > hylo i o =  i   . fmap2 id (hylo i o) . o
-> 
+
 > para     :: Regular d => (d a -> FunctorOf d a b -> b) -> d a -> b
 > para i x =  i x (fmap2 id (para i) (out x))
 
