@@ -83,6 +83,7 @@ clean:
 	rm -f polylib/*~
 	rm -f docs/*~
 	-$(MAKE) -C examples clean
+	$(MAKE) -C polylib clean
 	$(MAKE) -C book clean
 	rm -fr polyp$(polyp_version) polyp$(polyp_version).tar.gz
 
