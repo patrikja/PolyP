@@ -20,7 +20,7 @@ becomes
 cata :: (FunctorOf f d, P_fmap2 f) => (f a b -> b) -> d a -> b
 cata f = f . fmap2 id (cata f) . out
 
-\begin{code}
+\begin{verbatim}
 
 > module PolyInstance(instantiateProgram) where
 > import Env(Env,lookupEnv)
@@ -38,18 +38,18 @@ cata f = f . fmap2 id (cata f) . out
 > import Monad(mplus,liftM)
 > import Maybe(isNothing, isJust, fromJust)
 
-\end{code} 
+\end{verbatim} 
 
 The function instantiateProgram takes the parsed PolyP program and generates the
 corresponding Haskell program. The name is inherited from the original PolyP code.
 
-\begin{code}
+\begin{verbatim}
 
 > instantiateProgram :: (TBasis,PrgTEqns) -> [Eqn]
 
-\end{code}
+\end{verbatim}
 Implementation:
-\begin{code}
+\begin{verbatim}
 
 > instantiateProgram (tbasis,(datadefs,infixdecls,eqnss)) = 
 >     datadefs
@@ -58,12 +58,12 @@ Implementation:
 >     ++ rewritePolytypicConstructs (getTypeEnv tbasis) funcenv eqnss
 >  where funcenv = realFuncEnv $ getFuncEnv tbasis
 
-\end{code}
+\end{verbatim}
 
 We need to translate the functors in the functor environment to the real functors
 from the sugared versions used in the PolyP code (+ -> SumF, * -> ProdF, ...)
 
-\begin{code}
+\begin{verbatim}
 
 > realFuncEnv :: FuncEnv -> FuncEnv
 > realFuncEnv funcenv = map (mapSnd $ mapSnd realFuncNames) funcenv
@@ -81,12 +81,12 @@ from the sugared versions used in the PolyP code (+ -> SumF, * -> ProdF, ...)
 >              f :@@: g       -> realFuncNames f :@@: realFuncNames g
 >              _              -> t
 
-\end{code}
+\end{verbatim}
 
 For each datatype {\tt functorOfInstances} generates a FunctorOf instance for
 the datatype and its functor.
 
-\begin{code}
+\begin{verbatim}
 
 > functorOfInstances :: [Eqn] -> FixEnv -> FuncEnv -> [Eqn]
 > functorOfInstances datadefs fixenv funcenv = concatMap functorOfInstance datadefs
@@ -219,13 +219,13 @@ the datatype and its functor.
 > -- Infinite list of variable names
 > varNames = let names = "" : [ s ++ [c] | s <- names, c <- ['a'..'z']] in tail names
 
-\end{code}
+\end{verbatim}
 
 {\tt rewritePolytypicConstructs} rewrites {\tt polytypic} definitions to
 a class and instances for each branch in the polytypic case. It also calculates
 the correct types and constraints for polytypic functions.
 
-\begin{code}
+\begin{verbatim}
 
 > type PolyEnv = Env VarID QType
 
@@ -315,14 +315,14 @@ the correct types and constraints for polytypic functions.
                              [simp $ VarBind name Nothing [] e]
                  _  -> error ("PolyInstance.rewrite: " ++ pshow e ++ ":: " ++ pshow (c :=> t))
 
-\end{code}
+\end{verbatim}
 
 Since functors in the case branches are only type synonyms ({\tt type Par p
 r = p}) and we want to generate an instances for the actual functor (\{\tt
 ParF}) we have to transform the branch body so that it gets the right type.
 {\tt convert} generates this translation function (as an EP).
 
-\begin{code}
+\begin{verbatim}
 
            convert t var ep = case t of
               TCon "->" :@@: f :@@: g
@@ -335,24 +335,24 @@ ParF}) we have to transform the branch body so that it gets the right type.
 
 >     rewrite _ eq = [simp eq]
 
-\end{code}
+\end{verbatim}
 
 {\tt createPolyEnv} collects the polytypic functions from a type
 environment in a new environment. It also uses the translateX functions to
 translates the types to use the generated Haskell classes as follows:
 
-\begin{code}
+\begin{verbatim}
 fpoly :: Poly f => t
 ==> fpoly :: P_fpoly f => t  (when fpoly is a polytypic definition)
 
 poly :: Poly (FunctorOf d) => t[FunctorOf d]
 ==> poly :: FunctorOf functorOf_d d => t[functorOf_d]
-\end{code}
+\end{verbatim}
 
 Instead of generating a fresh variable (which of course would be best), we
 generate a variable name from the type {\tt d} that is unique in every case.
 
-\begin{code}
+\begin{verbatim}
 
 > createPolyEnv :: FuncEnv -> [VarID] -> TypeEnv -> PolyEnv
 > createPolyEnv funcenv polys = foldr contextEnv []
@@ -434,7 +434,7 @@ generate a variable name from the type {\tt d} that is unique in every case.
 >        Letrec eqnss e       -> Letrec (map (translateEqns funcenv) eqnss) (translateExpr funcenv e)
 >        _                    -> expr
 
-\end{code}
+\end{verbatim}
 
 We use type inference (very simple since the entire program is annotated
 with types) to infer the correct constraints on polytypic functions. The
@@ -446,7 +446,7 @@ The function {\tt annotate} infers and updates the type of variable
 bindings and if it is a binding of a polytypic variable, updates the
 PolyEnv.
 
-\begin{code}
+\begin{verbatim}
 
 > -- Update types of variable bindings and PolyEnv
 > annotate env eqn = case eqn of
@@ -522,7 +522,7 @@ PolyEnv.
 >     fOfFind (q:c) d   = fOfFind c d
 >     fOfFind [] _      = Nothing
 
-\end{code}
+\end{verbatim}
 
 When a polytypic function is called on a specific datatype, the inference
 above might infer constraints like {\tt FunctorOf a []}. Since the
@@ -531,7 +531,7 @@ determines the functor, we know in this case that {\tt a} must be
 {\tt SumF EmptyF (ProdF ParF RecF)}. {\tt evalContexts} makes use of this
 dependency to remove unneccessary type variables from contexts.
 
-\begin{code}
+\begin{verbatim}
 
 > evalContexts :: FuncEnv -> [Eqn] -> [Eqn]
 > evalContexts funcenv = map evalContextEqn
@@ -579,11 +579,11 @@ dependency to remove unneccessary type variables from contexts.
 >     tvars (t1 :@@: t2)   = tvars t1 ++ tvars t2
 >     tvars _              = []
 
-\end{code}
+\end{verbatim}
 
 We keep simplification of equations from the original file.
 
-\begin{code}
+\begin{verbatim}
 
 > simplifyTEqn :: FuncEnv -> TEqn -> TEqn
 > simplifyTEqn = mapEqn . simplifyQType
@@ -592,11 +592,11 @@ We keep simplification of equations from the original file.
 > simplifyQType funcenv = simplifyContext 
 >                       . qTypeEval funcenv
 
-\end{code}
+\end{verbatim}
 
 And substitution over type is nice to have as well.
 
-\begin{code}
+\begin{verbatim}
 
 > type Subst = Env VarID Type
 
@@ -607,4 +607,4 @@ And substitution over type is nice to have as well.
 > substQType env = fMap (appSubst s)
 >   where s v = maybe (TVar v) id (lookupEnv v env)
 
-\end{code}
+\end{verbatim}
