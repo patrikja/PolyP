@@ -11,7 +11,9 @@
 In this module |Maybe| could be replaced by any |Monad| using |fail
 "err"| for |zeroM|.
 
+%if verbose
 Unzipping is easy:
+%endif verbose
 
 > punzip :: Regular d => d (a,b) -> (d a,d b)
 > punzip x = (pmap fst x, pmap snd x)
@@ -19,7 +21,9 @@ Unzipping is easy:
 > funzip :: Bifunctor f => f (a,c) (b,d) -> (f a b,f c d)
 > funzip x = (fmap2 fst fst x, fmap2 snd snd x)
 
+%if verbose
 Zipping is a little more complex:
+%endif verbose
 
 > pzip :: Regular d => (d a,d b) -> Maybe (d (a,b))
 > pzip  = (innM @@ (fprop.fmap2 returnM pzip) @@ fzip ) . (out -*- out)
