@@ -1,8 +1,8 @@
 \chapter{Kind inference}
 \begin{verbatim}
 
-> module InferKind where
-> import Functorise(makeFunctor)
+> module InferKind(inferDataDefs) where
+> import Functorise(makeFunctorStruct)
 > import Grammar(Kind,Type(..),Eqn,Eqn'(..),VarID,ConID,QType,
 >                (-=>),qualify,getNameOfDataDef)
 > import TypeGraph(HpKind,HpNode(..),fetchNode,mkVar,mkFun,
@@ -83,7 +83,7 @@ the corresponding functors are added to the functor environment.
 >            let basis = (extendTypeTBasis tass . 
 >                         extendKindTBasis kass .
 >			  extendFuncTBasis fass) startTBasis
->	         fass = map (\d->(getNameOfDataDef d,makeFunctor d)) dataDefs
+>	         fass = map (\d->(getNameOfDataDef d,makeFunctorStruct d)) dataDefs
 >            in (basis,Done ())
 
 > inferDataDefs' :: TBasis -> [Eqn] -> 

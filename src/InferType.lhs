@@ -5,17 +5,17 @@
 > import UnifyTypes(checkInstance)
 > import TypeGraph(HpType,NodePtr,HpNode(..),HpQType,NonGenerics,
 >                  mkFOfd,(==>),checkCon,
->                  qtypeIntoHeap,qtypeOutOfHeap,allGeneric,
->                  spineWalkHpType,getChild)
-> import TypeBasis(Basis,instantiate)
-> import Env(Env,newEnv,lookupEnv,extendsEnv)
-> import MyPrelude(fMap)
+>                  typeIntoHeap,qtypeIntoHeap,qtypeOutOfHeap,allGeneric,
+>                  spineWalkHpType,getChild, showNodePtr)
+> import TypeBasis(Basis,FuncEnv,getTBasis,getFuncEnv,instantiate)
+> import Env(Env,newEnv,rangeEnv,lookupEnv,extendsEnv)
+> import MyPrelude(fMap, trace,debug)
 > import MonadLibrary(STErr,mliftErr,unDone,(@@),
 >                     mapl,(<@),(<@-),accumseq,accumseq_)
 > import StateFix -- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 > import Grammar(Eqn'(..),Expr'(..),
 >		 Qualified(..),Qualifier,QType,
->                VarID,Type(TVar))
+>                VarID,ConID,Type(TVar))
 > import ParseLibrary(parse)
 > import Parser(pType1)
 > import PrettyPrinter()
@@ -39,9 +39,10 @@ in the context list.
 > tevalAndSubst basis hpty' (_:=>hpfi) = 
 >   instantiate allGeneric hpty' >>= \hpty->
 >   let pf = pickFunctorVariable hpty
+>	funcenv = getFuncEnv (getTBasis basis)
 >   in 
 >     pf ==> hpfi                  >> -- substitution by destructive update
->     hpQTypeEval hpty             >> -- type evaluation  
+>     hpQTypeEval funcenv hpty     >> -- type evaluation  
 >     return hpty
 
 > pickFunctorVariable :: HpQType s -> HpType s
@@ -52,10 +53,12 @@ in the context list.
 \end{verbatim}
 \begin{verbatim}
 
-> qTypeEval :: QType -> QType
-> qTypeEval qt = __RUNST__ mqt
+> qTypeEval :: FuncEnv -> QType -> QType
+> qTypeEval funcenv qt = __RUNST__ mqt
 >   where mqt :: ST s QType
->         mqt = qtypeIntoHeap qt >>= hpQTypeEval >>= qtypeOutOfHeap allGeneric
+>         mqt = qtypeIntoHeap qt      >>= 
+>		hpQTypeEval funcenv   >>= 
+>		qtypeOutOfHeap allGeneric
 
 typeEval :: Type -> Type
 typeEval t = __RUNST__ m
@@ -67,13 +70,14 @@ typeEval t = __RUNST__ m
 > checkTypedInstance :: Basis s -> NonGenerics s -> 
 >                       HpQType s -> HpQType s -> STErr s ()
 > checkTypedInstance basis ngs small big 
->   = mliftErr (hpQTypeEval small) >>= \small' ->
+>   = mliftErr (hpQTypeEval (getFuncEnv (getTBasis basis)) small) >>= \small' ->
 >     checkInstance ngs small' big
 
-> hpQTypeEval :: HpQType s -> ST s (HpQType s)
-> hpQTypeEval (l :=> t) = (fMap concat (mapl tevalC l)) >>= \l' ->
->                         hpTypeEval t >> -- side effect on t
->                         return (l':=>t)
+> hpQTypeEval :: FuncEnv -> HpQType s -> ST s (HpQType s)
+> hpQTypeEval funcenv (l :=> t) = 
+>   (fMap concat (mapl tevalC l)) >>= \l' ->
+>   hpTypeEval funcenv t >> -- side effect on t
+>   return (l':=>t)
 
 > tevalC :: Qualifier (HpType s) -> ST s [Qualifier (HpType s)]
 > tevalC ("Poly", fun : _ ) = fMap (map poly) (funEval fun)
@@ -230,15 +234,19 @@ The evaluation is done by side-effecting the pointer structure.
 
 \begin{verbatim}
 
-> hpTypeEval :: NodePtr s -> ST s ()
-> hpTypeEval' :: [(NodePtr s,HpNode s)] -> ST s [NodePtr s]
+> hpTypeEval  :: FuncEnv -> NodePtr s -> ST s ()
+> hpTypeEval' :: FuncEnv -> [(NodePtr s,HpNode s)] -> ST s [NodePtr s]
 
-> hpTypeEval = (accumseq_ . fMap hpTypeEval) @@ hpTypeEval' @@ spineWalkHpType 
+> hpTypeEval funcenv = hpteval 
+>   where hpteval = (accumseq_ . fMap hpteval) @@ 
+>		    hpTypeEval' funcenv        @@ 
+>		    spineWalkHpType 
 
-> hpTypeEval' [] = error "InferType.hpTypeEval': impossible: nothing to apply"
-> hpTypeEval' pargs = case f of
+> hpTypeEval' funcenv [] = error "InferType.hpTypeEval': impossible: nothing to apply"
+> hpTypeEval' funcenv pargs = case f of
 >     HpVar _   -> def
->     HpCon c   -> maybe def eval (lookupEnv c typeSynEnv)
+>     HpCon c | isFuncorOf c -> evalFunctorOf funcenv children
+>	      | otherwise    -> maybe def eval (lookupEnv c typeSynEnv)
 >     HpApp _ _ -> error "InferType.hpTypeEval': impossible: HpApp found after spine removal"
 >   where f:args   = map snd pargs
 >         nargs    = length args
@@ -249,8 +257,27 @@ The evaluation is done by side-effecting the pointer structure.
 >         again ptr = 
 >           root ==> ptr >>
 >           spineWalkHpType root >>= \pargs2->
->           hpTypeEval' (pargs2++rest)
+>           hpTypeEval' funcenv (pargs2++rest)
 >         (root,_):rest = drop nargs pargs
+>
+>         again2 ptr = 
+>           root2 ==> ptr >>
+>           spineWalkHpType root >>= \pargs2->
+>           hpTypeEval' funcenv (pargs2++ rest2)
+>         (root2,_):rest2 = drop 1 pargs
+
+>         --evalFunctorOf :: FuncEnv -> [NodePtr s] -> ST s [NodePtr s]
+>         evalFunctorOf funcenv [] = error "InferType.evalFunctorOf: FunctorOf without any argument"
+>         evalFunctorOf funcenv (d:args) = checkCon d >>= maybe def fOf
+>         evalFunctorOf funcenv _ = def
+>
+>         -- fOf :: ConID -> ST s [NodePtr s]
+>	  fOf d = maybe def (again2 @@ (typeIntoHeap . debug . snd)) $ 
+>		  lookupEnv d funcenv
+
+
+> isFuncorOf :: ConID -> Bool
+> isFuncorOf = ("FunctorOf"==)
 
 \end{verbatim}
 These should be precalculated (maybe moved to another module).

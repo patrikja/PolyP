@@ -1,5 +1,14 @@
 
 # DO NOT DELETE: Beginning of Haskell dependencies
+BuiltinInstances.o : BuiltinInstances.lhs
+BuiltinInstances.o : ./Env.hi
+BuiltinInstances.o : ./Functorise.hi
+BuiltinInstances.o : ./Grammar.hi
+BuiltinInstances.o : ./Folding.hi
+BuiltinInstances.o : ./MonadLibrary.hi
+BuiltinInstances.o : ./MyPrelude.hi
+BuiltinInstances.o : ./StartTBasis.hi
+BuiltinInstances.o : ./PrettyPrinter.hi
 Chase.o : Chase.lhs
 CommandLine.o : CommandLine.lhs
 CommandLine.o : ./NonStdTrace.hi
@@ -32,7 +41,6 @@ Functorise.o : ./MyPrelude.hi
 Functorise.o : ./Folding.hi
 Functorize.o : Functorize.lhs
 Functorize.o : ./Env.hi
-Functorize.o : ./Functorise.hi
 Functorize.o : ./Grammar.hi
 Functorize.o : ./Folding.hi
 Functorize.o : ./MonadLibrary.hi
@@ -112,7 +120,7 @@ PolyInstance.o : ./Grammar.hi
 PolyInstance.o : ./Folding.hi
 PolyInstance.o : ./Functorise.hi
 PolyInstance.o : ./FunctorNames.hi
-PolyInstance.o : ./Functorize.hi
+PolyInstance.o : ./BuiltinInstances.hi
 PolyInstance.o : ./TypeGraph.hi
 PolyInstance.o : ./InferType.hi
 PolyInstance.o : ./MonadLibrary.hi

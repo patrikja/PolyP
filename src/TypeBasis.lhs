@@ -4,6 +4,7 @@
 > module TypeBasis where
 > import Grammar(QType,Kind,VarID,ConID,Func)
 > import Folding(dmmapQualified)
+> import Functorise(Struct)
 > import MyPrelude(pair)
 > import MonadLibrary((<@),StateM,executeSTM,fetchSTM,mliftSTM,
 >                     STErr,mliftErr,ErrorMonad(failEM),foreach,
@@ -36,7 +37,7 @@ The basis consists of five subenvironments:
 
 > type TypeEnv     = Env VarID QType
 > type KindEnv     = Env ConID Kind
-> type FuncEnv	   = Env ConID Func
+> type FuncEnv     = Env ConID (Struct,Func)
 > type HpTypeEnv s = Env VarID (HpQType s)
 
 \end{verbatim}
@@ -64,6 +65,9 @@ environment.
 
 > tBasis2Basis :: TBasis -> Basis s
 > tBasis2Basis tbasis = Basis (tbasis,(newEnv,allGeneric))
+
+> getTBasis :: Basis s -> TBasis
+> getTBasis (Basis (tbasis,_)) = tbasis
 
 \end{verbatim}
 
@@ -160,7 +164,7 @@ variables are non-generic.
 > extendKindAfterTBasis :: [(VarID,Kind)] -> TBasis -> TBasis
 > extendKindAfterTBasis l ((ts,ks),fs) = ((ts,extendsAfterEnv l ks),fs)
 
-> extendFuncTBasis :: [(VarID,Func)] -> TBasis -> TBasis
+> extendFuncTBasis :: [(VarID,(Struct,Func))] -> TBasis -> TBasis
 > extendFuncTBasis      l ((ts,ks),fs) = ((ts,ks),extendsEnv      l fs)
 
 > makeNonGeneric extraNgs (Basis (rom,(typeEnv, ngs)))

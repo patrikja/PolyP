@@ -1,4 +1,4 @@
-> module Functorise(makeFunctor,makeFunctorStruct,Struct) where
+> module Functorise(makeFunctorStruct,Struct) where
 > import Grammar(ConID,VarID,Eqn,Eqn'(DataDef),Func,
 >		 Type(..),spineWalkType,isTupleCon)
 > import MyPrelude(mapSnd)
@@ -15,8 +15,10 @@ The type {\tt Struct} represents the top level structure of the
 datatype definition: 
 \begin{verbatim}
 
+#if 0
 > makeFunctor :: Eqn -> Func
 > makeFunctor = snd . makeFunctorStruct
+#endif
 
 > type PList a = (a,[a])
 > type Struct = PList (ConID,Int)

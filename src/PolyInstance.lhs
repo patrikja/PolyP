@@ -37,6 +37,7 @@ command line via flags and parameters to instantiateProgram.
 > import BuiltinInstances(inn_def,out_def,either_def,fcname_def,
 >                   Req,eqReq)
 > import TypeGraph(simplifyContext)
+> import TypeBasis(FuncEnv)
 > import InferType(qTypeEval)
 > import MonadLibrary(State, executeST,(@@),handleError,
 >                     OutputT,output,runOutput,mliftOut)
@@ -242,7 +243,6 @@ both the type at the definition and the type at the instance.
 \begin{verbatim}
 
 > data DefTypes = PolyDef TEqn | VarDef TEqn | SpecDef | PreDef | Unknown
-> type FuncEnv = Env ConID (Struct,Func)
 > type DefEnv  = Env VarID TEqn
 
 > handleReq :: FuncEnv -> DefEnv -> TypeEnv -> (VarID, QType) -> 
@@ -492,7 +492,7 @@ Get the correct equation out of the poly case.
 
 > simplifyQType :: FuncEnv -> QType -> QType
 > simplifyQType funcenv = simplifyContext 
->                       . qTypeEval 
+>                       . qTypeEval funcenv
 >                       . evaluateFunInQType funcenv
 
 > functorCase :: Func -> [(QType, e)] -> Maybe (e, Subst)
@@ -501,7 +501,10 @@ Get the correct equation out of the poly case.
 >    (Just s) -> Just (eqn,s)
 >    Nothing  -> functorCase f cs
 
-\end{verbatim}
+\end{verbatim} 
+
+%*** evaluateFunInQType kanske inte behövs eftersom qTypeEval sköter jobbet.
+
 The VarID is the name of the functor we are looking for, the first
 QType is the defined type and the second is the instance. The result
 is the functor instance corresponding to the named functor.
@@ -530,7 +533,7 @@ is the functor instance corresponding to the named functor.
 >         ev y                              = y
 
 > functorOf :: FuncEnv -> VarID -> Func
-> functorOf fenv d = snd (maybe err id (lookupEnv d fenv))
+> functorOf fenv d = maybe err snd (lookupEnv d fenv)
 >   where err = error ("PolyInstance.functorOf: unknown datatype: "++d)
 
 \end{verbatim}

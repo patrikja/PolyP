@@ -437,7 +437,10 @@ pointer structure looks like.
 \begin{verbatim}
 
 > showNodePtr :: NodePtr s -> ST s String
-> showNodePtr p = readVar p >>= \n-> case n of
+> showNodePtr p = readVar p >>= showHpNode p
+
+> showHpNode :: NodePtr s -> HpNode s -> ST s String
+> showHpNode p n = case n of
 >              HpVar v | v === p -> return "Var"
 >                      | True    -> fMap ('-':) (showNodePtr v)
 >              HpCon c -> return ('C':c)

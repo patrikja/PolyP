@@ -24,6 +24,7 @@ Should not export info about the implementation of Env.
 > extendsAfterEnv :: [(k, val)] -> Env k val -> Env k val
 > combineEnv :: Env key val  -> Env key val -> Env key val
 > assocsEnv  :: Env key val  -> [(key, val)]
+> rangeEnv   :: Env key val -> [key]
 
 > type Cache a b = Env a b
 
@@ -34,6 +35,8 @@ Should not export info about the implementation of Env.
 \begin{verbatim}
 
 > mapEnv = map . mapSnd
+
+> rangeEnv = map fst
 
 > newEnv = []
 
