@@ -1,5 +1,5 @@
 # The Makefile is for the following PolyP-version
-version=1.2
+version=1.3
 
 help: 
 	@echo Makefile for PolyP by Patrik Jansson
@@ -111,7 +111,6 @@ README:	index.html
 	cp index.html $(WEBDIR)
 	lynx -dump $(WEBSITE) >README
 	mv qqq $(WEBDIR)/index.html
-	 
 
 # These targets are not real files
 .PHONY: help install hugs ghc hbc clean distclean packpolylib \

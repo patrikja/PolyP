@@ -13,7 +13,7 @@ POLYPPRELUDE = $(POLYPDIR)lib/PolyPrel.hs
 # The C-preprocessor
 CPP = gcc -E -C -P -traditional -x c-header
 #CPP = cpp -P -C -traditional
-CPPFLAGS += -D__POLYPPRELUDE__=\"$(POLYPPRELUDE)\"
+CPPFLAGS += -D__Haskell98__ -D__POLYPPRELUDE__=\"$(POLYPPRELUDE)\"
 
 # All Haskell source files in this directory
 lhs_files = $(wildcard *.lhs)

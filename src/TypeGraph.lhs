@@ -186,7 +186,7 @@ the type.
 \begin{verbatim}
 
 > flattenHpType :: HpType s -> ST s [HpType s]
-> flattenHpType = map appnil . cataHpType var (\c l -> l) (.)
+> flattenHpType = fmap appnil . cataHpType var (\c l -> l) (.)
 >  where var v = return (v:) 
 >        appnil f = f []
 
@@ -379,7 +379,7 @@ normally very few variables are non-generic at the same time.
 > addtoNGS a (NGS b) = NGS (a++b)
 
 > isGeneric :: HpType s -> NonGenerics s -> ST s Bool
-> isGeneric tyVar (NGS ngs) = map not (occursInTypeList tyVar ngs) 
+> isGeneric tyVar (NGS ngs) = fmap not (occursInTypeList tyVar ngs) 
 
 > isGenericApproximation :: HpType s -> NonGenerics s -> Bool
 > isGenericApproximation tyVar (NGS ngs) = null (filter (tyVar===) ngs)
@@ -434,7 +434,7 @@ pointer structure looks like.
 > showNodePtr :: NodePtr s -> ST s String
 > showNodePtr p = readVar p >>= \n-> case n of
 >              HpVar v | v === p -> return "Var"
->                      | True    -> map ('-':) (showNodePtr v)
+>                      | True    -> fmap ('-':) (showNodePtr v)
 >              HpCon c -> return ('C':c)
 >              HpApp p1 p2 -> liftop (++) (showNodePtr p1) (showNodePtr p2 <@ ('@':))
 
@@ -470,9 +470,13 @@ elsewhere.
 > simplifyContext qt = 
 #ifdef __HBC__
 >    runST $ RunST mqt
+
 #else /* not __HBC__ */
+
 >    runST         mqt
+
 #endif /* __HBC__ */
+
 >   where mqt :: ST s QType
 >         mqt = qtypeIntoHeap qt >>= simplifyHpContext >>= qtypeOutOfHeap allGeneric
 
@@ -482,7 +486,7 @@ elsewhere.
 
 > simplifyHpQualifiers :: [Qualifier (HpType s)] -> 
 >                    ST s [Qualifier (HpType s)]
-> simplifyHpQualifiers ps = map concat (mapl simpQual others) <@ (polys ++)
+> simplifyHpQualifiers ps = fmap concat (mapl simpQual others) <@ (polys ++)
 >   where [polys,others] = splitUp [isPoly] ps
 
 > isPoly :: Qualifier a -> Bool

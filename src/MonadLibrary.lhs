@@ -11,8 +11,18 @@
 >                     OutputT,output,runOutput,mliftOut,
 >                     mapl,foreach,liftop,map0,map1,map2,mfoldl,mfoldr) where
 > import StateFix
-> import Monad(join)
 > import MyPrelude(pair,mapFst)
+
+#ifdef __Haskell98__
+> import Monad(MonadPlus(..), join)
+#else
+> import Monad(join)
+#endif
+#ifdef __Haskell98__
+#define FMAPNAME fmap
+#else
+#define FMAPNAME map
+#endif
 
 > infixl 9 <@
 > infixl 9 <@-
@@ -21,12 +31,20 @@
 > infixl 7 <|
 > infixr 1 <<
 
+#ifndef __Haskell98__
+> mzero = zero
+> mplus = (++)
+#endif
+
+> (+++) :: MonadPlus m => m a -> m a -> m a
+> (+++) = mplus
+
 \end{verbatim}
 \section{Monad based utilities}
 \begin{verbatim}
 
-> x <@ f = map f x
-> x <@- e = map (\_->e) x
+> x <@ f  = fmap f x
+> x <@- e = fmap (\_->e) x
 
 join      :: Monad m => m (m a) -> m a
 join x     = x >>= id
@@ -63,12 +81,12 @@ Haskell 1.4. (Though it should be, in my opinion.)
 > mIf :: Monad m => m Bool -> m a -> m a -> m a
 > mIf mb t f = mb >>= \b-> if b then t else f
 
-> mguard :: MonadZero m => (a -> Bool) -> a -> m a
-> mguard p x | p x = return x
->            | True= zero
+ mguard :: MonadZero m => (a -> Bool) -> a -> m a
+ mguard p x | p x = return x
+            | True= zero
 
-> (<|) :: MonadZero m => m a -> (a -> Bool) -> m a
-> m <| p = m >>= \x -> if p x then return x else zero
+> (<|) :: MonadPlus m => m a -> (a -> Bool) -> m a
+> m <| p = m >>= \x -> if p x then return x else mzero
 
 \end{verbatim}
 \section{IO and ST monads}
@@ -87,9 +105,10 @@ instance Functor (ST a) where
 >              | Err String
 >              deriving (Show, Eq)
 
+
 > instance Functor Error where
->   map f (Done x) = Done (f x)
->   map f (Err s)  = Err s
+>   FMAPNAME f (Done x) = Done (f x)
+>   FMAPNAME f (Err s)  = Err s
 
 > instance Monad Error where
 >     return         = Done
@@ -106,7 +125,7 @@ instance Functor (ST a) where
 > type LErr a = (a,Error ())
 
 > showLErr :: Show a => LErr a -> String
-> showLErr (x,err) = show x ++ handleError id (map (\_->"") err)
+> showLErr (x,err) = show x ++ handleError id (fmap (\_->"") err)
 
 > mapLErr :: (a->b) -> LErr a -> LErr b
 > mapLErr = mapFst
@@ -135,10 +154,10 @@ instance Functor (ST a) where
 >         liftIOtoIOErr, dropIOErrtoIO, dropError -}
 > 
 > mapIOE :: (a -> b) -> (IOErr a) -> (IOErr b)
-> mapIOE f (IOErr xs) = IOErr (xs <@ map f)
+> mapIOE f (IOErr xs) = IOErr (xs <@ fmap f)
 > 
 > instance Functor IOErr where   
->   map = mapIOE
+>   FMAPNAME = mapIOE
 > 
 > returnIOE :: a -> IOErr a 
 > returnIOE x = IOErr (return (Done x))
@@ -163,7 +182,7 @@ instance Functor (ST a) where
 >   failEM = failIOE
 > 
 > liftIOtoIOErr :: IO a -> IOErr a
-> liftIOtoIOErr = IOErr . map Done
+> liftIOtoIOErr = IOErr . fmap Done
 > 
 > dropIOErrtoIO :: IOErr a -> IO a
 > dropIOErrtoIO (IOErr m)
@@ -189,10 +208,10 @@ instance Functor (ST a) where
 >        dropSTErrtoST,dropErrorST,convertSTErr -}
 > 
 > mapSTE :: (a -> b) -> (STErr s a) -> (STErr s b)
-> mapSTE f (STErr xs) = STErr (xs <@ map f)
+> mapSTE f (STErr xs) = STErr (xs <@ fmap f)
 > 
 > instance Functor (STErr s) where   
->   map = mapSTE
+>   FMAPNAME = mapSTE
 > 
 > returnSTE :: a -> STErr s a 
 > returnSTE x = STErr (return (Done x))
@@ -216,7 +235,7 @@ instance Functor (ST a) where
 >   failEM = failSTE
 > 
 > liftSTtoSTErr :: ST s a -> STErr s a
-> liftSTtoSTErr = STErr . map Done
+> liftSTtoSTErr = STErr . fmap Done
 > 
 > dropSTErrtoST :: STErr s a -> ST s a
 > dropSTErrtoST (STErr m)
@@ -243,10 +262,11 @@ instance Functor (ST a) where
 > data State s a = ST (s -> (a,s))
 > 
 > instance Functor (State s) where
->   map f (ST st) = ST (\s -> let {(x,s') = st s} in (f x, s'))
+>   FMAPNAME f (ST st) = 
+>     ST (\s -> let {(x,s') = st s} in (f x, s'))
 > 
 > instance Monad (State s) where
->   return x      = ST (\s -> (x,s))
+>   return x   = ST (\s -> (x,s))
 >   ST m >>= f = ST (\s -> let (x,s') = m s
 >                              ST f'  = f x
 >                          in  f' s')
@@ -264,21 +284,31 @@ instance Functor (ST a) where
 > data StateM m s a = STM (s -> m (a,s)) 
 > 
 > instance Functor m => Functor (StateM m s) where
->   map f (STM xs) = STM (\s -> map (\(x,s') -> (f x, s'))
->                                   (xs s)
->                        )
-> 
+>   FMAPNAME f (STM xs) = 
+>     STM (\s -> fmap (\(x,s') -> (f x, s')) 
+>                     (xs s)                                
+>         )                                 
 > instance Monad m => Monad (StateM m s) where
 >   return x        = STM (\s -> return (x,s))
 >   STM xs >>= f = STM (\s -> xs s >>= \(x, s') ->
 >                                let STM f' = f x
 >                                in f' s'
 >                         )  
+>
+> mzeroSTM :: MonadPlus m => StateM m s a
+> mzeroSTM = STM (\s -> mzero)
+>
+#ifdef __Haskell98__
+> instance MonadPlus m => MonadPlus (StateM m s) where
+>   mzero = mzeroSTM
+>   mplus (STM stm) (STM stm') = STM (\s -> stm s +++ stm' s)
+#else
 > instance MonadZero m => MonadZero (StateM m s) where
->   zero = STM (\s -> zero)
+>   zero = mzeroSTM
 > 
 > instance MonadPlus m => MonadPlus (StateM m s) where
 >   (STM stm) ++ (STM stm') = STM (\s -> stm s ++ stm' s)
+#endif
 > 
 > instance ErrorMonad m => ErrorMonad (StateM m s) where
 >   failEM msg = STM (\s -> failEM msg)
@@ -300,7 +330,7 @@ instance Functor (ST a) where
 > mliftSTM m = STM (\s -> map (`pair` s) m)
 
 > mliftOut :: Functor m => m a -> OutputT b m a
-> mliftOut ma = OT (map return ma)
+> mliftOut ma = OT (fmap return ma)
 
 \end{verbatim}
 \section{Operations on all monads}
@@ -341,7 +371,7 @@ will be a nice left recursive black hole;-)
 
 > liftop f mp mq=mp >>= \p-> mq >>= \q-> return (f p q)
 > map2 = liftop
-> map1 = map
+> map1 = fmap
 > map0 = return
 
 \end{verbatim}
@@ -350,7 +380,7 @@ will be a nice left recursive black hole;-)
 
 > data Writer a b = Writer ([a]->[a]) b
 > instance Functor (Writer a) where
->   map f (Writer s x) = Writer s (f x)
+>   FMAPNAME f (Writer s x) = Writer s (f x)
 > instance Monad (Writer a) where
 >   return = Writer id
 >   (Writer s a) >>= f = Writer (s.t) b
@@ -365,22 +395,22 @@ will be a nice left recursive black hole;-)
 > unOT (OT m) = m
 
 > instance Functor m => Functor (OutputT a m) where
->   map f (OT mx) = OT (map (map f) mx)
+>   FMAPNAME f (OT mx) = OT (fmap (fmap f) mx)
 
 > instance (Functor m ,Monad m) => Monad (OutputT a m) where
 >   return x     = OT (return (return x))
->   (OT m) >>= f = OT ((map join . join . map f') m)
->        where f' = swap . map (unOT . f)
->              swap (Writer s ma) = map (Writer s) ma
+>   (OT m) >>= f = OT ((fmap join . join . fmap f') m)
+>        where f' = swap . fmap (unOT . f)
+>              swap (Writer s ma) = fmap (Writer s) ma
 
 > output :: Monad m => a -> OutputT a m ()
 > output x = OT (return (write x))
 
 > runOutput' :: Functor m => OutputT a m b -> m ([a] -> [a],b)
-> runOutput' (OT m) = map (\(Writer s a) -> (s,a)) m
+> runOutput' (OT m) = fmap (\(Writer s a) -> (s,a)) m
 
 > runOutput :: Functor m => [a] -> OutputT a m b -> m ([a],b)
-> runOutput l o = map (\(s,x)->(s l,x)) (runOutput' o)
+> runOutput l o = fmap (\(s,x)->(s l,x)) (runOutput' o)
 
 \end{verbatim}
 

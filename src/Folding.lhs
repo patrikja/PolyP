@@ -181,22 +181,22 @@ A normal map over (typed) expressions.
 >    where typed f e = Typed e . f 
 >          polytypic f n t fun cs =
 >             Polytypic n (f t) (f fun) (map (mapFst f) cs)
->          varBind f v t ps e = VarBind v (map f t) ps e
+>          varBind f v t ps e = VarBind v (fmap f t) ps e
 >          explType f vs t = ExplType vs (f t)
 
 \end{verbatim}
 The function {\tt dmmapQualified} works through two layers of monads.
 \begin{verbatim}
 
-> mmapQualified :: (Functor m, Monad m) => (t -> m u) -> Qualified t -> 
->                                                        m (Qualified u)
+> mmapQualified :: (Functor m, Monad m) => (t -> m u) -> 
+>                                          Qualified t -> m (Qualified u)
 > mmapQualified f (qs:=>t) =
 >   map2 (:=>) (mapl mmapQ qs) (f t)
->  where mmapQ (c,ts) = map (pair c) (mapl f ts)
+>  where mmapQ (c,ts) = fmap (pair c) (mapl f ts)
 
 > dmmapQualified :: (Functor m, Monad m, Functor n, Monad n) =>
 >                   (a -> m (n b)) -> Qualified a -> m (n (Qualified b))
-> dmmapQualified f = map (mmapQualified id) . mmapQualified f
+> dmmapQualified f = fmap (mmapQualified id) . mmapQualified f
 
 \end{verbatim}
 

@@ -8,15 +8,18 @@ In Gofer and older hugs - this was required
 > import Trace(trace)
 # endif
 > import UnsafePerformIO(unsafePerformIO)
+
 #else /* not __HBC__ */
 # ifdef __DEBUG__
 > import IOExts(trace)
 # endif
 > import IOExts(unsafePerformIO)
+
 #endif /* __HBC__ */
 
 #ifndef __DEBUG__
 > trace :: String -> a -> a
 > trace x y = y
+
 #endif /* __DEBUG__ */
 

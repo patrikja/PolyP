@@ -7,6 +7,20 @@
 > import List(nubBy)
 
 \end{verbatim}
+\section{Compatibility issues}
+
+In Haskell 98 what was earlier \texttt{map} has been split into two 
+values: one class member \texttt{fmap} and one list map \texttt{map}.
+To achieve backward compatibility we define \texttt{fmap} even for 
+earlier Haskell versions.
+
+#ifndef __Haskell98__
+
+> fmap :: Functor f => (a->b) -> f a -> f b
+> fmap = map
+
+#endif
+
 \section{Some list utilities}
 
 \begin{verbatim}

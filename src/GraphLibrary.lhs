@@ -75,9 +75,13 @@ Depth-first search
 
 #ifndef __HBC__
 > pruneF bnds ts = runST         (mkEmpty bnds  >>= \m ->
+
 #else /* __HBC__ */
+
 > pruneF bnds ts = runST $ RunST (mkEmpty bnds  >>= \m ->
+
 #endif /* __HBC__ */
+
 >                                 chop m ts)
 
 > chop         :: Set s -> Forest Vertex -> ST s (Forest Vertex)

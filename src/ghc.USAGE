@@ -4,7 +4,8 @@ If the installation works out the executable should be in bin/ghcpolyp.
 
 Rename this to polyp and put it on your path 
 or link to it from your own bin directory
-  ln -s bin/ghcpolyp $(HOME)/bin/polyp
+
+  ln -s bin/ghcpolyp $HOME/bin/polyp
 
 The USAGE file gives more information (and assumes the executable is
 called "polyp").

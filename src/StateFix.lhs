@@ -29,8 +29,10 @@ The differences are of two kinds:
 > import ST -- (ST,STRef,runST,newSTRef,readSTRef,writeSTRef)
 # ifdef __OLD_HUGS__
 > import STArray
+
 # else /* not __OLD_HUGS__ */
 > type MutArr s a b = STArray s a b
+
 # endif /* __OLD_HUGS__ */
 #endif
 
@@ -68,13 +70,17 @@ equality.
 > (===) :: MutVar s a -> MutVar s a -> Bool
 #ifdef __HBC__
 > (===) = sameVar -- Pointer equality
+
 #else /* not __HBC__ */
+
 > (===) = (==)    -- Pointer equality
+
 #endif /* __HBC__ */
 
 #ifdef __GLASGOW_HASKELL__ || __OLD_HUGS__
 > instance Functor (ST s) where
 >   map f m = m >>= \ x -> return (f x)
+
 #endif /* not conforming to new ghc/hugs shared ST-library */
 
 \end{verbatim}
@@ -94,6 +100,7 @@ equality.
 > newArr   = newMutArray
 > readArr  = readMutArray
 > writeArr = writeMutArray
+
 # endif /* __HBC__ */
 #endif /* __OLDHUGS__ */
 

@@ -119,8 +119,13 @@ mutually recursive definitions.
 > noType :: Maybe QType
 > noType = Nothing
 
+#ifdef __Haskell98__
+#define FMAPNAME fmap
+#else
+#define FMAPNAME map
+#endif
 > instance Functor Qualified where
->   map f (qs:=>t) = map (mapSnd (map f)) qs :=> f t
+>   FMAPNAME f (qs:=>t) = map (mapSnd (map f)) qs :=> f t
 
 > context2type :: Context -> Type
 > type Qualifier t = (ConID,[t])
