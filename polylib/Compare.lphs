@@ -75,11 +75,11 @@ Possible variants:
 <   maybe (compare (fconstructor2Int x) (fconstructor2Int y))                
 <         (forder . fmap2 (uncurry f) (uncurry g))                           
 <         (fzip (x,y))                                        
-<
+< 
 < forder :: Bifunctor f => f Ordering Ordering -> Ordering
 < forder = fcrush ordop EQ
 < forder = foldr ordop EQ . fl_all
-<
+< 
 < pcompare op x y = 
 <   pzipWith' forder
 <             (uncurry compare . (constructor2Int -*- constructor2Int)) 

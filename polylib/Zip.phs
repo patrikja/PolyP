@@ -38,17 +38,16 @@ prodzip :: ((a,b),(c,d)) -> Maybe ((a,c),(b,d))
 prodzip ((a,b),(c,d))  =  returnM ((a,c),(b,d))
 constzip :: Eq t => (t,t) -> Maybe t
 constzip (x,y) = if x==y then returnM x else zeroM
-zeroM :: Maybe a
-zeroM = Nothing
-
 returnM  :: a -> Maybe a
 returnM x  =  Just x
-
-innM :: Regular d => FunctorOf d a (d a) -> Maybe (d a)
-innM  =  returnM . inn
 
 bindM    :: Maybe a -> (a -> Maybe b) -> Maybe b
 bindM x f  =  maybe Nothing f x
 
 (@@)     :: (a -> Maybe b) -> (c -> Maybe a) -> c -> Maybe b
 g @@ f = \a-> f a `bindM` g
+ zeroM :: Maybe a
+zeroM = Nothing
+
+innM :: Regular d => FunctorOf d a (d a) -> Maybe (d a)
+innM  =  returnM . inn

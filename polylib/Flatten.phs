@@ -18,6 +18,8 @@ fl_all :: Bifunctor f => f a a -> [a]
 fl_par = fflatten . fmap2 singleton nil
 fl_rec = fflatten . fmap2 nil       singleton
 fl_all = fflatten . fmap2 singleton singleton
+substructures :: Regular d => d a -> [d a]
+substructures x = x : fflatten (fmap2 nil substructures (out x))
 singleton   :: a -> [a]
 singleton x =  [x]
 

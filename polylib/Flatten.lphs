@@ -59,7 +59,7 @@ Function |flatten| can also be defined using |crush| (see the module
 
 > singleton   :: a -> [a]
 > singleton x =  [x]
->
+> 
 > nil         :: a -> [b]
 > nil       x =  []
 

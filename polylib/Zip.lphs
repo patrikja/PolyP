@@ -17,12 +17,12 @@ Unzipping is easy:
 
 > punzip :: Regular d => d (a,b) -> (d a,d b)
 > punzip x = (pmap fst x, pmap snd x)
->
+> 
 > funzip :: Bifunctor f => f (a,c) (b,d) -> (f a b,f c d)
 > funzip x = (fmap2 fst fst x, fmap2 snd snd x)
 
 %if verbose
-Zipping is a little more complex:
+Zipping is a bit more complex:
 %endif verbose
 
 > pzip :: Regular d => (d a,d b) -> Maybe (d (a,b))
@@ -94,7 +94,7 @@ The intended (and implemented) meaning is fairly clear: one branch
 |Const T -> constzip| in the polytypic case for each type |T| that is
 an instance of |Eq|.
 
-\paragraph{|Maybe|-monad functions}\nobreakpage
+\paragraph{|Maybe|-monad functions}
 
 > returnM  :: a -> Maybe a
 > returnM x  =  Just x
@@ -107,7 +107,7 @@ an instance of |Eq|.
  
 > zeroM :: Maybe a
 > zeroM = Nothing
->
+> 
 > innM :: Regular d => FunctorOf d a (d a) -> Maybe (d a)
 > innM  =  returnM . inn
 
