@@ -53,8 +53,31 @@ Implementation:
 
 > instantiateProgram (tbasis,(datadefs,eqnss)) = 
 >     datadefs
->     ++ functorOfInstances datadefs (getFuncEnv tbasis)
->     ++ rewritePolytypicConstructs (getTypeEnv tbasis) (getFuncEnv tbasis) eqnss
+>     ++ functorOfInstances datadefs funcenv
+>     ++ rewritePolytypicConstructs (getTypeEnv tbasis) funcenv eqnss
+>  where funcenv = realFuncEnv $ getFuncEnv tbasis
+
+\end{verbatim}
+
+We need to translate the functors in the functor environment to the real functors
+from the sugared versions used in the PolyP code (+ -> SumF, * -> ProdF, ...)
+
+\begin{verbatim}
+
+> realFuncEnv :: FuncEnv -> FuncEnv
+> realFuncEnv funcenv = map (mapSnd $ mapSnd realFuncNames) funcenv
+> 	where
+>    -- Change to real functor names
+>    realFuncNames t = case t of
+>              TCon "+"       -> TCon "SumF"
+>              TCon "*"       -> TCon "ProdF"
+>              TCon "Empty"   -> TCon "EmptyF"
+>              TCon "Par"     -> TCon "ParF"
+>              TCon "Rec"     -> TCon "RecF"
+>              TCon "@"       -> TCon "CompF"
+>              TCon "Const"   -> TCon "ConstF"
+>              f :@@: g       -> realFuncNames f :@@: realFuncNames g
+>              _              -> t
 
 \end{verbatim}
 
@@ -68,7 +91,7 @@ the datatype and its functor.
 >  where
 >     findFunc conid = maybe [] ((:[]).snd) $ lookupEnv conid funcenv
 >        where err = error $ "PolyInstance.functorOfInstances: No functor for datatype " ++ conid
->     functorOfInstance (DataDef name _ cons _) = case func of
+>     functorOfInstance (DataDef name _ cons _) = case findFunc name of
 >        []       -> []
 >        [func]   -> [ Instance [] ("FunctorOf", [func, TCon name]) (innEqn func cons
 >                                               ++ outEqn func cons
@@ -76,19 +99,6 @@ the datatype and its functor.
 >                                               ++ constrName cons
 >                                )]
 >        where
->           func = map realFuncNames (findFunc name)
-
->           -- Change to real functor names
->           realFuncNames t = case t of
->              TCon "+"       -> TCon "SumF"
->              TCon "*"       -> TCon "ProdF"
->              TCon "Empty"   -> TCon "EmptyF"
->              TCon "Par"     -> TCon "ParF"
->              TCon "Rec"     -> TCon "RecF"
->              TCon "@"       -> TCon "CompF"
->              TCon "Const"   -> TCon "ConstF"
->              f :@@: g       -> realFuncNames f :@@: realFuncNames g
->              _              -> t
 
 >           -- Compute equations for datatypeName and constructorName
 >           dataName name = [VarBind "datatypeName" Nothing [] $ Var "const" :@: Literal (StrLit name)]
@@ -430,7 +440,7 @@ PolyEnv.
 >     WildCard             -> [] :=> TVar "dummy"
 >     _                    -> error $ "Cannot infer type of " ++ pshow t
 
-> -- Infer constraints arising from let bindings (not implemented)
+> -- Infer constraints arising from let bindings
 > inferContextEqn :: PolyEnv -> Eqn' QType -> [Qualifier Type]
 > inferContextEqn env eqn = case eqn of
 >     VarBind name _ _ e   -> let c :=> _ = inferQType env e in c

@@ -51,5 +51,5 @@ clean::
 	rm -f $(targets:.hs=.check)
 
 veryclean:: clean
-	rm -f $(targets) $(targets:.hs=.Hs2) $(targets:.hs=.Phs2) $(targets:.hs=.out2) $(patsubst %.hs,type%.hs,$(targets))
+	rm -f $(targets) $(targets:.hs=.phi) $(targets:.hs=.Hs2) $(targets:.hs=.Phs2) $(targets:.hs=.out2) $(patsubst %.hs,type%.hs,$(targets))
 
