@@ -1,0 +1,2 @@
+main = out
+-- this should give an error as out is too polymorphic

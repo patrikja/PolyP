@@ -1,0 +1,23 @@
+-- BUG: type error in the Rec case is reported only at instantiation time.
+
+{-
+Fail: PolyInstance.traverseTEqn: Instantiation problem for scan:
+FunctorNames.codeFunctor: uninstantiated functor variable k
+ found as part of FunctorOf k
+-}
+
+--polytypic fscan :: Regular b => f a (b a) -> [b a]
+polytypic fscan :: f a (b a) -> [b a]
+  = case f of
+      Const t -> \x -> []
+      Empty   -> \x -> []
+      Par     -> \x -> []
+      Rec     -> scan
+      f * g   -> \(x,y) -> fscan x ++ fscan y
+      f + g   -> fscan `either` fscan
+
+scan :: Regular d => d a -> [d a]
+scan x = x : fscan (out x)
+
+main = (scan "1738", scan (Just True))
+

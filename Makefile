@@ -50,6 +50,7 @@ bin/chase: src/chase.in
 	echo '#!'$(PERL) > bin/chase
 	echo '$$POLYLIBDIR='\'$(POLYLIBDIR)\'\; >>bin/chase
 	cat src/chase.in >> bin/chase
+	chmod +x bin/chase
 
 
 

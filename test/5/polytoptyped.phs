@@ -1,0 +1,7 @@
+main = print p >>
+       print (oM (fst p),oL (snd p))
+
+oM = out :: Maybe Int -> FunctorOf Maybe Int (Maybe Int)
+oL = out :: String -> FunctorOf [] Char String
+p  = (,) (Just 1) "" :: (,) (Maybe Int) ([] Char)
+

@@ -1,0 +1,15 @@
+-- This should not be accepted by PolyP since the type of id
+--   is more restricted than the type of badfmap
+
+polytypic badfmap :: (a -> c) -> (b -> d) -> f a b -> f c d
+  = \p r -> case f of                             
+      	      g -> id
+
+-- e is forall quantified, the others not.
+--  teval {f -> g} (f a b -> f c d) <? e -> e
+--  g a b -> g c d <? e -> e
+--  g a b <? e   &&   g c d <? e
+--  {e -> g a b}
+--  g c d <? g a b
+--  g <? g && c <? a && d <? b
+--  NO! because no substitutions are allowed on non-quantified variables

@@ -1,0 +1,23 @@
+main = (t1,t2)
+
+t1 = test id val1
+t2 =  dist22 val3
+
+val1 = fmap2 out id (out (Just "Hej"))
+val2 = fmap2 id (const ()) (out []) -- :: FunctorOf [] a [a]
+val3 = fmap2 (const val2) (const val2) (out (Just ()))
+
+
+-- simulate fmap2 to avoid having to import it
+fmap2 :: Bifunctor f => (a->c) -> (b->d) -> f a b -> f c d
+fmap2 = fmap2
+
+test :: (Poly f, Poly g) => (a->d) -> f (g a b) c -> f (g d b) c
+test f = fmap2 (fmap2 f id) id
+
+polytypic dist22 :: Poly f => e (f a b) (f c d) -> f (e a c) (e b d)
+  = case e of
+      g + h   -> either (fmap2 Left Left . dist22) (fmap2 Right Right . dist22)
+
+
+--val :: FunctorOf Maybe (FunctorOf [] Char ([Char])) (Maybe ([Char]))

@@ -1,0 +1,6 @@
+main = print x >>
+       print y
+x :: Float
+x = id 1.2
+y :: Int
+y = const 17.const 38$0

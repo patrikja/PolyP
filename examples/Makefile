@@ -10,7 +10,7 @@
 PolyP := $(firstword $(wildcard ../bin/*polyp) polyp)
 #PolyP = polyp
 PERL = perl
-CHASE = $(PERL) ../bin/chase -i ../polylib
+CHASE = $(PERL) ../bin/chase
 hugs = runhugs
 
 DIFF = diff
