@@ -11,7 +11,7 @@ runhugs = runhugs
 
 PolyPDIR = ${HOME}
 # PolyP = $(PolyPDIR)/bin/polyp
-# PolyP = polyp
+PolyP = polyp
 # CHASE = perl $(PolyPDIR)/bin/chase
 # CHASE = $(PolyPDIR)/bin/chase
 CHASE = chase
@@ -23,7 +23,7 @@ CHASE = chase
 	cat $(wildcard type$*.hs) $< > $@
 
 %.Hs2: %.Phs2
-	$(PolyP) $(PolyPFLAGS) $< > $@ 
+	$(PolyP) $(PolyPFLAGS) ${PolyPREQUESTS} $< > $@ 
 
 %.Phs2: %.phs
 	$(CHASE) $(CHASEFLAGS) $< > $@
