@@ -7,6 +7,7 @@
 > import Env(lookupEnv)
 > import Grammar(Eqn'(..),Expr'(..),Expr,Type(..),Qualified(..),Literal(..),
 >                Eqn,Func,QType, ConID,VarID,tupleConstructor,listConstructor)
+> import Folding(cataType)
 > import MyPrelude(mapFst,mapSnd,pair,variablename)
 > import StartTBasis(innType,outType,fcnameType,leftname,rightname,eitherType)
 > import PrettyPrinter(Pretty(pretty))
@@ -52,7 +53,7 @@ The following section needs to be reworked. (Use material from Masters Thesis)
 
 > convType :: ConID -> Type -> Type
 > convType def (TVar _) = TCon "Par" -- indexed if multiple params
-> convType def (TCon t) = TCon "Const" :@@: TCon t
+> convType def t | isConstantType t = TCon "Const" :@@: t
 
 Skall ga ned i tradet rekursivt.
 
@@ -61,6 +62,12 @@ Skall ga ned i tradet rekursivt.
 > convType def (TCon con :@@: t) = 
 >    TCon "@" :@@: TCon con :@@: convType def t
 > convType def _ = error "Functorize.convType: Type not regular enough"
+
+> isConstantType :: Type -> Bool
+> isConstantType = null . typeVars
+
+> typeVars :: Type -> [VarID]
+> typeVars = cataType ((:[]),const [],(++))
 
 \end{verbatim}
 Far too many bad functors get through this a the moment.
