@@ -2,7 +2,6 @@ module BaseM(pmapM,fmap2M,cataM,anaM,hyloM,paraM,innM,outM,idM,(@@)) where
 import Base((-*-))
 pmapM :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
 pmapM fM  = liftM inn . fmap2M fM  (pmapM fM)   . out
-
 polytypic fmap2M :: Monad m => (a -> m c) -> (b -> m d) -> 
                                f a b -> m (f c d)
   = \p r -> case f of
@@ -20,11 +19,11 @@ prodmapM :: Monad m => (a -> m c) -> (d -> m e) -> (a,d) -> m (c,e)
 prodmapM  f g p = f (fst p) >>= \x-> g (snd p) >>= \y-> return (x,y) 
 prodmapMr f g p = g (snd p) >>= \y-> f (fst p) >>= \x-> return (x,y) 
 cataM :: (Regular d,Monad m) => (FunctorOf d a b -> m b) -> (d a -> m b)
+cataM iM    = iM       @@ fmap2M idM (cataM iM   ) . out
 anaM  :: (Regular d,Monad m) => (b -> m (FunctorOf d a b)) -> (b -> m (d a))
+anaM     oM = liftM inn . fmap2M idM (anaM     oM) @@ oM
 hyloM :: (Bifunctor f,Monad m) => (f a b -> m b)-> (c -> m (f a c)) -> 
                                   c -> m b
-cataM iM    = iM       @@ fmap2M idM (cataM iM   ) . out
-anaM     oM = liftM inn . fmap2M idM (anaM     oM) @@ oM
 hyloM iM oM = iM       @@ fmap2M idM (hyloM iM oM) @@ oM
 paraM :: (Regular d, Monad m) => (d a -> FunctorOf d a b -> m b) -> d a -> m b
 paraM iM x = iM x =<< fmap2M idM (paraM iM) (out x)
@@ -38,7 +37,6 @@ pmapMl :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
 pmapMl = pmapM
 pmapMr :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
 pmapMr fM  = liftM inn . fmap2Mr fM  (pmapMr fM)   . out
-
 polytypic fmap2Mr :: Monad m => 
                      (a->m c) -> (b->m d) -> f a b -> m (f c d)
   = \p r -> case f of
@@ -50,16 +48,14 @@ polytypic fmap2Mr :: Monad m =>
               d @ g     ->  pmapMr (fmap2Mr p r)
               Const t   ->  return                    
 cataMr :: (Regular d,Monad m) => (FunctorOf d a b -> m b) -> (d a -> m b)
+cataMr iM    = iM       @@ fmap2Mr idM (cataMr iM   ) . out
 anaMr  :: (Regular d,Monad m) => (b -> m (FunctorOf d a b)) -> (b -> m (d a))
+anaMr     oM = liftM inn . fmap2Mr idM (anaMr     oM) @@ oM
 hyloMr :: (Bifunctor f,Monad m) => (f a b -> m b)-> (c -> m (f a c)) -> 
                                    c -> m b
-cataMr iM    = iM       @@ fmap2Mr idM (cataMr iM   ) . out
-anaMr     oM = liftM inn . fmap2Mr idM (anaMr     oM) @@ oM
 hyloMr iM oM = iM       @@ fmap2Mr idM (hyloMr iM oM) @@ oM
-
 pmapM' :: (Regular d, Monad m) => Bool -> (a -> m b) -> d a -> m (d b)
 pmapM' ord fM   = liftM inn . fmap2M' ord fM  (pmapM' ord fM)   . out
-
 polytypic fmap2M' :: Monad m => Bool -> (a -> m c) -> (b -> m d) -> 
                                 f a b -> m (f c d)
   = \ord p r -> case f of

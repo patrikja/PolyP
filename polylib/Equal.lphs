@@ -5,7 +5,7 @@
 % ------------------------------------------------------------
 
 > module Equal(pequal,fequal,peq) where
-> 
+
 > peq :: (Regular d, Eq a) => d a -> d a -> Bool
 > peq = pequal (==)
 
@@ -14,7 +14,7 @@
 
 > pequal :: Regular d => (a->b->Bool) -> d a -> d b -> Bool
 > pequal eq x y = fequal eq (pequal eq) (out x) (out y)
-> 
+
 > polytypic fequal :: (a->b->Bool) -> (c->d->Bool) -> 
 >                     f a c -> f b d -> Bool
 >   = \p r -> case f of
