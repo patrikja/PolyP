@@ -1,0 +1,75 @@
+module PolyLib.ConstructorName where
+import PolyLib.Prelude
+
+constructorArity :: Regular d => d a -> Int
+constructorArity = fconstructorArity . out
+
+constructorNames :: Regular d => d a -> [String]
+constructorNames x = map constructorName $ constructors `asTypeOf` [x]
+
+constructorNamesAndArities :: Regular d => d a -> [(String,Int)]
+constructorNamesAndArities x = map (mapFst constructorName)
+                              $ asTypeOf constructorsAndArities [(x, undefined)]
+
+constructorsAndArities :: Regular d => [(d a, Int)]
+constructorsAndArities = map (mapFst inn) fconstructorsAndArities
+
+constructors  :: Regular d => [d a]
+constructors  =  map inn fconstructors
+
+polytypic fconstructors :: [f a b]
+    = case f of 
+	g + h	-> map InL fconstructors ++ map InR fconstructors
+	g	-> [fconstructorArgs]
+
+polytypic fconstructorArgs :: f a b
+    = case f of
+	g * h   -> fconstructorArgs :*: fconstructorArgs
+	Empty   -> EmptyF
+	Par     -> ParF undefined
+	Rec     -> RecF undefined
+	d @ g   -> CompF undefined
+	Const t -> ConstF undefined
+
+polytypic fconstructorsAndArities :: [(f a b,Int)] =
+  case f of 
+    g + h   ->  map (mapFst InL) fconstructorsAndArities ++ 
+                map (mapFst InR) fconstructorsAndArities
+    g * h   ->  (\x -> [(x,fconstructorArity x)]) $ head fconstructors
+    Empty   ->  (\x -> [(x,fconstructorArity x)]) $ head fconstructors
+    Par     ->  (\x -> [(x,fconstructorArity x)]) $ head fconstructors
+    Rec     ->  (\x -> [(x,fconstructorArity x)]) $ head fconstructors
+    d @ g   ->  (\x -> [(x,fconstructorArity x)]) $ head fconstructors
+    Const t ->  (\x -> [(x,fconstructorArity x)]) $ head fconstructors
+
+polytypic fconstructorArity :: f a b -> Int =
+  case f of
+    g + h   ->  fconstructorArity `foldSum` fconstructorArity
+    g * h   ->  \(x:*:y) -> fconstructorArity x + 
+                     fconstructorArity y
+    Empty   ->  const 0
+    Par     ->  const 1
+    Rec     ->  const 1
+    d @ g   ->  const 1
+    Const t ->  const 1
+
+constructor2Int :: Regular d => d a -> Int
+constructor2Int = fconstructor2Int . out
+
+polytypic fconstructor2Int :: f a b -> Int =
+  case f of 
+    g + h   ->  const 0 `foldSum` ((\ n -> 1 + n) . fconstructor2Int)
+    g * h   ->  const 0
+    Empty   ->  const 0
+    Par     ->  const 0
+    Rec     ->  const 0
+    d @ g   ->  const 0
+    Const t ->  const 0
+int2constructor :: Regular d => Int -> d a
+int2constructor n = constructors !! n
+
+int2fconstructor :: Bifunctor f => Int -> f a b
+int2fconstructor n = fconstructors !! n
+
+mapFst :: (a->b) -> (a,c) -> (b,c)
+mapFst f p = (f (fst p), snd p)

@@ -1,0 +1,34 @@
+module PolyLib.Sum(psum,fsum,size) where 
+import PolyLib.Prelude
+import PolyLib.Base(cata,pmap)
+
+psum :: (Regular d, Num a) => d a -> a
+psum = cata fsum
+
+polytypic fsum :: Num a => f a a -> a
+  = case f of 
+      g + h    ->  fsum `foldSum` fsum
+      g * h    ->  \(x:*:y) -> fsum x + fsum y
+      Empty    ->  \x -> fromIntegral 0
+      Par      ->  unParF
+      Rec      ->  unRecF
+      d @ g    ->  psum . pmap fsum . unCompF
+      Const t  ->  \x -> fromIntegral 0
+
+{-
+psum :: Regular d => d Int -> Int
+psum = cata fsum
+
+polytypic fsum :: f Int Int -> Int
+  = case f of 
+      g + h    ->  fsum `foldSum` fsum
+      g * h    ->  \(x:*:y) -> fsum x + fsum y
+      Empty    ->  \x -> 0  
+      Par      ->  unParF
+      Rec      ->  unRecF
+      d @ g    ->  psum . pmap fsum . unCompF
+      Const t  ->  \x -> 0
+-}
+
+size :: Regular d => d a -> Int
+size = psum . pmap (\_->1)

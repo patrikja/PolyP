@@ -1,0 +1,25 @@
+module PolyLib.Thread(thread,pmapM,fthread,fmap2M) where
+import PolyLib.Prelude
+import Control.Monad
+import PolyLib.Base(cata,pmap)
+import PolyLib.BaseM(pmapM,fmap2M,(@@))
+
+thread :: (Regular d, Monad m) => d (m a) -> m (d a)
+thread  =  cata (liftM inn . fthread)
+
+polytypic fthread :: Monad m => f (m a) (m b) -> m (f a b)
+  = case f of
+      g + h       ->  sumthread . (fthread -++- fthread)
+      g * h       ->  prodthread . (fthread -**- fthread)
+      Empty       ->  \EmptyF -> return EmptyF
+      Par         ->  liftM ParF . unParF
+      Rec         ->  liftM RecF . unRecF
+      d @ g       ->  liftM CompF . thread . (pmap fthread) . unCompF
+      Const t     ->  return . ConstF . unConstF
+
+--sumthread  :: Monad m => Either (m a) (m b) -> m (Either a b)
+sumthread  =  liftM InL `either` liftM InR
+
+--prodthread :: Monad m => (m a,m b) -> m (a,b)
+prodthread (mx,my) = mx >>= \x-> my >>= \y-> return (x:*:y)
+

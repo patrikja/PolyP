@@ -1,0 +1,34 @@
+module PolyLib.Show where
+import PolyLib.Prelude
+import PolyLib.Base
+import PolyLib.ConstructorName
+
+polytypic fshowsPrec :: Int -> f (Int -> String -> String) (Int -> String -> String) -> String -> String
+    = \p -> case f of
+            g + h   -> fshowsPrec p `foldSum` fshowsPrec p
+            g * h   -> (\(x,y) -> x . showString " " . y) . (fshowsPrec 10 -**- fshowsPrec 10)
+            Empty   -> const id
+            Par     -> \x -> unParF x p
+            Rec     -> \x -> unRecF x p
+            d @ g   -> pshowsPrec' fshowsPrec p . unCompF
+            Const t -> showsPrec p . unConstF
+
+pshowsPrec' :: Regular d => (Int -> a -> String -> String) -> Int -> d a -> String -> String
+pshowsPrec' s p x =
+    let ar      = constructorArity x in
+    let cons    = mkConstrName ar (constructorName x) in
+    (if ar > 0 then showParen (p>9) else id) $ showString cons . (fshowsPrec 10 $ fmap2 (flip s) (flip $ pshowsPrec' s) $ out x)
+
+mkConstrName ar name = (if (isOp name) then "(" ++ name ++ ")" else name) ++
+                        if ar > 0 then " " else ""
+
+isOp s = case s of
+    ':':_   -> True
+    _       -> False
+
+pshowsPrec :: (Regular d, Show a) => Int -> d a -> String -> String
+pshowsPrec = pshowsPrec' showsPrec
+
+pshow :: (Regular d, Show a) => d a -> String
+pshow x = pshowsPrec 0 x ""
+

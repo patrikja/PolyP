@@ -1,0 +1,18 @@
+module PolyLib.EqualVariants(pequal,peq) where
+import PolyLib.Prelude
+import PolyLib.Flatten(flatten,fl_all)
+import PolyLib.Zip(pzip,pzipWith')
+pequal :: Regular d => (a->b->Bool) -> d a -> d b -> Bool
+pequal op l r = pzipWith' (and . fl_all)
+                          (\_ -> False) 
+                          (uncurry op)
+                          (l,r)        
+peq :: (Regular d, Eq a) => d a -> d a -> Bool
+peq l r = pzipWith' (and . fl_all)
+                    (\_ -> False) 
+                    (uncurry (==))
+                    (l,r)        
+peq' :: (Regular d, Eq a) => d a -> d a -> Bool
+peq' x y = maybe False 
+                 (all (uncurry (==)) . flatten) 
+                 (pzip (x,y))

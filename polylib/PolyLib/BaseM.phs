@@ -1,0 +1,80 @@
+module PolyLib.BaseM(pmapM,pmapMr,pmapMl,pmapM',fmap2M,cataM,anaM,hyloM,paraM,innM,outM,idM,(@@)) where
+import PolyLib.Prelude
+import PolyLib.Base
+import Control.Monad
+pmapM :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
+pmapM fM  = liftM inn . fmap2M fM  (pmapM fM)   . out
+polytypic fmap2M :: Monad m => (a -> m c) -> (b -> m d) ->
+                               f a b -> m (f c d)
+  = \p r -> case f of
+              g + h    ->  summapM  (fmap2M p r) (fmap2M p r)
+              g * h    ->  prodmapM (fmap2M p r) (fmap2M p r)
+              Empty    ->  const $ return EmptyF
+              Par      ->  liftM ParF . p . unParF
+              Rec      ->  liftM RecF . r . unRecF
+              d @ g    ->  liftM CompF . pmapM (fmap2M p r) . unCompF
+              Const t  ->  liftM ConstF . return . unConstF
+--summapM :: Monad m => (a -> m c) -> (d -> m e) ->
+--                      SumF a d -> m (SumF c e)
+summapM f g = (liftM InL . f) `foldSum` (liftM InR . g)
+--prodmapM :: Monad m => (a -> m c) -> (d -> m e) -> (a,d) -> m (c,e)
+prodmapM  f g p' = let p = unProdF p' in f (fst p) >>= \x-> g (snd p) >>= \y-> return (x :*: y)
+prodmapMr f g p' = let p = unProdF p' in g (snd p) >>= \y-> f (fst p) >>= \x-> return (x :*: y)
+cataM :: (Regular d,Monad m) => (FunctorOf d a b -> m b) -> (d a -> m b)
+cataM iM    = iM       @@ fmap2M idM (cataM iM   ) . out
+anaM  :: (Regular d,Monad m) => (b -> m (FunctorOf d a b)) -> (b -> m (d a))
+anaM     oM = liftM inn . fmap2M idM (anaM     oM) @@ oM
+hyloM :: (Bifunctor f,Monad m) => (f a b -> m b)-> (c -> m (f a c)) ->
+                                  c -> m b
+hyloM iM oM = iM       @@ fmap2M idM (hyloM iM oM) @@ oM
+paraM :: (Regular d, Monad m) => (d a -> FunctorOf d a b -> m b) -> d a -> m b
+paraM iM x = iM x =<< fmap2M idM (paraM iM) (out x)
+idM :: Monad m => a -> m a
+idM  = return
+innM :: (Regular d, Monad m) => FunctorOf d a (d a) -> m (d a)
+innM = idM . inn
+outM :: (Regular d, Monad m) => d a -> m (FunctorOf d a (d a))
+outM = idM . out
+pmapMl :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
+pmapMl = pmapM
+pmapMr :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
+pmapMr fM  = liftM inn . fmap2Mr fM  (pmapMr fM)   . out
+polytypic fmap2Mr :: Monad m =>
+                     (a->m c) -> (b->m d) -> f a b -> m (f c d)
+  = \p r -> case f of
+              g + h     ->  summapM   (fmap2Mr p r) (fmap2Mr p r)
+              g * h     ->  prodmapMr (fmap2Mr p r) (fmap2Mr p r)
+              Empty     ->  const $ return EmptyF
+              Par       ->  liftM ParF . p . unParF
+              Rec       ->  liftM RecF . r . unRecF
+              d @ g     ->  liftM CompF . pmapMr (fmap2Mr p r) . unCompF
+              Const t   ->  liftM ConstF . return . unConstF
+cataMr :: (Regular d,Monad m) => (FunctorOf d a b -> m b) -> (d a -> m b)
+cataMr iM    = iM       @@ fmap2Mr idM (cataMr iM   ) . out
+anaMr  :: (Regular d,Monad m) => (b -> m (FunctorOf d a b)) -> (b -> m (d a))
+anaMr     oM = liftM inn . fmap2Mr idM (anaMr     oM) @@ oM
+hyloMr :: (Bifunctor f,Monad m) => (f a b -> m b)-> (c -> m (f a c)) ->
+                                   c -> m b
+hyloMr iM oM = iM       @@ fmap2Mr idM (hyloMr iM oM) @@ oM
+pmapM' :: (Regular d, Monad m) => Bool -> (a -> m b) -> d a -> m (d b)
+pmapM' ord fM   = liftM inn . fmap2M' ord fM  (pmapM' ord fM)   . out
+polytypic fmap2M' :: Monad m => Bool -> (a -> m c) -> (b -> m d) ->
+                                f a b -> m (f c d)
+  = \ord p r -> case f of
+      g + h    ->  summapM  (fmap2M' ord p r) (fmap2M' ord p r)
+      g * h    ->  liftM (uncurry (:*:)) . opM ord . foldProd (\x y -> (fmap2M' ord p r x, fmap2M' ord p r y))
+      Empty    ->  const $ return EmptyF
+      Par      ->  liftM ParF . p . unParF
+      Rec      ->  liftM RecF . r . unRecF
+      d @ g    ->  liftM CompF . pmapM' ord (fmap2M' ord p r) . unCompF
+      Const t  ->  liftM ConstF . return . unConstF
+opM :: Monad m => Bool -> (m a, m b) -> m (a,b)
+opM b p = case b of
+            True  -> fst p >>= \x-> snd p >>= \y-> return (x,y)
+            False -> snd p >>= \y-> fst p >>= \x-> return (x,y)
+
+--liftM :: Monad m => (a->b) -> m a -> m b
+--liftM f mx = mx >>= \x -> return (f x)
+
+(@@) :: Monad m => (b->m c) -> (a->m b) -> (a->m c)
+f @@ g = \y -> g y >>= f

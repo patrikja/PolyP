@@ -1,0 +1,34 @@
+module PolyLib.Compare(pcompare',pcompare,fcompare) where
+import PolyLib.Prelude
+pcompare' :: (Regular d, Ord a) => d a -> d a -> Ordering
+pcompare' = pcompare compare
+pcompare :: Regular d    => (a->a->Ordering) -> d a -> d a -> Ordering
+pcompare eq x y = fcompare eq (pcompare eq) (out x) (out y)
+
+c21 f g x y = f (g x) (g y)
+
+polytypic fcompare :: (a->a->Ordering) -> (b->b->Ordering) -> 
+                      f a b -> f a b -> Ordering
+  = \p r -> case f of
+              g + h    ->  sumcompare  (fcompare p r) (fcompare p r)
+              g * h    ->  prodcompare (fcompare p r) (fcompare p r)
+              Empty    ->  \_ _ -> EQ
+              Par      ->  c21 p unParF
+              Rec      ->  c21 r unRecF
+              d @ g    ->  c21 (pcompare (fcompare p r)) unCompF
+              Const t  ->  c21 compare unConstF
+
+--sumcompare :: (a->a->Ordering) -> (b->b->Ordering) -> 
+--              Either a b -> Either a b -> Ordering
+sumcompare f g a b = case (a,b) of
+                       (InL  x, InL  v) ->  f x v
+                       (InR y, InR w)           ->  g y w
+                       (InL  _, InR _)          ->  LT
+                       (InR _, InL  _)          ->  GT
+--prodcompare :: (a->a->Ordering) -> (b->b->Ordering) -> 
+--               (a,b)->(a,b) -> Ordering
+prodcompare f g (p:*:p') (q:*:q') = f p q `ordop` g p' q'
+ordop :: Ordering -> Ordering -> Ordering
+ordop x y = case x of 
+              EQ -> y
+              _  -> x
