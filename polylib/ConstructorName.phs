@@ -1,0 +1,16 @@
+---------------------------------------------------------------
+-- ConstructorName
+--   970509 Patrik Jansson
+-- module ConstructorName where
+-- import Base(inn,out)
+---------------------------------------------------------------
+constructors  :: [d a]
+constructors  =  map inn fconstructors
+
+constructorName = fconstructorName . out
+
+polytypic fconstructors :: [f a b] =
+  case f of 
+    g + h -> map Left fconstructors ++ map Right fconstructors
+    g     -> [undefined]
+

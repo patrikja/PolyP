@@ -1,0 +1,27 @@
+----------------------------------------------------------------
+-- ZipVariants
+-- 980409 Patrik Jansson
+----------------------------------------------------------------
+module ZipVariants where
+import Zip(pzipWith,pzipWith',resultM)
+import Flatten(fl_all)
+
+-- pzipWith'' :: Regular d => ((a, b) -> c) -> (d a, d b) -> Maybe (d c)
+pzipWith'' op = pzipWith (resultM.op)
+
+-- Regular d => (d a,d b) -> Maybe (d (a,b))
+pzip'' = pzipWith'' id
+
+-- Regular d => (d a, d b) -> (d (a,b), Bool)
+pzip' p = ( pzipWith'    inn     (const undefined)    id      p
+          , pzipWith' (and.fl_all) (const False) (const True) p
+          )
+
+-- incomplete definition
+fzipWith op1 op2 p = fmap fzip p
+--   Maybe (f i j) <- Maybe (f (a,b) (c,d)) <- (f a c, f b d) 
+
+--pzipWith' ins fail op (x,y)  =
+--  maybe (fail (x,y)) (ins . fmap op (pzipWith' ins fail op)) 
+--        (fzip (out x, out y))
+

@@ -1,0 +1,13 @@
+---------------------------------------------------------------
+-- ThreadFuns
+--   980409 Patrik Jansson  
+---------------------------------------------------------------
+module ThreadFuns(propagate,cross) where
+
+-- cross :: Regular d => d [a] -> [d a]
+cross :: Poly (FunctorOf d) => d [a] -> [d a] 
+cross = thread 
+
+-- propagate :: Regular d => d (Maybe a) -> Maybe (d a)
+propagate :: Poly (FunctorOf d) => d (Maybe a) -> Maybe (d a)
+propagate = thread 

@@ -1,0 +1,37 @@
+---------------------------------------------------------------
+-- Threads a monad through a value
+--   970424 Patrik Jansson  
+---------------------------------------------------------------
+module Thread(thread,pmapM,fthread,fmapM) where
+import Base(cata,inn,pmap)
+
+-- thread :: (Regular d, Monad m) => d (m a) -> m (d a)
+thread  =  cata (mapm inn . fthread)
+
+-- pmapM :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
+pmapM f = thread . pmap f
+-- fmapM :: (Bifunctor f, Monad m) => (a -> m c) -> (b -> m d) -> 
+--                                    f a b -> m (f c d)
+fmapM f g = fthread . fmap f g
+
+-- Bifunctor f => ...
+polytypic fthread :: f (m a) (m b) -> m (f a b)
+  = case f of
+      g + h     ->  sumthread  . (fthread -+- fthread)
+      g * h     ->  prodthread . (fthread -*- fthread)
+      Empty     ->  return
+      Par       ->  id
+      Rec       ->  id
+      d @ g     ->  thread     . (pmap fthread)
+      Const t   ->  return
+
+--sumthread  :: Either (m a) (m b) -> m (Either a b)
+sumthread  =  mapm Left `either` mapm Right
+
+--prodthread :: (m a,m b) -> m (a,b)
+prodthread (mx,my) = mx >>= \x-> my >>= \y-> return (x,y)
+
+----------------------------------------------------------------
+-- Monad operations (that are not in PolyPs prelude)
+
+mapm f mx = mx >>= \x -> return (f x)

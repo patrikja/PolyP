@@ -1,0 +1,56 @@
+---------------------------------------------------------------
+-- Flatten
+--   980409 Patrik Jansson
+---------------------------------------------------------------
+module Flatten(flatten,fflatten,fl_par,fl_rec,fl_all) where
+import Base(cata,pmap,fmap)
+-- flatten :: Regular d => d a -> [a]
+flatten  =  cata fflatten
+
+-- Bifunctor f => ...
+polytypic fflatten :: f a [a] -> [a]
+  = case f of
+      g + h     ->  fflatten `either` fflatten
+      g * h     ->  \(x,y) -> fflatten x ++ fflatten y
+      Empty     ->  nil
+      Par       ->  singleton
+      Rec       ->  id
+      d @ g     ->  concat . flatten . pmap fflatten 
+      Const t   ->  nil
+
+-- fl_par :: Bifunctor f => f a b -> [a]
+-- fl_rec :: Bifunctor f => f a b -> [b]
+-- fl_all :: Bifunctor f => f a a -> [a]
+fl_par =          fflatten . fmap id  nil
+fl_rec = concat . fflatten . fmap nil (singleton.singleton)
+fl_all =          fflatten . fmap id  singleton
+
+---------------------------------------------------------------
+-- Help functions for lists
+
+singleton x = [x]
+nil x = []
+
+{-
+-- alternative definitions
+polytypic fl_rec :: f a b -> [b]
+  = case f of
+      g + h     ->  fl_rec `either` fl_rec
+      g * h     ->  \(x,y) -> fl_rec x ++ fl_rec y
+      Empty     ->  nil
+      Par       ->  nil
+      Rec       ->  singleton
+      d @ g     ->  concat . flatten . pmap fl_rec 
+      Const t   ->  nil
+
+polytypic fl_par :: f a [a] -> [a]
+  = case f of
+      g + h     ->  fl_par `either` fl_par
+      g * h     ->  \(x,y) -> fl_par x ++ fl_par y
+      Empty     ->  nil
+      Par       ->  singleton
+      Rec       ->  nil
+      d @ g     ->  concat . flatten . pmap fl_par 
+      Const t   ->  nil
+
+-}

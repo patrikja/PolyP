@@ -1,0 +1,46 @@
+---------------------------------------------------------------
+-- Equality and ordering
+--   980409 Patrik Jansson 
+---------------------------------------------------------------
+module EqOrd where
+import Base(fmap)
+import Flatten(flatten,fl_all)
+import Zip(pzip,fzip,pzipWith')
+-- peq :: 
+pequal op l r = pzipWith' (and . fl_all)
+		          (\_ -> False) 
+		          (uncurry op)
+		          (l,r)        
+-- fequal o1 o2 l r = 
+
+peq l r = pzipWith' (and . fl_all)
+		    (\_ -> False) 
+		    (uncurry (==))
+		    (l,r)        
+
+peq' x y = maybe False 
+                 (all (uncurry (==)) . flatten) 
+                 (pzip (x,y))
+
+-- pord not officially released yet
+pord (x,y) = maybe (compare (cnumber x) (cnumber y))
+                   (foldr ordop EQ
+                   .fl_all
+                   .fmap (uncurry compare) pord
+                   )
+                   (fzip (out x, out y))
+
+ordop x y = case x of 
+              EQ -> y
+              _  -> x
+---------------------------------------------------------------
+cnumber = fcnumber . out
+
+polytypic fcnumber :: f a b -> Int
+  = case f of
+      g + h -> fcnumber `either` (inc . fcnumber)
+      g     -> \_ -> 0
+
+inc n = n+1
+
+

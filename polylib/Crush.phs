@@ -1,0 +1,20 @@
+---------------------------------------------------------------
+-- Crush
+--   980409 Patrik Jansson
+---------------------------------------------------------------
+module Crush(crush,fcrush) where 
+import Base(cata,pmap)
+-- crush :: Regular d => (a->a->a) -> a -> d a -> a
+crush op e =  cata (fcrush op e)
+
+-- Bifunctor f => ...
+polytypic fcrush :: (a->a->a) -> a -> f a a -> a
+  = \op e -> case f of 
+               g + h   ->  fcrush op e `either` fcrush op e
+               g * h   ->  \(x,y) -> op (fcrush op e x)
+                                        (fcrush op e y)
+               Empty   ->  \x -> e  
+               Par     ->  id
+               Rec     ->  id
+               d @ g   ->  crush op e . pmap (fcrush op e)
+               Const t ->  \x -> e
