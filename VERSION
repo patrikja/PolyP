@@ -1,14 +1,15 @@
 PolyP 
-version 0.7
+version 0.8
 written in Haskell 1.4 (works with 1.3)
 to be used with hbc, ghc or hugs
 
 Revision history: 
- 980506: version 0.7 for hbc, ghc, hugs (Haskell 1.4)
- 980413: version 0.6 for hbc, ghc, hugs (Haskell 1.4)
+ 980610: version 0.8
+ 980506: version 0.7
+ 980413: version 0.6
  980312: version 0.5 for hbc, ghc, hugs (Haskell 1.4)
- 970510: version 0.4 for hbc 0.9999.3
- 960922: version 0.3 for hbc 0.9999.3
- 960830: version 0.2 for hbc 0.9999.3
+ 970510: version 0.4
+ 960922: version 0.3
+ 960830: version 0.2
  960819: version 0.1 for hbc 0.9999.3 (Haskell 1.3)
  960717: version 0   for Hugs (in Haskell 1.2)

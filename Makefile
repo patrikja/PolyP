@@ -1,5 +1,5 @@
 # The Makefile is for the following PolyP-version
-version=0.7
+version=0.8
 
 help: 
 	@echo Makefile for PolyP by Patrik Jansson
