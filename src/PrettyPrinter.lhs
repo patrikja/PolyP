@@ -11,18 +11,54 @@
 
 \end{verbatim}
 \section{Instances}
+
+We want instances for Pretty to be able to Show all program
+objects. Unfortunately the following is not legal:
 \begin{verbatim}
+instance Pretty a => Show a where
+  showsPrec _ = (++) . showDoc . pretty
+\end{verbatim}
+The normal Haskell way around is to order the classes, and give a
+default instance, but we cannot change the class Show to have Pretty
+as a superclass as Show is in the Haskell prelude. Another way around
+is to give a number if instance declarations like 
+\begin{verbatim}
+instance Pretty a => Show (Eqn' a) where ...
+\end{verbatim}
+A third way is to abandon show and use pshow = showDoc . pretty instead.
+\begin{verbatim}
+
+> pshow :: Pretty a => a -> String
+> pshow = showDoc . pretty
+
+> instance Pretty a => Pretty (Eqn' a) where
+>   pretty = prEqn
+
+> instance Pretty a => Show   (Eqn' a) where
+>   showsPrec _ = (++) . showDoc . pretty
+
+> instance Pretty a => Pretty (Expr' a) where
+>   pretty = prExpr
+
+> instance Pretty Char where
+>   pretty c = text [c]
+> instance Pretty Literal where
+>   pretty = prLit
+
+> instance Pretty a => Pretty [a] where
+>   pretty = sep . map pretty
+
+> instance Pretty Type where 
+>   pretty = prType
 
 > instance Show Type where
 >   showsPrec _ = (++) . showDoc . pretty
-> instance (Typelike t, Pretty t) => Show (Qualified t) where
+
+> instance (Typelike t, Pretty t) => Pretty (Qualified t) where
+>   pretty = prQualified
+
+> instance (Typelike t, Pretty t) => Show   (Qualified t) where
 >   showsPrec _ = (++) . showDoc . pretty
-> instance Pretty a => Show (Eqn' a) where
->  showsPrec _ = (++) . showDoc . pretty
-> instance Pretty Char where
->   pretty c = text [c]
-> instance Pretty a => Pretty [a] where
->   pretty = sep . map pretty
 
 > class Typelike t where
 >   checkFOf         :: t -> Maybe t
@@ -39,9 +75,6 @@ restriction that forbids instances for \texttt{Qualified Type}.
 
 \section{Equations}
 \begin{verbatim}
-
-> instance Pretty a => Pretty (Eqn' a) where
->   pretty = prEqn
 
 > prEqn :: Pretty a => Eqn' a -> Doc
 > prEqn (VarBind name mt pats body) 
@@ -120,9 +153,6 @@ output Haskell code violates the monomorphism restriction.
 \section{Expressions}
 \begin{verbatim}
 
-> instance Pretty a => Pretty (Expr' a) where
->   pretty = prExpr
-
 > prId :: Expr' t -> String -> Doc
 
 > prId e n | isOperator e = ppParentheses (text n)
@@ -179,11 +209,7 @@ output Haskell code violates the monomorphism restriction.
 
 \end{verbatim}
 \section{Types}
-{\em Insert types on all functions.}
 \begin{verbatim}
-
-> instance (Typelike t, Pretty t) => Pretty (Qualified t) where
->   pretty = prQualified
 
 > prQualified :: (Typelike t, Pretty t) => Qualified t -> Doc
 > prQualified (cs:=>t) = prQ cs t
@@ -205,9 +231,6 @@ output Haskell code violates the monomorphism restriction.
 > prContext' :: (Typelike t, Pretty t) => (String, [t]) -> Doc
 > prContext' (c,ts) =  
 >   sep (text c : map (nest 2 . prT) ts)
-
-> instance Pretty Type where 
->   pretty = prType
 
 > prType :: Type -> Doc
 > prType (TVar v)                = text v
@@ -236,9 +259,6 @@ output Haskell code violates the monomorphism restriction.
 \end{verbatim}
 \section{Literals}
 \begin{verbatim}
-
-> instance Pretty Literal where
->   pretty = prLit
 
 > prLit :: Grammar.Literal -> Doc
 > prLit (IntLit  n) = text (show n)

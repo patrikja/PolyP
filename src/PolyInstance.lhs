@@ -5,7 +5,7 @@ functions.
 \begin{verbatim}
 
 > module PolyInstance(instantiateProgram) where
-> import Env(Env,mapEnv,lookasideST,lookupEnv,extendsEnv,newEnv)
+> import Env(Env,mapEnv,lookasideST,lookupEnv,extendsEnv,newEnv,showsEnv)
 > import Grammar(Eqn'(..),Expr'(..),Type(..),Qualified(..),
 >                Eqn,TEqn,Expr,TExpr,Func,QType,VarID,ConID,
 >                PrgTEqns, changeNameOfBind,noType,
@@ -19,7 +19,7 @@ functions.
 > import MonadLibrary(State, executeST, mapl,(<@),(@@),unDone,
 >                     OutputT,output,runOutput,mliftOut,map0,map1,map2)
 > import MyPrelude(maytrace,pair,mapFst,mapSnd,combineUniqueBy,fMap,maydebug)
-> import PrettyPrinter(Pretty(pretty))
+> import PrettyPrinter(Pretty,pshow)
 > import StartTBasis(preludeFuns,preludedatadefs)
 > import TypeBasis(TBasis,TypeEnv)
 
@@ -167,7 +167,7 @@ The data needed is:
 
 >         tr :: Req -> Req
 >         tr r@(name,ps:=>_) = ("{- Request:"
->			     ++ name++show (map (pretty.snd) ps)
+>			     ++ name++pshow (map snd ps)
 >			     ++"-}\n") 
 >                          `maytrace` r
 
@@ -237,7 +237,7 @@ Remaining bugs:
 >       [TCon "FunctorOf" :@@: TCon d] -> 
 >            setT funcenv tinst (fundefs n (struct d))
 >       _ -> error ("PolyInstance.specPolyInst: inn/out can not be generated for "++
->                   concat (map (show.pretty) functors))
+>                   concat (map pshow functors))
 >   where functors = getFunctors tfusk tinst
 >         tfusk = [("Poly",[TVar "f"])] :=> undefined
 >         struct d = fst (maybe (err d) id (lookupEnv d funcenv))
@@ -277,7 +277,7 @@ fconstructorName
 >       [TCon "FunctorOf" :@@: TCon d] -> 
 >            setT funcenv tinst (fcname_def (n++extra) (struct d))
 >       _ -> error ("specPolyInst: fconstructorName can not be generated for "++
->                   concat (map (show.pretty) functors))
+>                   concat (map pshow functors))
 >   where functors = getFunctors tfusk tinst
 >         tfusk = [("Poly",[TVar "f"])] :=> undefined
 >         struct d = fst (maybe (err d) id (lookupEnv d funcenv))
@@ -343,7 +343,7 @@ uncn :: (a0->a1->...->an) -> (a0,(a1,...,an-1)...) -> an
 >         extra = codeFunctors functors
 >         functors = getFunctors tdef tinst
 >	  tracing :: Subst -> Subst
->	  tracing s = maytrace ("{- Subst:"++show s++"-}\n") s
+>	  tracing s = maytrace ("{- Subst:"++showsEnv s "" ++"-}\n") s
 
 > uncurryName :: String
 > uncurryName = "uncurry"
@@ -424,7 +424,7 @@ Get the correct equation out of the poly case.
 >         mp    = functorCase f cs
 >         (e,s) = maybe err id mp
 >         err   = error ("PolyInstance.functorCase: no match for "++
->                        show (pretty f)  ++ 
+>                        pshow f  ++ 
 >                        " in polytypic " ++ n)
 >         subst = matchfuns (tdef,tinst)
 >         tOK   = substQType subst tdef
@@ -457,8 +457,7 @@ is the functor instance corresponding to the named functor.
 >       (fun:_) -> evaluateTopFun funcenv fun
 >       _       -> error ("PolyInstance.getFunctor: "++
 >                         "Poly not found in polytypic definition: "++
->                         fname) -- ++ " "++ (show2 ps)++show2 qs)
-> --  where show2 = show . pretty
+>                         fname) -- ++ " "++ (pshow ps)++pshow qs)
 
 > evaluateTopFun :: FuncEnv -> Func -> Func
 > evaluateTopFun funcenv (TCon "FunctorOf" :@@: TCon d) = functorOf funcenv d
@@ -552,8 +551,6 @@ Make sure match works for variables too. (insert dictionaries?)
 (together with functorCase)
 
 \begin{verbatim}
-
- type Subst = [(VarID,Type)]
 
 > type Subst = Env VarID Type
 

@@ -11,7 +11,7 @@
 > import Folding(cataType)
 > import MyPrelude(mapFst,mapSnd,pair,variablename)
 > import StartTBasis(innType,outType,fcnameType,leftname,rightname,eitherType)
-> import PrettyPrinter(Pretty(pretty))
+> import PrettyPrinter(Pretty,pshow)
 
 \end{verbatim}
 \section{Extracting functors from {\tt data}-definitions} 
@@ -259,7 +259,7 @@ instead of {\tt F[]} to make it possible to parse.
 >     s (TCon "@")     = ('A':)
 >     s (TCon d)       = ((codeTyCon d)++)
 >     s t@(TVar v)     = error ("Functorize: codeFunctor: uninstantiated functor variable " ++
->                               show (pretty t) ++ " found as part of " ++ show (pretty f) )
+>                               pshow t ++ " found as part of " ++ pshow f )
 
 > decodeFunctor :: String -> Func
 > decodeFunctor s = snd (p s)

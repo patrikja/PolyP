@@ -9,7 +9,7 @@
 >                isDataDef,isExplType)
 > import GraphLibrary(Graph,Tree(..),scc')
 > import MyPrelude(splitUp)
-> import PrettyPrinter(Pretty(..))
+> import PrettyPrinter(Pretty,pshow,prQualified,Qualified,Type,QType,Eqn)
 > import TypeBasis(TypeEnv)
 
 \end{verbatim}
@@ -151,15 +151,17 @@ so the explicit type can not simply be placed on the rhs.
 >   where get (ExplType vs t) = zip vs (repeat t)
 >         get _ = error "DependencyAnalysis.ets2TyEnv: impossible: only ExplType allowed."
 
-> mayInsType :: (Pretty t,Show t, Eq t) => Maybe t -> Eqn' t -> Eqn' t
+> mayInsType :: Maybe QType -> Eqn -> Eqn
 > mayInsType t (VarBind v _ ps e) = VarBind v t ps e
 > mayInsType t q@(Polytypic p t' _ _) = case t of 
 >         Nothing              -> q
 >         Just t'' | t''==t'   -> q
 >                  | otherwise -> error ("mayInsType: "++err t' t'')
->   where err ty1 ty2 = "Polytypic declaration "++p++
+>   where err :: QType -> QType -> String
+>         err ty1 ty2 = "Polytypic declaration "++p++
 >                       " with two different types:\n"++
->                       show ty1 ++ " and " ++ show ty2
-> mayInsType t q = error ("mayInsType: Unexpected equation:\n"++show q)
+>                       show (prQualified ty1) ++ " and " ++ 
+>                       show (prQualified ty2)
+> mayInsType t q = error ("mayInsType: Unexpected equation:\n"++pshow q)
 
 \end{verbatim}

@@ -12,7 +12,7 @@
 >                  extendTypeTBasis,extendKindTBasis)
 > import StateFix-- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 > import Env(newEnv,lookupEnv,extendsEnv)
-> import PrettyPrinter(Pretty(..))
+> import PrettyPrinter(Pretty,pshow)
 > import UnifyTypes(unify)
 > import MonadLibrary(STErr,mliftErr,convertSTErr,ErrorMonad(failEM),
 >                     Error(..),LErr, foreach,(<@))
@@ -38,7 +38,7 @@ directly.
 >       HpVar _  -> return ()
 >       _       -> mliftErr (kindOutOfHeap k) >>= \kind->
 >                  failEM ("Kind error: Expected * but found: "
->                          ++ show (pretty kind))
+>                          ++ pshow kind)
 
  assureType basis tp
    = basis |* tp                 >>= \hpKind -> 

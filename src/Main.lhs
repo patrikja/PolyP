@@ -13,7 +13,7 @@
 > import MyPrelude(putErrStr,putErrStrLn,fatalError,fMap)
 > import Parser(parse,pModule,pType1)
 > import PolyInstance(instantiateProgram)
-> import PrettyPrinter(Pretty(..),($$),text)
+> import PrettyPrinter(Pretty(..),($$),text,pshow)
 > import StateFix -- [(runST [,RunST])] in hugs, ghc, hbc
 > import System(getArgs,getProgName)
 > import TypeBasis(TBasis)
@@ -165,13 +165,13 @@ These are still preliminary versions.
 
 #ifdef __DEBUG__
 > prettify :: PrgText -> PrgText
-> prettify = concat . map (show.pretty) . parseProgram
+> prettify = concat . map pshow . parseProgram
 
 > parseanddep :: PrgText -> PrgEqns
 > parseanddep = dependencyProgram . parseProgram
 
 > prettyordered :: PrgText -> PrgText
-> prettyordered pgm = concatMap (unlines . map (show.pretty)) (datas:eqnss)
+> prettyordered pgm = concatMap (unlines . map pshow) (datas:eqnss)
 >   where (datas,eqnss) = parseanddep pgm
 
 > labelling :: PrgText -> PrgText
@@ -189,11 +189,11 @@ These are still preliminary versions.
 > showTBasis (~(tenv,kenv),err) = concat (
 >    ("Kinds:\n":map showpair (assocsEnv kenv) ) ++
 >    ("Types:\n":map showpair (assocsEnv tenv) ) ++ [errtext] )
->   where showpair (name,t) = ' ':name ++ " :: " ++ show (pretty t)
+>   where showpair (name,t) = ' ':name ++ " :: " ++ pshow t
 >         errtext = handleError id (fMap (\_->"") err)
 
 > showEqns :: Pretty a => [a] -> String
-> showEqns = concat . map (show.pretty)
+> showEqns = concat . map pshow
 
 \end{verbatim}
 \section{Code generation}
@@ -221,8 +221,8 @@ Two possible approaches:
 > testunify = do t <- getType
 >                t'<- getType
 >                let (t2,t2') = testunify' (t,t')
->                putStr (show (pretty t2))
->                putStr (show (pretty t2'))
+>                putStr (pshow t2)
+>                putStr (pshow t2')
 
 > testunify' (t,t') = unDone $ __RUNST__ m'
 >   where m'= convertSTErr m

@@ -24,25 +24,31 @@ The differences are of two kinds:
 \begin{verbatim}
 
 #if defined(__HUGS__) || defined(__GLASGOW_HASKELL__)
-> module StateFix(module ST,MutVar, newVar, readVar, writeVar, (===),
+> module StateFix(module ST,MutVar,newVar,readVar,writeVar,(===),
 >                 MutArr,newArr,readArr,writeArr) where
 > import ST -- (ST,STRef,runST,newSTRef,readSTRef,writeSTRef)
-# ifdef __OLD_HUGS__
-> import STArray
-# else 
-> type MutArr s a b = STArray s a b
-# endif 
 #endif
-
 #ifdef __HBC__
 > module StateFix(module State,module MutArray,MutVar,(===),
 >                 MutArr,newArr,readArr,writeArr) where
 > import State
-> import MutArray
-> type MutArr s a b = MutArray s a b
-> type MutVar s a = MutableVar s a
-#else 
-# ifndef __OLD_HUGS__
+#endif
+
+In Haskell 98 the class Ix is in a separate module instead of in the
+  prelude.  (The change was discovered when moving from ghc-4.02 to
+  ghc-4.03 thus the prelude in ghc-4.02 is wrong.)
+
+#if defined(__Haskell98__)
+> import Ix(Ix)
+#endif
+
+
+
+#ifdef __OLD_HUGS__
+> import STArray
+#else
+# if defined(__HUGS__) || defined(__GLASGOW_HASKELL__)
+> type MutArr s a b = STArray s a b
 > type MutVar s a = STRef s a
 
 > newVar   ::               a -> ST s (MutVar s a)
@@ -52,10 +58,13 @@ The differences are of two kinds:
 > newVar  = newSTRef     
 > readVar = readSTRef
 > writeVar= writeSTRef
-
-In earlier versions of Hugs, the three lines above were not needed.
 # endif 
-#endif 
+# ifdef __HBC__
+> import MutArray
+> type MutArr s a b = MutArray s a b
+> type MutVar s a   = MutableVar s a
+# endif
+#endif
 
 \end{verbatim}
 Due to problems with combining overloading with the \verb|ST s|-monad

@@ -8,7 +8,7 @@
 >                  showNodePtr,allGeneric)
 > import MonadLibrary(STErr,mliftErr,ErrorMonad(failEM),(<@),mIf,liftop,
 >                     ST,(===),readVar)
-> import PrettyPrinter(Pretty(..),($$),nest,text,sep,prType)
+> import PrettyPrinter(Pretty(..),pshow,($$),nest,text,sep,prType)
 > import Grammar(Type(..),Qualified(..))
 
 #ifdef __DEBUG_UNIFY__
@@ -55,8 +55,8 @@
 >                           maytrace (concat [ "a=",sa,"=",st,
 >                                              ",b=",sb,"=",st']) 
 >                           (return ())
->    where st = show (pretty t) 
->          st'= show (pretty t') 
+>    where st = pshow t 
+>          st'= pshow t' 
 
 
 > data ErrMsg = EUnifyConstApp String 

@@ -5,7 +5,7 @@
 > import Grammar -- (Eqn'(..),Expr'(..),VarID)
 > import MyPrelude(pair,mapFst,mapSnd,without,flatMap,fMap)
 > import MonadLibrary(mapl,foreach,(<*>),(<@),liftop,map0,map1,map2)
-> import PrettyPrinter(Pretty(pretty))
+> import PrettyPrinter(Pretty,pshow)
 
 \end{verbatim}
 \section{Folding expressions and types}
@@ -254,9 +254,9 @@ variables are typed.  Should be rewritten to update the state \'a la
 >                                              (map mt2 cs)          )
 >     m (Letrec qss e)= map2 Letrec (mapl (mapl mq) qss) (mt e)
 >     m (Typed e t)   = error ("Folding: mmapTExpr: unexpected Typed expression: "++
->                              show (pretty e))
+>                              pshow e)
 >     m e             = error ("Folding: mmapTExpr: unexpected expression: "++
->                              show (pretty e))
+>                              pshow e)
 
 >     mt2 (x, y) = (mt x,mt y)
 >     mq = mmapTEqn f
