@@ -3,7 +3,7 @@
 
 > module TypeError(mayreportTError, TError(..),mayshowargs, failWith) where
 > import TypeGraph(HpType,NonGenerics,
->                  typeOutOfHeap,typesOutOfHeap,
+>                  qtypeOutOfHeap,typesOutOfHeap,
 >                  showNodePtr)
 > import MonadLibrary(STErr,mliftErr,ErrorMonad(failEM),(<@),mIf,liftop,
 >                     ST,(===),readVar)
@@ -27,7 +27,7 @@
 >    where 
 >      outofhp p u =
 >            typesOutOfHeap ngs p        >>= \tp    -> 
->            typeOutOfHeap  ngs ([]:=>u) >>= \([]:=>typeU) -> 
+>            qtypeOutOfHeap  ngs ([]:=>u) >>= \([]:=>typeU) -> 
 >            return (tp,typeU)
 >      typeerror mess ta t u =
 >        (text "Type instantiation error in:")

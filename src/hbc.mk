@@ -3,6 +3,7 @@
 prog = ../bin/hbcpolyp
 #hs_flags += -O
 hc = hbc
+hbcmakedepends = hbcmake -g
 
 SUFFIXES= .hi .hs .lhs .o
 
@@ -38,6 +39,6 @@ depends: hbcdepends.mk
 
 # use hbcmake to recreate the dependencies in hbcdepends.mk
 hbcdepends.mk: $(lhs_files)
-	hbcmake -g Main.lhs > hbcdepends.mk
+	$(hbcmakedepends) Main.lhs > hbcdepends.mk
 
 include hbcdepends.mk

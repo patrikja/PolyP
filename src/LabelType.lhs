@@ -12,7 +12,7 @@
 > import InferType((###),inferLiteral, inventTypes,
 >                  patBindToVarBind,tevalAndSubst,inferDataDefs)
 > import MonadLibrary(STErr, (<@),(<@-), mliftErr, unDone, LErr, mapLErr,
->                     convertSTErr, Error(..), mapl, foreach,map2)
+>                     convertSTErr, Error(..), mapl, foreach)
 > import MyPrelude(pair,mapFst,mapSnd,splitUp,  maytrace)
 > import StartTBasis(startTBasis)
 > import StateFix-- (ST [,runST [,RunST]]) in hugs, ghc, hbc
@@ -22,8 +22,8 @@
 >                  getNonGenerics,getRamTypes,instantiate,
 >                  lookupType,makeNonGeneric,ramKindToRom,ramTypeToRom)
 > import TypeGraph(HpQType,HpType, HpTExpr, HpTEqn, 
->                  mkVar, mkFun, tEqnOutOfHeap', eqnIntoHeap,
->                  typeOutOfHeap',runVarSupply)
+>                  mkVar, mkFun, eqnIntoHeap,
+>                  blockOutOfHeap)
 > import UnifyTypes(unify, checkInstance)
 
 > infix 9 |->
@@ -256,14 +256,6 @@ The order is important: hpeqns must be in the same order as {\tt
 >         remconst = filter (not.constant) 
 >         constant ("Poly",TCon "FunctorOf" :@@: TCon _ : _) = True
 >         constant _ = False
-
-> blockOutOfHeap :: [(HpTEqn s,(VarID,HpQType s))] -> 
->                   ST s [(TEqn,(VarID,QType))]
-> blockOutOfHeap ps = mapl f ps 
->   where f (eqn,(n,t)) = tEqnOutOfHeap' [] eqn >>= \meqn ->
->                         typeOutOfHeap' [] t   >>= \mt   ->
->                         return (mapSnd (pair n) 
->                                  (runVarSupply (map2 pair meqn mt)) ) 
 
 \end{verbatim}
 To label a block of mutually recursive definitions we first assume new

@@ -4,7 +4,7 @@
 > module UnifyTypes(unify,checkInstance,  unifyVar) where
 > import TypeGraph(HpType,fetchNode,occursInType,
 >                  typeIntoHeap, flattenNgs,
->                  flattenHpType,mkCon,mkApp,
+>                  flattenHpType,mkCon,mkApp,mkFOfd,
 >                  HpNode(..),HpQType,NonGenerics,(==>))
 > import TypeError
 > import MonadLibrary(STErr,mliftErr,ErrorMonad(failEM),(<@),mIf,liftop,
@@ -102,7 +102,8 @@ algorithm changes the types pointer structure using {\tt (==>)}.
 
 > checkInstance :: NonGenerics s -> HpQType s -> HpQType s -> 
 >                    STErr s ()
-> checkInstance ngs (_:=>a) (_:=>b) =
+> checkInstance ngs (ac:=>a) (bc:=>b) =
+>      
 >      lifE (flattenNgs ngs >>= \allngs ->
 >            isInstance allngs a b) >>= 
 >      mayreportTError ngs a
@@ -269,13 +270,11 @@ constructor.
 >        unify4 (fst p,mufd) a b
 >    unifyMu p a b _ _ _ = unify4 p a b
 
+>    makeMuFD :: HpType s -> String -> ST s (HpNode s)
 >    makeMuFD pMu d = 
 >      mkCon d       >>= \pd->
->      mkFOf         >>= \pFOf->
->      mkApp pFOf pd >>= \pFOfd->
+>      mkFOfd pd     >>= \pFOfd->
 >      return (HpApp pMu pFOfd)
-
->    mkFOf = mkCon "FunctorOf"
 
 \end{verbatim}
 If the right hand side (rhs) is also {\tt FunctorOf d} we just compare

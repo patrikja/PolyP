@@ -2,11 +2,11 @@
 \begin{verbatim}
 
 > module TypeGraph where
-> import MyPrelude(variablename,pair)
+> import MyPrelude(variablename,pair,mapSnd)
 > import Grammar
 > import PrettyPrinter(Pretty(..),text)
 > import MonadLibrary(State,StateM,(<@),liftop,(<@-),fetchST,executeST,mliftSTM,
->                     mfoldl,executeSTM,updateSTM,mfoldr,
+>                     mfoldl,executeSTM,updateSTM,mfoldr,map2,mapl,
 >                     ST,MutVar,newVar,writeVar,readVar, (===))
 > import Env(Env,Cache,lookupEqEnv,rememberST,newEnv,lookaside,remember)
 > import Folding(mmapEqn,mmapQualified,dmmapQualified,mcataType)
@@ -32,13 +32,16 @@ itself) or an indirection node (if it points somewhere else).
 > type HpKind s  = NodePtr s
 
 \end{verbatim}
-These should never be printed, but for debugging it might be helpful.
+
+These should never be printed, but for debugging it might be
+helpful. See {\tt showNodePtr} below for a more detailed printer.
+
 \begin{verbatim}
 
 > instance Pretty (HpNode s) where
->   pretty (HpCon c) = text c
+>   pretty (HpCon c  ) = text c
 >   pretty (HpApp _ _) = text "<HpApp>"
->   pretty (HpVar _) = text "<HpVar>"
+>   pretty (HpVar _  ) = text "<HpVar>"
 
 \end{verbatim}
 We need a version of \verb|lookaside| that uses pointer equality,
@@ -62,8 +65,9 @@ We need a version of \verb|lookaside| that uses pointer equality,
 > follow    :: NodePtr s -> ST s (NodePtr s)
 > fetchNode :: NodePtr s -> ST s (NodePtr s, HpNode s)
 
-> typeOutOfHeap :: NonGenerics s -> HpQType s -> ST s QType
-> kindOutOfHeap ::                  HpKind s -> ST s Kind
+> qtypeOutOfHeap :: NonGenerics s -> HpQType s -> ST s QType
+> typeOutOfHeap  :: NonGenerics s -> HpType s  -> ST s Type
+> kindOutOfHeap  ::                  HpKind s  -> ST s Kind
 
 > typeIntoHeap  :: QType -> ST s (HpQType s)
 > kindIntoHeap  :: Kind  -> ST s (HpKind s)
@@ -87,6 +91,12 @@ We need a version of \verb|lookaside| that uses pointer equality,
 
 > mkConApp conID args = mkCon conID >>= \con -> 
 >                       mfoldl mkApp con args
+
+> mkFOf :: ST s (HpType s)
+> mkFOf    = mkCon "FunctorOf"
+
+> mkFOfd :: HpType s -> ST s (HpType s)
+> mkFOfd d = mkFOf >>= (`mkApp` d)
 
 \end{verbatim}
 The operator \verb|(==>)| makes a type variable `point to' another
@@ -167,11 +177,11 @@ right pointers of the apply nodes.
 
 > spineWalkHpType :: NodePtr s -> ST s [(NodePtr s,HpNode s)]
 > spineWalkHpType t = s t <@ ($[])
->  where s p = fetchNode p  >>= \(ptr, node) -> 
+>  where s p = fetchNode p  >>= \ pn@(ptr, node) -> 
 >              case node of                        
->                HpVar v     -> return  ((ptr,node):)
->                HpCon c     -> return  ((ptr,node):)       
->                HpApp pf px -> s pf <@ (.((ptr,node):))
+>                HpVar v     -> return  (pn:)
+>                HpCon c     -> return  (pn:)       
+>                HpApp pf px -> s pf <@ (.(pn:))
 
 > getChild :: HpNode s -> NodePtr s
 > getChild (HpApp pf px) = px
@@ -179,9 +189,14 @@ right pointers of the apply nodes.
 
 \end{verbatim}
 \subsection{Type transformers}
-In \verb|typeOutOfHeap'|, \verb|ngs| is assumed to be a list of type
+In \verb|qtypeOutOfHeap'|, \verb|ngs| is assumed to be a list of type
 variables. This is assured by first calling \verb|flattenNgs|.
 \begin{verbatim}
+
+> qtypeOutOfHeap ngs ptr =
+>   flattenNgs ngs            >>= \allngs->
+>   qtypeOutOfHeap' allngs ptr <@
+>   runVarSupply
 
 > typeOutOfHeap ngs ptr =
 >   flattenNgs ngs            >>= \allngs->
@@ -194,7 +209,7 @@ variables. This is assured by first calling \verb|flattenNgs|.
 > typesOutOfHeap ngs (a,b) =
 >    mkApp a b                  >>= \hpt -> 
 >    flattenNgs ngs             >>= \allngs->
->    typeOutOfHeap'' allngs hpt <@
+>    typeOutOfHeap' allngs hpt <@
 >    (unApp.runVarSupply)
 >  where unApp (ta :@@: tb) = (ta,tb)
 >        unApp _            = error "TypeGraph: typesOutOfHeap: impossible: no application found"
@@ -229,10 +244,18 @@ Where the {\tt ST s}-monad can be removed by \verb|runST| later.
 
 > tEqnOutOfHeap' :: NonGenerics s -> HpTEqn s -> ST s (VarSupply s TEqn)
 > tEqnOutOfHeap' ngs hpteqn = 
->   mmapEqn (typeOutOfHeap' ngs) hpteqn <@ threadEqn 
+>   mmapEqn (qtypeOutOfHeap' ngs) hpteqn <@ threadEqn 
 
 > threadEqn :: (Functor m, Monad m) => Eqn' (m a) -> m (Eqn' a)
 > threadEqn = mmapEqn id
+
+> blockOutOfHeap :: [(HpTEqn s,(VarID,HpQType s))] -> 
+>                   ST s [(TEqn,(VarID,QType))]
+> blockOutOfHeap ps = mapl f ps 
+>   where f (eqn,(n,t)) = tEqnOutOfHeap' [] eqn >>= \meqn ->
+>                         qtypeOutOfHeap' [] t   >>= \mt   ->
+>                         return (mapSnd (pair n) 
+>                                  (runVarSupply (map2 pair meqn mt)) ) 
 
 \end{verbatim}
 To translate from the heap representation to the abstract syntax for
@@ -240,11 +263,15 @@ types we need a supply of suitable variablenames. For each variable
 encountered we need either its already defined name or a fresh name.
 \begin{verbatim}
 
-> type HpType2Int s a = State (Cache (HpType s) Int) a
-> type VarSupply s a = StateM (State (Cache (HpType s) Int)) Int a
+#ifdef __HBC__
+> type HpType2Int s a =         State (Cache (HpType s) Int)  a
+> type VarSupply  s a = StateM (State (Cache (HpType s) Int)) Int a
+#else
+> type HpType2Int s   =         State (Cache (HpType s) Int)
+> type VarSupply  s a = StateM (HpType2Int s                ) Int a
+#endif
 
- type VarSupply s a = StateM (HpType2Int s) Int a
-
+> runVarSupply :: VarSupply s a -> a
 > runVarSupply = executeST newEnv . executeSTM (0::Int)
 > rememberVar :: HpType s -> Int -> VarSupply s Int
 > rememberVar v n = mliftSTM (rememberST v n) 
@@ -253,13 +280,13 @@ encountered we need either its already defined name or a fresh name.
 > lookupVar :: HpType s -> VarSupply s (Maybe Int)
 > lookupVar = mliftSTM . lookupvar 
 
-> typeOutOfHeap' :: NonGenerics s -> HpQType s -> 
+> qtypeOutOfHeap' :: NonGenerics s -> HpQType s -> 
 >                   ST s (VarSupply s QType) 
-> typeOutOfHeap' ngs = dmmapQualified (typeOutOfHeap'' ngs)
+> qtypeOutOfHeap' ngs = dmmapQualified (typeOutOfHeap' ngs)
 
-> typeOutOfHeap'' :: NonGenerics s -> HpType s -> 
+> typeOutOfHeap' :: NonGenerics s -> HpType s -> 
 >                    ST s (VarSupply s Type) 
-> typeOutOfHeap'' ngs = cataHpType (return . var) con app
+> typeOutOfHeap' ngs = cataHpType (return . var) con app
 >   where 
 >     var v = readAndUpdate lookupVar freshVarNum rememberVar v <@ varOf v
 >     con c = return (TCon c)

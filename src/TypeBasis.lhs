@@ -12,7 +12,7 @@
 >            extendsEnv,assocsEnv,remember,extendsAfterEnv)
 > import TypeGraph(HpType,HpKind,HpQType,NonGenerics,NodePtr,
 >                  mkVar,mkCon,mkApp,cataHpType,
->                  typeOutOfHeap,kindOutOfHeap,typeIntoHeap,kindIntoHeap,
+>                  qtypeOutOfHeap,kindOutOfHeap,typeIntoHeap,kindIntoHeap,
 >                  flattenNgs)
 
 \end{verbatim}
@@ -179,7 +179,7 @@ out of the heap.
 
 > ramTypeToRom :: Basis s -> ST s [(String,QType)]
 > ramTypeToRom (_,(env,_)) = 
->    mapl (\(n,hpt) -> typeOutOfHeap [] hpt <@ pair n ) (assocsEnv env)
+>    mapl (\(n,hpt) -> qtypeOutOfHeap [] hpt <@ pair n ) (assocsEnv env)
 > ramKindToRom :: KindBasis s -> ST s [(String,Kind)]
 > ramKindToRom (_,env) = 
 >    mapl (\(n,hpt)->kindOutOfHeap hpt <@ pair n) (assocsEnv env)
