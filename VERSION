@@ -5,6 +5,7 @@ to be used with ghc, hugs or perhaps hbc
 
 Revision history: 
  030521: version 2   (class based translation)
+   (new numbering scheme: 2.`date`)
  990809: version 1.5 (added flag -r func:TypeConstructor)
  990714: version 1.4 (Better error messages + FunctorOf simplification)
  990526: version 1.3 (For Haskell 98)
