@@ -1,4 +1,4 @@
-module Zip(pzip,fzip,pzipWith,pzipWith',(@@),resultM) where
+module Zip(pzip,fzip,pzipWith,pzipWith',fzipWith,(@@),resultM) where
 import Base(pmap,fmap2,(-+-),(-*-))
 import Propagate(fprop,sumprop,prodprop,propagate,mapMaybe)
 import PolyPTypes
@@ -23,6 +23,11 @@ pzipWith  = pzipWith' (mapMaybe inn.fprop) (const zeroM)
 
 funzip :: Bifunctor f => f (a,c) (b,d) -> (f a b,f c d)
 funzip x = (fmap2 fst fst x, fmap2 snd snd x)
+
+-- Note: a different kind of typing compared to pzipWith
+fzipWith :: Bifunctor f => ((a,a')->c) -> ((b,b')->d) -> 
+	    (f a b, f a' b') -> Maybe (f c d)
+fzipWith f g = mapMaybe (fmap2 f g) . fzip 
 
 fzip :: Bifunctor f => (f a b,f c d) -> Maybe (f (a,c) (b,d))
 fzip p = onlyUsefulForTypeChecking "fzip"
