@@ -10,7 +10,7 @@ pmapM fM   = mapm inn . fmapM fM  (pmapM fM)   . out
 -- fmapM :: (Bifunctor f, Monad m) => (a -> m c) -> (b -> m d) -> 
 --                                    f a b -> m (f c d)
 
-polytypic fmapM :: (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
+polytypic fmapM :: Monad m => (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
   = \p r -> case f of
 	      g + h     ->  summapM  (fmapM p r) (fmapM p r)
 	      g * h     ->  prodmapM (fmapM p r) (fmapM p r)
@@ -53,7 +53,7 @@ paraM iM x = applyM (iM x) (fmapM idM (paraM iM) (out x))
 -- pmapMr :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
 pmapMr fM   = mapm inn . fmapMr fM  (pmapMr fM)   . out
 
-polytypic fmapMr :: (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
+polytypic fmapMr :: Monad m => (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
   = \p r -> case f of
 	      g + h     ->  summapM   (fmapMr p r) (fmapMr p r)
 	      g * h     ->  prodmapMr (fmapMr p r) (fmapMr p r)
@@ -74,10 +74,10 @@ hyloMr iM oM = iM      @@ fmapMr idM (hyloMr iM oM) @@ oM
 -- pmapM' :: (Regular d, Monad m) => Bool -> (a -> m b) -> d a -> m (d b)
 pmapM' ord fM   = mapm inn . fmapM' ord fM  (pmapM' ord fM)   . out
 
-polytypic fmapM' :: Bool -> (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
+polytypic fmapM' :: Monad m => Bool -> (a -> m c) -> (b -> m d) -> f a b -> m (f c d)
   = \ord p r -> case f of
       g + h     ->  summapM  (fmapM' ord p r) (fmapM' ord p r)
-      g * h     ->  opM ord . (fmapM' ord p r -*-  fmapM' ord p r)
+      g * h     ->  opM ord . (fmapM' ord p r -*- fmapM' ord p r)
       Empty     ->  return
       Par       ->  p                     
       Rec       ->  r                     
