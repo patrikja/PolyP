@@ -15,7 +15,7 @@ pmapM f = thread . pmap f
 fmapM f g = fthread . fmap f g
 
 -- Bifunctor f => ...
-polytypic fthread :: f (m a) (m b) -> m (f a b)
+polytypic fthread :: Monad m => f (m a) (m b) -> m (f a b)
   = case f of
       g + h     ->  sumthread  . (fthread -+- fthread)
       g * h     ->  prodthread . (fthread -*- fthread)

@@ -5,11 +5,13 @@
 > import MyPrelude(variablename,pair,mapSnd,splitUp)
 > import Grammar
 > import PrettyPrinter(Pretty(..),text)
-> import MonadLibrary(State,StateM,(<@),liftop,(<@-),fetchST,executeST,mliftSTM,
->                     mfoldl,executeSTM,updateSTM,mfoldr,map2,mapl,
+> import MonadLibrary(State,StateM,(<@),liftop,(<@-),
+>                     fetchST,executeST,mliftSTM,executeSTM,updateSTM,
+>                     mfoldl,mfoldr,map2,mapl,mIf,
 >                     ST,MutVar,newVar,writeVar,readVar, (===))
 > import Env(Env,Cache,lookupEqEnv,rememberST,newEnv,lookaside,remember)
 > import Folding(mmapEqn,mmapQualified,dmmapQualified,mcataType)
+> import StateFix-- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 
 > infixr 6 ##
 
@@ -77,7 +79,8 @@ We need a version of \verb|lookaside| that uses pointer equality,
 > kindIntoHeap  :: Kind  -> ST s (HpKind s)
 > eqnIntoHeap   :: Eqn   -> ST a (HpTEqn a)
 
-> (##) :: [Qualifier a] -> [Qualifier a] -> ST s [Qualifier a]
+> (##) :: [Qualifier (HpType s)] -> [Qualifier (HpType s)] -> 
+>    ST s [Qualifier (HpType s)]
 > mkQFun :: HpQType s -> HpQType s -> ST s (HpQType s)
 
 \end{verbatim}
@@ -411,23 +414,64 @@ pointer structure looks like.
 >              HpCon c -> return ('C':c)
 >              HpApp p1 p2 -> liftop (++) (showNodePtr p1) (showNodePtr p2 <@ ('@':))
 
+\end{verbatim}
+\subsection{Simplification of contexts}
+% 
+Constant {\tt Poly} contexts must be retained (they are to guide the 
+instance generation phase) but other constant Haskell contexts should 
+be eliminated.
+%
+(Strictly speaking, this should only be done after checking an instance 
+ environment, but throwing them away will not worsen the current status.)
+%
+\begin{verbatim}
+
 > mkQFun (ps:=>tA) (qs:=>tB) =
 >   ps ## qs    >>= \pqs->
 >   mkFun tA tB >>= \tA2B->
 >   return (pqs:=>tA2B)
 
-> ps ## qs = return (ppolys ++ qpolys ++ pothers ++ qothers)
->   where [ppolys,pothers] = splitUp [isPoly] ps
->         [qpolys,qothers] = splitUp [isPoly] qs
+> ps ## qs = simplifyHpQualifiers (ps ++ qs)
+
+\end{verbatim}
+%
+The {\tt Poly} qualifiers are brought to the front and the rest simplified.
+%
+Function {\tt simpQual} assumes that {\tt Poly} qualifiers are handled 
+elsewhere.
+%
+\begin{verbatim}
+
+> simplifyContext :: QType -> QType
+> simplifyContext qt = 
+#ifdef __HBC__
+>    runST $ RunST mqt
+#else /* not __HBC__ */
+>    runST         mqt
+#endif /* __HBC__ */
+>   where mqt :: ST s QType
+>         mqt = qtypeIntoHeap qt >>= simplifyHpContext >>= qtypeOutOfHeap []
+
+
+> simplifyHpContext :: HpQType s -> ST s (HpQType s)
+> simplifyHpContext (ps:=>t) = simplifyHpQualifiers ps <@ (:=> t)
+
+> simplifyHpQualifiers :: [Qualifier (HpType s)] -> 
+>                    ST s [Qualifier (HpType s)]
+> simplifyHpQualifiers ps = map concat (mapl simpQual others) <@ (polys ++)
+>   where [polys,others] = splitUp [isPoly] ps
 
 > isPoly :: Qualifier a -> Bool
 > isPoly ("Poly",_) = True
 > isPoly _          = False
 
+> simpQual :: Qualifier (HpType s) -> ST s [Qualifier (HpType s)]
+> simpQual q = mIf (isConstantQualifier q) (return []) (return [q])
+
+> isConstantQualifier :: Qualifier (HpType s) -> ST s Bool
+> isConstantQualifier (n,ts) = mapl flattenHpType ts <@ (null . concat)
+
 \end{verbatim}
-We would like to remove duplicates and do some simplification of
-contexts but it will only work for directly comparable values. (i.e.
-not for mutable variables).
-%
+A qualifier is constant if the list of all variables in it is empty.
 
 

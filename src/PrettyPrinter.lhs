@@ -74,10 +74,13 @@ import MonadLibrary(Error)
 
 > prTypeFirst :: Pretty t => VarID -> t -> Doc -> Doc
 > prTypeFirst name t d = 
->       text "{-"
->    $$ prEqn (ExplType [name] t)
->    $$ text "-}"
+>       prEqn (ExplType [name] t)
 >    $$ d
+
+       text "{-"
+    $$ prEqn (ExplType [name] t)
+    $$ text "-}"
+    $$ d
 
 \end{verbatim}
 The type is commented out, as it is not always correct.

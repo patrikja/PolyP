@@ -421,6 +421,8 @@ arrow --- transform it to a context and parse the rest.
 > type2context = check . map spineWalkType . untuple 
 >   where check      = handle . mapl out
 >         handle     = maybe (failEM msg) return
+>         out (TCon "Regular":d:[]) = Just ("Poly",[TCon "FunctorOf" :@@: d])
+>         out (TCon "Bifunctor":f:[]) = Just ("Poly",[f])
 >         out (TCon t:ts) = Just (t,ts)
 >         out _      = Nothing
 >         msg = "Can't parse type context"
@@ -454,15 +456,16 @@ From the Haskell report:
           | (->) (function constructor)
           | (,{,}) (tupling constructors)
 
-> pTypeCon = map (expandStringSynonym . TCon) $
+> pTypeCon = map (expandTypeSynonyms . TCon) $
 >              pConID 
 >           ++ symbol listConstructor 
 >           ++ symbol "(->)" <@- functionConstructor
 >           ++ pTupleCon
 
-> expandStringSynonym :: Type -> Type
-> expandStringSynonym (TCon "String") = TCon listConstructor :@@: TCon "Char"
-> expandStringSynonym c               = c
+> expandTypeSynonyms :: Type -> Type
+> expandTypeSynonyms (TCon "String") = 
+>   TCon listConstructor :@@: TCon "Char"
+> expandTypeSynonyms c               = c
 
 *** Hack to allow String as a predefined type synonym for [Char]
 

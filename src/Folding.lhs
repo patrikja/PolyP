@@ -261,7 +261,7 @@ variables are typed.  Should be rewritten to update the state \'a la
 >     mt2 (x, y) = (mt x,mt y)
 >     mq = mmapTEqn f
 
-> mmapTEqn  :: (Functor m, Monad m,Pretty t) => 
+> mmapTEqn  :: (Functor m, Monad m, Pretty t) => 
 >              (String -> t -> m String) -> Eqn' t -> m (Eqn' t)
 > mmapTEqn f = mq
 >   where
@@ -272,5 +272,16 @@ variables are typed.  Should be rewritten to update the state \'a la
 >     mq _ = error "Folding.mmapTEqn: impossible: not a binding"
 >     mtSnd (x,y) = mt y <@ (pair x)
 >     mt = mmapTExpr f
+
+typemapTEqn :: (String -> QType -> QType) -> TEqn -> TEqn
+typemapTEqn f = tmq
+  where 
+    tmq (VarBind v t ps e) = VarBind v (f v t) ps (me e)
+    tmp q                  = error "Folding.typemapTEqn: not a VarBind"
+    tme :: TExpr -> TExpr
+    tme = typemapTExpr f
+
+typemapTExpr :: (String -> QType -> QType) -> TExpr -> TExpr
+
 
 \end{verbatim}

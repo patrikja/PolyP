@@ -78,9 +78,10 @@ defined (uncurry0,1,2 ...).
 requires {\tt either} and {\tt uncurryi} for some i.
 \begin{verbatim}
 
-> inn_def :: VarID -> Struct -> ([Req],[Eqn])
-> inn_def na ((name,_),ss) = (reqs,[VarBind na (Just innType) [] 
->                                      (eitherfs (map constrs ss))])
+> inn_def :: VarID -> Struct -> (QType,([Req],[Eqn]))
+> inn_def na ((name,_),ss) = (innType,
+>                             (reqs,[VarBind na Nothing [] 
+>                                      (eitherfs (map constrs ss))]))
 >   where 
 >     noPoly = [] :=> undefined
 >     reqs   = map (`pair` noPoly) needed 
@@ -145,9 +146,10 @@ out_name x = case x of
                ...
                Cn an1 .. ankn  -> Right (.. (Right (Left (an1 ... )))..)
 
-> out_def :: VarID -> Struct -> ([Req],[Eqn])
-> out_def n ((name,_),ss) = ([],[VarBind n (Just outType) [x] 
->                                 (Case x (calts ss))])
+> out_def :: VarID -> Struct -> (QType,([Req],[Eqn]))
+> out_def n ((name,_),ss) = (outType,
+>                            ([],[VarBind n (Just outType) [x] 
+>                                 (Case x (calts ss))]))
 >   where 
 >     x = Var "x"
 >     calt (nam,num) = (apply nam vars,nestpairs vars)
@@ -185,10 +187,11 @@ out_name x = case x of
 fconstructorname :: Bifunctor f => f a b -> String
 fconstructorname = (\_->C1) `either` ((\_->C2) `either` ... (\_->Cn))...)
 
-> fcname_def :: VarID -> Struct -> ([Req],[Eqn])
-> fcname_def n ((name,_),ss) = (reqs,
->                               [VarBind n (Just fcnameType) []
->                                 (eitherfs (map (constf . fst) ss))])
+> fcname_def :: VarID -> Struct -> (QType,([Req],[Eqn]))
+> fcname_def n ((name,_),ss) = (fcnameType,
+>                               (reqs,
+>                                [VarBind n Nothing []
+>                                  (eitherfs (map (constf . fst) ss))]))
 >   where 
 >     noPoly = [] :=> undefined
 >     reqs   = map (`pair` noPoly) needed 

@@ -9,12 +9,13 @@ functions.
 > import Grammar(Eqn'(..),Expr'(..),Type(..),Qualified(..),
 >                Eqn,TEqn,Expr,TExpr,Func,QType,VarID,ConID,
 >                PrgTEqns, changeNameOfBind,noType,
->                tupleConstructor)
+>                tupleConstructor,(-=>),qualify)
 > import Folding(cataType,cataEqn,cataExpr,ExprFuns,EqnFuns,
->                stripTEqn,mmapTEqn)
+>                stripTEqn,mmapTEqn,mapEqn)
 > import Functorize(inn_def,out_def,either_def,fcname_def,
 >                   makeFunctorStruct,Struct,Req,eqReq,
 >                   codeFunctors)
+> import TypeGraph(simplifyContext)
 > import InferType(qTypeEval)
 > import MonadLibrary(State, executeST, mapl,(<@),(@@),unDone,
 >                     OutputT,output,runOutput,mliftOut,map0,map1,map2)
@@ -49,7 +50,8 @@ Implementation:
 
  polyInstPrg datadefs prg vartypes = map id teqns
 
-> polyInstPrg datadefs prg vartypes = map stripTEqn teqns
+> polyInstPrg datadefs prg vartypes = 
+>     map (simplifyTEqn funcenv . stripTEqn) teqns
 >   where funcenv = mapEnv makeFunctorStruct datadefenv
 >         teqns = polyInst funcenv defenv vartypes
 >         defenv = eqnsToDefenv (concat prg)
@@ -121,16 +123,19 @@ The mmap should update the environment.
 
 > type OutEnvM a b = OutputT a (State (Env VarID QType)) b
 > traverseTEqn :: Subst -> TEqn -> OutEnvM Req TEqn
-> traverseTEqn s = mmapTEqn f
+> traverseTEqn s = mmapTEqn f . mapEqn (substQType s)
 >   where
+>     f :: VarID -> QType -> OutEnvM Req VarID
 >     f n t = 
->       lookupOut n >>= maybe (return n) (makeReq n (substQType s t))
+>       lookupOut n >>= maybe (return n) (makeReq n t)
+>     makeReq :: VarID -> QType -> QType -> OutEnvM Req VarID
 >     makeReq n t tdef = 
 >        output req >> return newname
->          where req     = (n,t)
->                newname = n++extra
->                extra = codeFunctors functors
+>          where req      = (n,t)
+>                newname  = n++extra
+>                extra    = codeFunctors functors
 >                functors = getFunctors tdef t
+>     lookupOut :: VarID -> OutEnvM a (Maybe QType)
 >     lookupOut = mliftOut . lookasideST
 
 \end{verbatim}
@@ -157,7 +162,8 @@ The data needed is:
 
 > polyInst :: FuncEnv -> DefEnv -> TypeEnv -> [TEqn]
 > polyInst funcenv defenv typeenv = eqns 
->   where eqns = concat (generateEqns ([mainreq],[mainreq]))
+>   where eqns = concat (generateEqns ([mreq],[mreq]))
+>         mreq = mainreq typeenv
 >         generateEqns (reqs,seen) = 
 >            neweqns : if null newreqs then [] 
 >                      else generateEqns (newreqs,newreqs++seen)
@@ -175,17 +181,21 @@ The data needed is:
 
 \end{verbatim}
 
+The main request should have the correct type of main. 
+Currently it only uses a dummy type variable.
 \begin{verbatim}
 
-> mainreq :: Req
-> mainreq = ("main", [] :=> TVar "v")
+> mainreq :: TypeEnv -> Req
+> mainreq typeenv = ("main", maintype)
+>   where maintype :: QType
+>         maintype = maybe err id (lookupEnv "main" typeenv)
+>         err = error ("PolyInstance.mainreq: main is missing "++
+>                      "(maybe the type checking failed)")
 
 \end{verbatim}
 Check that the type information flows properly: traverse must know
 both the type at the definition and the type at the instance.  
 
-{\em Make the output types correct. (Substitute functors and simplify
-  contexts)}
 \begin{verbatim}
 
 > data DefTypes = PolyDef TEqn | VarDef TEqn | SpecDef | PreDef | Unknown
@@ -200,33 +210,46 @@ both the type at the definition and the type at the instance.
 >     (VarDef  eqn) -> traverse typeenv (pairType funcenv typeenv eqn tinst) tinst
 >     SpecDef       -> specPolyInst funcenv name tinst
 >     PreDef        -> ([],[])
->     Unknown       -> error ("handleReq: unknown function requested: "++name++
+>     Unknown       -> error ("PolyInstance.handleReq: unknown function requested: "++name++
 >                             "\n  (Probably error in type inference)\n")
-
-*** the original type t may be thrown away here
 
 > pairType :: FuncEnv -> TypeEnv -> Eqn -> QType -> (Eqn, Subst, QType)
 > pairType funcenv typeenv (VarBind name t as e) tinst = 
->      (VarBind name Nothing as e,
->       matchfuns (maydebug $ tdef name,maydebug $ tinst),
->       tdef name)
->    where tdef na = maybe (err na) id (lookupEnv na typeenv)
+>      (VarBind name (Just tOK) as e,
+>       subst,
+>       tdef)
+>    where findtdef na = maybe (err na) id (lookupEnv na typeenv)
+>          tdef  = findtdef name
 >          err n = error ("PolyInstance.pairType: type not in environment:"++n)
->          tsim = qTypeEval (evaluateFunInQType funcenv tinst)
+>          subst = matchfuns (maydebug $ tdef,maydebug $ tinst)
+>          tOK   = substQType subst tdef
 > pairType _ _ _ _ = error "PolyInstance.pairType: impossible: not a VarBind"
 
 \end{verbatim}
+
+In {\tt pairType} the generated type should be a simplified version 
+of the original type after substitution of the functor variables 
+from the request.
+%
+Remaining bugs:
+%
+  local definitions may get a context that is not used in the type
+    p :: Poly (FunctorOf a) => ([Char], Int)
+    p = structure_compress_f0 struct
+%
+  Definition of inn, out, uncurry, ... have the wrong types.
 \subsection{Inn and out}
 \begin{verbatim}
 
 > specPolyInst :: FuncEnv -> VarID -> QType -> ([Req], [TEqn]) 
 > specPolyInst funcenv n tinst | n `elem` ["inn","out"] = 
 >     case functors of
->       [TCon "FunctorOf" :@@: TCon d] -> fundefs n (struct d)
->       _ -> error ("specPolyInst: inn/out can not be generated for "++
+>       [TCon "FunctorOf" :@@: TCon d] -> 
+>            setT funcenv tinst (fundefs n (struct d))
+>       _ -> error ("PolyInstance.specPolyInst: inn/out can not be generated for "++
 >                   concat (map (show.pretty) functors))
->   where functors = getFunctors tdef tinst
->         tdef = [("Poly",[TVar "f"])] :=> undefined
+>   where functors = getFunctors tfusk tinst
+>         tfusk = [("Poly",[TVar "f"])] :=> undefined
 >         struct d = fst (maybe (err d) id (lookupEnv d funcenv))
 >         err d = error ("specPolyInst: functor not found:"++d)
 >         extra = codeFunctors functors
@@ -259,11 +282,12 @@ fconstructorName
 
 > specPolyInst funcenv n@"fconstructorName" tinst = 
 >     case functors of
->       [TCon "FunctorOf" :@@: TCon d] -> fcname_def (n++extra) (struct d)
+>       [TCon "FunctorOf" :@@: TCon d] -> 
+>            setT funcenv tinst (fcname_def (n++extra) (struct d))
 >       _ -> error ("specPolyInst: fconstructorName can not be generated for "++
 >                   concat (map (show.pretty) functors))
->   where functors = getFunctors tdef tinst
->         tdef = [("Poly",[TVar "f"])] :=> undefined
+>   where functors = getFunctors tfusk tinst
+>         tfusk = [("Poly",[TVar "f"])] :=> undefined
 >         struct d = fst (maybe (err d) id (lookupEnv d funcenv))
 >         err d = error ("specPolyInst: functor not found:"++d)
 >         extra = codeFunctors functors
@@ -273,20 +297,37 @@ fconstructorName
 
 > specPolyInst datadefs n _ = error ("specPolyInst: not implemented yet:"++n)
 
+> setT :: FuncEnv -> QType -> (QType,(a,[Eqn])) -> (a,[Eqn])
+> setT funcenv tinst (tdef,p) = mapSnd (map (setType tOK)) p
+>   where 
+>     tOK   = substQType subst tdef
+>     subst = matchfuns (tdef,tinst)
+
+> setType t (VarBind name _        pats rhs) = 
+>            VarBind name (Just t) pats rhs
+> setType t _ = error "PolyInstance.updateType: impossible - no VarBind"
+
 > makeUncurry :: VarID -> Int -> ([Req], [Eqn])
-> makeUncurry name n = case n of 
->      0 -> ([] ,uncn [f,p] (f))
->      1 -> ([] ,uncn [f,p] (f :@: p))
->      2 -> ([] ,uncn [f,p] (f :@: p1 :@: p2 ))
->      _ -> ([r],uncn [f,p] (Var uncurryn :@: (f :@: p1) :@: p2 ))
->    where [f,p] = map Var ["f","p"]
->          [p1,p2] = map ((:@:p).Var) ["fst","snd"]
->          uncn ps e = [VarBind name (Just tuncn) ps e]
->          unit = Con (tupleConstructor 0)
->          pairf a b = Con (tupleConstructor 2) :@: a :@: b
->          uncurryn = "uncurry"++show (n-1)
->          r = (uncurryn,tuncn)
->          tuncn = []:=>TVar "a" -- should be the real type (see below)
+> makeUncurry name m = case m of 
+>      0 -> ([] ,unc 0 [f,p] (f))
+>      1 -> ([] ,unc 1 [f,p] (f :@: p))
+>      2 -> ([] ,unc 2 [f,p] (f :@: p1 :@: p2 ))
+>      n -> ([req (n-1)],
+>            unc n [f,p] (Var (uncurryn (n-1)):@: (f :@: p1) :@: p2 ))
+>    where [f,p]      = map Var ["f","p"]
+>          [p1,p2]    = map ((:@:p).Var) ["fst","snd"]
+>          unc n ps e = [VarBind name (Just (tunc n)) ps e]
+>          unit       = Con (tupleConstructor 0)
+>          pairf a b  = Con  (tupleConstructor 2) :@:  a :@:  b
+>          tpairf a b = TCon (tupleConstructor 2) :@@: a :@@: b
+>          uncurryn k = "uncurry"++show k
+>          req k      = (uncurryn k,tunc k)
+>          tunc n     = qualify (func n -=> righttuple n -=> var n)
+>          func n     = foldr (-=>) (var n) (map var [0..n-1])
+>          righttuple 0= TCon (tupleConstructor 0)
+>          righttuple 1= var 0
+>          righttuple n= foldr1 tpairf (map var [0..n-1])
+>          var n = TVar ("a"++show n)
 
 It is important that the matching is done lazily.
 
@@ -294,9 +335,8 @@ unc0 :: a -> () -> a
 unc1 :: (a->b) -> (a) -> b
 unc2 :: (a->b->c) -> (a,b) -> c
 
-uncn :: 
+uncn :: (a0->a1->...->an) -> (a0,(a1,...,an-1)...) -> an
 {\tt uncurryn = uncurry . (uncurryn-1 .) }
-
 
 \end{verbatim}
 {\em To be rewritten.}
@@ -377,28 +417,29 @@ We also want to generate a correctly instantiated type.
 \section{Implementation}
 Get the correct equation out of the poly case.
 
-{\em The t in VarBind n tdef needs to be type-evaluated.}
-
 \begin{verbatim}
 
 > pickPolyEqn :: FuncEnv -> TEqn -> QType -> (TEqn, Subst, QType)
-> pickPolyEqn funcenv (Polytypic n tdef (_:=>TVar fname) cs) t =
->     (VarBind n (Just tsim) [] e, s, tdef) 
->   where f = getFunctor funcenv fname tdef t
->         mp = functorCase f cs
+> pickPolyEqn funcenv (Polytypic n tdef (_:=>TVar fname) cs) tinst =
+>     (VarBind n (Just tOK) [] e, s, tdef) 
+>   where f     = getFunctor funcenv fname tdef tinst
+>         mp    = functorCase f cs
 >         (e,s) = maybe err id mp
->         err = error ("PolyInstance.functorCase: no match for "++
->                      show (pretty f)  ++ 
->                      " in polytypic " ++ n)
->         tsim = qTypeEval (evaluateFunInQType funcenv t)
-
-FunctorOf Datatype must be simplified 
-
-replace all occurences of FunctorOf d, by functorOf d
-
-substQType 
+>         err   = error ("PolyInstance.functorCase: no match for "++
+>                        show (pretty f)  ++ 
+>                        " in polytypic " ++ n)
+>         subst = matchfuns (tdef,tinst)
+>         tOK   = substQType subst tdef
 
 > pickPolyEqn _ _ _ = error "PolyInstance.pickPolyEqn: impossible: not Polytypic"
+
+> simplifyTEqn :: FuncEnv -> TEqn -> TEqn
+> simplifyTEqn = mapEqn . simplifyQType
+
+> simplifyQType :: FuncEnv -> QType -> QType
+> simplifyQType funcenv = simplifyContext 
+>                       . qTypeEval 
+>                       . evaluateFunInQType funcenv
 
 > functorCase :: Func -> [(QType, e)] -> Maybe (e, Subst)
 > functorCase f [] = Nothing
@@ -608,7 +649,6 @@ Try out: {\tt match :: (Regular d, Regular (Mu (() + FunctorOf d))) =>
   
 Problems: 
 \begin{itemize}
- \item Make inn more lazy: delay the pattern match in uncurry. 
  \item Make the output type the correct instance.
  \item Maybe there should be two judgement forms:
   \begin{itemize}

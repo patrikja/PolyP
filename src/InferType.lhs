@@ -423,6 +423,7 @@ in a table:
 >   ,("Rec",[])
 >   ,("Empty",[])
 >   ,("Const",[consttypeEval])
+>   ,("FunctorOf",[map (:[]) . mkFOfd])
 >   ] newEnv
 
 \end{verbatim}
@@ -454,7 +455,7 @@ f@(HpVar v) -> -- a functor variable
 >         def | null args  = return [pf]
 >             | otherwise  = error "InferType.funEval': Expected functor variable, found application."
 >         errNoBifun c = error ("InferType.funEval': found "++c++
->                               "but expected a Bifunctor constructor.")
+>                               " when expecting a Bifunctor constructor.")
 
 > funEvalArgs :: String -> [HpType s] -> [HpType s -> ST s [HpType s]] -> ST s [HpType s]
 > funEvalArgs c args argfuns 

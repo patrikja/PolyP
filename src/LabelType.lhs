@@ -25,6 +25,7 @@
 >                  mkVar, mkFun, (##), mkQFun,
 >                  eqnIntoHeap, blockOutOfHeap)
 > import UnifyTypes(unify, checkInstance)
+> import Monad(foldM)
 
 > infix 9 |->
 
