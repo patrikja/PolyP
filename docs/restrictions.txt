@@ -1,0 +1,14 @@
+Syntax restrictions:
+  No multiline definitions
+    use case expressions.
+  No where-clauses
+    use let-expressions.
+  No operator sections
+    use lambda abstractions.
+  No guards
+     use if then else
+  ...
+
+The error messages are not very good, but the information in the
+comments in the output file can often be used to locate the error.
+
