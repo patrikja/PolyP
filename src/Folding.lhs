@@ -5,7 +5,7 @@
 > import Grammar -- (Eqn'(..),Expr'(..),VarID)
 > import MyPrelude(pair,mapFst,mapSnd,without,flatMap,fMap)
 > import MonadLibrary(mapl,foreach,(<*>),(<@),liftop,map0,map1,map2)
-> import PrettyPrinter(Pretty,pshow)
+> import PrettyPrinter(Pretty(),pshow)
 
 \end{verbatim}
 \section{Folding expressions and types}

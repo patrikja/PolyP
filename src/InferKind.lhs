@@ -12,7 +12,7 @@
 >                  extendTypeTBasis,extendKindTBasis)
 > import StateFix-- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 > import Env(newEnv,lookupEnv,extendsEnv)
-> import PrettyPrinter(Pretty,pshow)
+> import PrettyPrinter(Pretty(),pshow)
 > import UnifyTypes(unify)
 > import MonadLibrary(STErr,mliftErr,convertSTErr,ErrorMonad(failEM),
 >                     Error(..),LErr, foreach,(<@))

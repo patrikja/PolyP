@@ -11,7 +11,7 @@
 > import Folding(cataType)
 > import MyPrelude(mapFst,mapSnd,pair,variablename)
 > import StartTBasis(innType,outType,fcnameType,leftname,rightname,eitherType)
-> import PrettyPrinter(Pretty,pshow)
+> import PrettyPrinter(Pretty(),pshow)
 
 \end{verbatim}
 \section{Extracting functors from {\tt data}-definitions} 
@@ -238,7 +238,7 @@ just a type variable.  We simply need a pair of functions {\tt
   codeType} and {\tt decodeType}.)  
 %
 There is one special case: {\tt FunctorOf []} is coded as {\tt F0}
-instead of {\tt F[]} to make it possible to parse.
+instead of {\tt F[]} to make it a legal Haskell identifier(-suffix).
 \begin{verbatim}
 
 > codeFunctors :: [Func] -> String

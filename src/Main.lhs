@@ -44,11 +44,11 @@
 
 \end{verbatim}
 \section{Verbose mode}
-In verbose mode every stage of the program generation presents s summary:
+In verbose mode every stage of the program generation presents a summary:
 \begin{itemize}
 \item The parser reports the names of the successfully parsed equations.
 \item The dependency analysis presents the topologically sorted list
-  of mutually reqursive groups of equations.
+  of mutually recursive groups of equations.
 \item The type inference reports the types of all (top level) equations.
 \item The code generation presents the generated code.
 \end{itemize}

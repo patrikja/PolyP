@@ -3,6 +3,7 @@
 
 > data Flags = Flags {verbose          :: Bool, 
 >		      help	       :: Bool,
+>		      requests         :: [String],
 >		      preludeFileNames :: [String],
 >		      fileargs	       :: [String]}
 >   deriving Show
@@ -21,6 +22,7 @@
 > defaultflags :: Flags
 > defaultflags = Flags {verbose		 = False, 
 >		        help             = False,
+>			requests	 = [],
 >		        preludeFileNames = [preludeFileName],
 >			fileargs         = []}
 
@@ -34,10 +36,14 @@
 >    | isHelpFlag fl	     = (analyseFlags rest) {help    = True}	    
 > analyseFlags (fl:name:rest) 
 >    | isIncludeFlag fl      = mapPrFileName (name:) (analyseFlags rest)
+>    | isRequestFlag fl      = mapRequests    (name:) (analyseFlags rest)
 > analyseFlags (file:rest)   = mapFileArgs   (file:) (analyseFlags rest)
 
 > mapPrFileName :: ([String] -> [String]) -> Flags -> Flags
 > mapPrFileName f x = x {preludeFileNames = f (preludeFileNames x)}
+
+> mapRequests :: ([String] -> [String]) -> Flags -> Flags
+> mapRequests f x = x {requests = f (requests x)}
 
 > mapFileArgs :: ([String] -> [String]) -> Flags -> Flags
 > mapFileArgs f x = x {fileargs = f (fileargs x)}
@@ -47,6 +53,9 @@
 
 > isVerboseFlag :: String -> Bool
 > isVerboseFlag = ("-v"==)
+
+> isRequestFlag :: String -> Bool
+> isRequestFlag = ("-r"==)
 
 > isHelpFlag :: String -> Bool
 > isHelpFlag ('-':c:_) = c `elem` "h?"

@@ -9,7 +9,7 @@
 >                isDataDef,isExplType)
 > import GraphLibrary(Graph,Tree(..),scc')
 > import MyPrelude(splitUp)
-> import PrettyPrinter(Pretty,pshow,prQualified,Qualified,Type,QType,Eqn)
+> import PrettyPrinter(Pretty(),pshow,prQualified,Qualified,Type,QType,Eqn)
 > import TypeBasis(TypeEnv)
 
 \end{verbatim}

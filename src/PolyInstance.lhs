@@ -2,6 +2,27 @@
 This chapter deals with creating specific instances of polytypic
 functions.
 
+The instantiation (similar to partial evaluation) starts at main and
+traverses all code (possibly) reachable from main. Instances are
+generated for all polytypic functions encountered, at the types they
+are used at. It would be useful to allow a more flexible use of the
+instantiation function in three ways:
+\begin{enumerate}
+\item Start at a different place than main: parameterise over a list
+  of requests. (A request is a typed identifier.)
+\item Generate instances for some specific polytypic functions.
+\item Generate instances for some specific types.
+\end{enumerate}
+Examples would be to generate instances of pmap for all types in the
+program, or to generate instances of all polytypic definitions in the
+program for the types Rose and Tree.
+
+The latter two points can probably be implemented by first generating
+a list of requests and then using the solution of the first point.
+
+We also need a way to communicate these alternatives from the polyp
+command line via flags and parameters to instantiateProgram.
+
 \begin{verbatim}
 
 > module PolyInstance(instantiateProgram) where
@@ -19,15 +40,16 @@ functions.
 > import MonadLibrary(State, executeST, mapl,(<@),(@@),unDone,
 >                     OutputT,output,runOutput,mliftOut,map0,map1,map2)
 > import MyPrelude(maytrace,pair,mapFst,mapSnd,combineUniqueBy,fMap,maydebug)
-> import PrettyPrinter(Pretty,pshow)
+> import PrettyPrinter(Pretty(),pshow)
 > import StartTBasis(preludeFuns,preludedatadefs)
 > import TypeBasis(TBasis,TypeEnv)
+> import Flags(Flags(..),flags)
 
 \end{verbatim} 
 Given a program with explicitly typed identifiers, an environment
 mapping identifiers to their principal types and an environment
 mapping datatypes to their definitions, {\tt polyInstPrg} generates
-the Gofer-translation of the program.
+the Haskell-translation of the program.
 \begin{verbatim}
 
 > instantiateProgram :: (TBasis,PrgTEqns) -> [Eqn]
@@ -40,14 +62,46 @@ Implementation:
 > instantiateProgram (tbasis,(datadefs,eqnss)) = 
 >     datadefs ++ polyInstPrg datadefs eqnss (fst tbasis) 
 
- polyInstPrg datadefs prg vartypes = map id teqns
-
-> polyInstPrg datadefs prg vartypes = 
+> polyInstPrg datadefs prg typeenv = 
 >     map (simplifyTEqn funcenv . stripTEqn) teqns
->   where funcenv = mapEnv makeFunctorStruct datadefenv
->         teqns = polyInst funcenv defenv vartypes
->         defenv = eqnsToDefenv (concat prg)
+>   where funcenv    = mapEnv makeFunctorStruct datadefenv
+>         teqns      = polyInst funcenv defenv typeenv (startreqs typeenv)
+>         defenv     = eqnsToDefenv (concat prg)
 >         datadefenv = eqnsToDefenv (preludedatadefs++datadefs)
+
+\end{verbatim}
+The main request should have the correct type of main. 
+\begin{verbatim}
+
+> startreqs :: TypeEnv -> [Req]
+> startreqs typeenv = if null (requests flags)
+>                     then [mainreq typeenv]
+>                     else map (parseReq typeenv) (requests flags)
+
+> makeReq :: String -> QType -> Req
+> makeReq s t = (s,t)
+
+> parseReq :: TypeEnv -> String -> Req
+> parseReq typeenv s = makeReq name insttype
+>   where (name,rest) = span (':'/=) s
+>         insttype | null rest = typ
+>	           | otherwise = tOK
+>         tycon = TCon (tail rest)
+>         typ = maybe err id (lookupEnv name typeenv)
+
+>         tOK   = substQType subst typ
+>         subst = matchfuns (typ,[regular tycon] :=> undefined)
+>         regular d = ("Poly",[TCon "FunctorOf" :@@: d])
+>         err = error ("PolyInstance.parseReq:"++name++" is missing "++
+>                      "(maybe the type checking failed)")
+
+> mainreq :: TypeEnv -> Req
+> mainreq typeenv = ("main", maintype)
+>   where maintype :: QType
+>         maintype = maybe err id (lookupEnv "main" typeenv)
+>         err = error ("PolyInstance.mainreq: main is missing "++
+>                      "(maybe the type checking failed)")
+
 
 \end{verbatim}
 % ----------------------------------------------------------------
@@ -146,45 +200,37 @@ A request for:
 \end{itemize}
 The data needed is: 
 \begin{itemize}
-\item The program
+\item The functor environment
+\item The definition environment (the program)
+\item The type environment
+\item A list of requests to start from
 \end{itemize}
 
 {\em Check that requests really can not give two generated equations. }
+
 \begin{verbatim}
 
-> polyInst :: FuncEnv -> DefEnv -> TypeEnv -> [TEqn]
-> polyInst funcenv defenv typeenv = eqns 
->   where eqns = concat (generateEqns ([mreq],[mreq]))
->         mreq = mainreq typeenv
+> polyInst :: FuncEnv -> DefEnv -> TypeEnv -> [Req] -> [TEqn]
+> polyInst funcenv defenv typeenv startreqs = eqns 
+>   where eqns = concat (generateEqns (startreqs,startreqs))
 >         generateEqns (reqs,seen) = 
 >            neweqns : if null newreqs then [] 
 >                      else generateEqns (newreqs,newreqs++seen)
 >           where (neweqns,newreqs) = handleReqs (reqs,seen)         
 >         handleReqs (rs,oldrs) = (concat newqss,newrs)
->           where (newrss,newqss) = 
->                   unzip (map (handleReq funcenv defenv typeenv . tr) rs)
->                 newrs = combineUniqueBy eqReq oldrs (concat newrss)
+>           where newrs = combineUniqueBy eqReq oldrs (concat newrss)
+>                 (newrss,newqss) = 
+>                   unzip (map (handleReq funcenv defenv typeenv . mayTraceReq) rs)
+>                 
 
->         tr :: Req -> Req
->         tr r@(name,ps:=>_) = ("{- Request:"
->			     ++ name++pshow (map snd ps)
->			     ++"-}\n") 
->                          `maytrace` r
+Only for debugging:
 
-\end{verbatim}
-
-The main request should have the correct type of main. 
-Currently it only uses a dummy type variable.
-\begin{verbatim}
-
-> mainreq :: TypeEnv -> Req
-> mainreq typeenv = ("main", maintype)
->   where maintype :: QType
->         maintype = maybe err id (lookupEnv "main" typeenv)
->         err = error ("PolyInstance.mainreq: main is missing "++
->                      "(maybe the type checking failed)")
+> mayTraceReq :: Req -> Req
+> mayTraceReq r@(name,ps:=>_) = 
+>   ("{- Request:"++name++pshow (map snd ps)++"-}\n") `maytrace` r
 
 \end{verbatim}
+
 Check that the type information flows properly: traverse must know
 both the type at the definition and the type at the instance.  
 
@@ -342,8 +388,8 @@ uncn :: (a0->a1->...->an) -> (a0,(a1,...,an-1)...) -> an
 >         newq = changeNameOfBind (++extra) q 
 >         extra = codeFunctors functors
 >         functors = getFunctors tdef tinst
->	  tracing :: Subst -> Subst
->	  tracing s = maytrace ("{- Subst:"++showsEnv s "" ++"-}\n") s
+>         tracing :: Subst -> Subst
+>         tracing s = maytrace ("{- Subst:"++showsEnv s "" ++"-}\n") s
 
 > uncurryName :: String
 > uncurryName = "uncurry"
@@ -644,22 +690,9 @@ Try out: {\tt match :: (Regular d, Regular (Mu (() + FunctorOf d))) =>
   
 Problems: 
 \begin{itemize}
- \item Make the output type the correct instance.
- \item Maybe there should be two judgement forms:
-  \begin{itemize}
-   \item {\tt BiFunctor f}: f is a bifunctor (a type of kind {\tt *->*->*}
-     built up using +, *, @, Par, Rec, Const t and FunctorOf D for
-     regular datatypes D)
-   \item {\tt Regular D}: D is a datatype functor (D is a datatype (of
-     kind {\tt *->*}) that has been unified with a Mu f or D is Mu
-     (FunctorOf D))
-  \end{itemize}
- \item Make sure the explicit types are simplified and instatiated after 
-   code generation so that they can be printed in the output.
  \item Check what overloading problems we can get in the generated code. 
    (Gofer takes it, but maybe not Hugs or Haskell.)
  \item The generation of functors is not ready.
- \item either is required - should be generated
  \item Local bindings (let, lambda, case) should hide the outer one:
    the inner map in (a silly version of the identity function)
    \verb+\map->map+ should not be instantiated.
