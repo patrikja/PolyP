@@ -11,9 +11,7 @@
 >                     STErr,mliftErr,convertSTErr,ErrorMonad(failEM),
 >                     OutputT,output,runOutput,mliftOut,
 >                     mapl,foreach,liftop,map0,map1,map2,mfoldl,mfoldr,
-#ifndef __Haskell98__
->		      mzero,
-#endif
+>		      mZero,
 >		      accumseq,accumseq_,mguard) where
 > import StateFix
 > import MyPrelude(pair,mapFst,putErrStrLn,fMap)
@@ -37,15 +35,17 @@
 > infixr 5 +++
 > infixr 1 <<
 
-#ifndef __Haskell98__
-> mzero :: MonadZero m => m a
-> mzero = zero
+> mZero :: MONADZERONAME m => m a
+#ifdef __Haskell98__
+> mZero = mzero
+#else
+> mZero = zero
 > mplus :: MonadPlus m => m a -> m a -> m a
 > mplus = (++)
 #endif
 
 > mguard :: MONADZERONAME m => Bool -> m ()
-> mguard b = if b then return () else mzero
+> mguard b = if b then return () else mZero
 
 > (+++) :: MonadPlus m => m a -> m a -> m a
 > (+++) = mplus
@@ -107,7 +107,7 @@ Haskell 1.4. (Though it should be, in my opinion.)
 > mIf mb t f = mb >>= \b-> if b then t else f
 
 > (<|) :: MONADZERONAME m => m a -> (a -> Bool) -> m a
-> m <| p = m >>= \x -> if p x then return x else mzero
+> m <| p = m >>= \x -> if p x then return x else mZero
 
 \end{verbatim}
 \section{IO and ST monads}
@@ -316,16 +316,16 @@ instance Functor (ST a) where
 >                                in f' s'
 >                         )  
 >
-> mzeroSTM :: MONADZERONAME m => StateM m s a
-> mzeroSTM = STM (\s -> mzero)
+> mZeroSTM :: MONADZERONAME m => StateM m s a
+> mZeroSTM = STM (\s -> mZero)
 >
 #ifdef __Haskell98__
 > instance MonadPlus m => MonadPlus (StateM m s) where
->   mzero = mzeroSTM
+>   mzero = mZeroSTM
 >   mplus (STM stm) (STM stm') = STM (\s -> stm s +++ stm' s)
 #else
 > instance MonadZero m => MonadZero (StateM m s) where
->   zero = mzeroSTM
+>   zero = mZeroSTM
 > 
 > instance MonadPlus m => MonadPlus (StateM m s) where
 >   (STM stm) ++ (STM stm') = STM (\s -> stm s ++ stm' s)

@@ -12,6 +12,13 @@ PolyP := $(firstword $(wildcard ../bin/*polyp) polyp)
 PERL = perl
 CHASE = $(PERL) ../bin/chase -i ../polylib
 
+DIFF = diff
+## For older hugs systems (pre 1998)
+#DIFF = diff -w
+# The -w argument to diff is to ignore white space differences
+# caused by the change of printing of hugs in 1998. "(1, 2)" -> "(1,2)"
+# The .out files contain the (correct) output (without the extra space)
+
 ###################
 # The target Haskell files of the tests to be performed
 targets = testSum.hs testCrush.hs testFlatten.hs testPropagate.hs	\
@@ -47,13 +54,8 @@ test%.check : test%.phs
 	@echo "--!!! Checking $*"
 	@$(CHASE) $< >tmp.phs
 	@-($(PolyP) tmp.phs | cat $(wildcard type$*.hs) - >test$*.hs \
-          && runhugs test$*.hs > test$*.check) || echo >test$*.check
-	@diff test$*.check test$*.out
-## For older hugs systems (pre 1998)
-#	@diff -w test$*.check test$*.out
-# The -w argument to diff is to ignore white space differences
-# caused by the change of printing of hugs in 1998. "(1, 2)" -> "(1,2)"
-# The .out files contain the (correct) output (without the extra space)
+          && ${hugs} test$*.hs > test$*.check) || echo >test$*.check
+	@${DIFF} test$*.check test$*.out
 
 genfiles = $(targets) $(targets:.hs=.check) tmp.phs tmp.hs Separate.hs
 

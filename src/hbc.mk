@@ -2,8 +2,8 @@
 
 prog = ../bin/hbcpolyp
 #hs_flags += -O
-hs_flags += -H12M
-hc = hbc
+hs_flags += -H15M
+hc = ${hbc}
 hbcmakedepends = hbcmake -g
 
 .SUFFIXES:

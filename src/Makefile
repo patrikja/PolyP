@@ -14,12 +14,15 @@ POLYPPRELUDE = $(POLYPDIR)lib/PolyPrel.hs
 CPP = gcc -E -C -P -traditional -x c-header
 #CPP = cpp -P -C -traditional
 
-# Choose between the following line (the first is for Haskell 98 compilers)
+# differences between Haskell versions
+ifeq (${HASKELLVERSION},98)
 CPPFLAGS += -D__Haskell98__ -D__FMAPNAME__=fmap
-# CPPFLAGS += -D__FMAPNAME__=map
+else
+CPPFLAGS += -D__FMAPNAME__=map
+endif
 
-# The defined names are not expanded if CPP thinks we're in a string or character
-#   For example after a single '
+# Reminder: The defined names are not expanded if CPP thinks we're in
+#   a string or character. (For example after a single ')
 
 # This line is needed to compile the prelude path into the executable.
 #   (if not set correctly, the environment variable POLYPPRELUDE can be set later)

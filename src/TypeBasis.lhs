@@ -14,6 +14,9 @@
 >                  mkVar,mkCon,mkApp,cataHpType,
 >                  qtypeOutOfHeap,kindOutOfHeap,qtypeIntoHeap,kindIntoHeap,
 >                  flattenNgs,allGeneric,isGenericApproximation,addtoNGS)
+#ifdef __HBC__
+> import Monad() -- hbc does not import instance declarations correctly
+#endif
 
 \end{verbatim}
 \section{The definition of the basis}

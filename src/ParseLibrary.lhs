@@ -10,6 +10,9 @@ comments are now obsolete.
 >                     Error(..),ErrorMonad(..))
 > import MyPrelude(fMap)
 > import Char(isSpace,isAlpha,isDigit)
+#ifdef __HBC__
+> import Monad() -- hbc does not import instance declarations correctly
+#endif
 
 > infixl 1 `chainr`, `chainl`
 

@@ -9,7 +9,9 @@ help:
 	@echo "  gmake check.X"
 	@echo "    runs some regression tests."
 
-# These variables can be used to specify the desired version of the compiler
+# Choose the desired version of Haskell ...
+HASKELLVERSION = 98
+# ... and of the compiler
 ghc  = ghc
 hbc  = hbc
 hugs = runhugs
@@ -22,7 +24,7 @@ hugs ghc hbc:
 	-mkdir $@src
 	$(MAKE) -C src $@src 
 # compile[1] the source
-	$(MAKE) -C $@src hc=$($@)
+	$(MAKE) -C $@src "hc=$($@)"
 	@echo Read the files src/$@.USAGE and USAGE for details on how to run PolyP
 
 # [1] For hbc and ghc the source is really compiled, but as hugs is an

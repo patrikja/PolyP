@@ -19,7 +19,7 @@ white-space. (Because this allows the incorrect `elem `.)
 > import Char(isUpper,isLower,isAlpha,isDigit)
 > import MyPrelude(mapSnd,fMap)
 > import MonadLibrary((<:*>),(<*>),(<@),(<@-),(<<),(<|),liftop,
->                     mapl,ErrorMonad(failEM),mzero,(+++))
+>                     mapl,ErrorMonad(failEM),mZero,(+++))
 > import ParseLibrary(Parser,item,lit,sat,digit,opt,optional,
 >                     some_offside,mustbe,symbol,sepby,string,
 >                     chainl,chainr,spaces,number,
@@ -29,6 +29,9 @@ white-space. (Because this allows the incorrect `elem `.)
 >                qualify,noType,spineWalk,spineWalkType,(-=>),
 >                tupleConstructor,listConstructor,isTupleCon,
 >                functionConstructor)
+#ifdef __HBC__
+> import Monad() -- hbc does not import instance declarations correctly
+#endif
 
 \end{verbatim}
 The parser is not in good shape and uses far too many reductions
@@ -98,7 +101,7 @@ Definitions have no {\tt where} part.
 >         in case f of
 >              Con n -> return (n,ps) 
 >              Var n -> return (n,ps)
->              _     -> mzero 
+>              _     -> mZero 
 
 \end{verbatim}
 Only variables and constructors are allowed as the head of a left hand
