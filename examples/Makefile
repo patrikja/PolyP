@@ -37,9 +37,6 @@ check:: $(targets:.hs=.check) $(wildcard ../polylib/*.phs)
 
 check:: veryclean
 
-# Make the testcompilations silent
-MAKEFLAGS += -s
-
 include ../test/polyp.mk
 
 print:

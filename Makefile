@@ -33,11 +33,14 @@ hugs ghc hbc: bin/chase
 # runhugs hugssrc/Main.lhs
 
 # Run some regression tests
+#   -s makes the testcompilations silent (unless there is an error)
 check:
-	$(MAKE) -C examples check
+	$(MAKE) -s -C examples check
+	$(MAKE) -s -C test check
 
 check.% : %
-	$(MAKE) -C examples check PolyP=../bin/$*polyp
+	$(MAKE) -s -C examples check PolyP=../bin/$*polyp
+	$(MAKE) -s -C test check PolyP=../bin/$*polyp
 
 # compile with all three compilers and check the results
 checkdist: check.ghc check.hbc check.hugs

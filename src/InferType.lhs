@@ -91,15 +91,15 @@ changed by \texttt{hpQTypeEval}.
 
 > hpQTypeEval :: FuncEnv -> HpQType s -> ST s (HpQType s)
 > hpQTypeEval funcenv (l :=> t) = 
->   (fMap concat (mapl tevalC l)) >>= \l' ->
+>   (fMap concat (mapl (tevalC funcenv) l)) >>= \l' ->
 >   hpTypeEval funcenv t >> -- side effect on t
 >   return (l':=>t)
 
-> tevalC :: Qualifier (HpType s) -> ST s [Qualifier (HpType s)]
-> tevalC ("Poly", fun : _ ) = fMap (map poly) (funEval fun)
+> tevalC :: FuncEnv -> Qualifier (HpType s) -> ST s [Qualifier (HpType s)]
+> tevalC funcenv ("Poly", fun : _ ) = fMap (map poly) (funEval funcenv fun)
 >    where poly :: HpType s -> Qualifier (HpType s)
 >          poly f = ("Poly", [f])
-> tevalC c                  = return [ c ]
+> tevalC funcenv c = return [ c ] --*** types in other contexts should be simplified as well
 
 \end{verbatim}
 
@@ -115,12 +115,12 @@ hpQTypeEval ({f|->Par} Poly f => f a b -> b) =
 hpQTypeEval (Poly Par => (Par) a b -> b) = 
 () => a -> b
 \end{verbatim}
-The context transformation/simplification is implemented by funEval.
+The context transformation/simplification is implemented by \texttt{funEval}.
 
 \begin{verbatim}
 
-> funEval :: HpType s -> ST s [HpType s] -- functors
-> funEval = funEval' @@ spineWalkHpType 
+> funEval :: FuncEnv -> HpType s -> ST s [HpType s] -- functors
+> funEval funcenv = funEval' funcenv @@ spineWalkHpType 
 
 \end{verbatim}
 
@@ -134,31 +134,30 @@ definition would do it.
  funEval (Par)     = []
  funEval (Rec)     = []
  funEval (Const t) = []
+ funEval (FOf d)   = []   -- if d is regular, otherwise error (unsatisfiable)
  funEval (f)       = [f]  -- functor variable
 \end{verbatim}
 
 In practice we have to work a little harder: not only are the functors
 encoded in the type for types, but also this type is encoded using
 pointers. We can encode the varying part of the above function sketch
-in a table:
+in a table: \texttt{funEvalEnv}.
 
 \begin{verbatim}
 
-> funEvalEnv :: Env String [HpType s -> ST s [HpType s]]
-> funEvalEnv = extendsEnv 
->   [("+",[funEval, funEval])
->   ,("*",[funEval, funEval])
->   ,("@",[dataEval,funEval])
+> funEvalEnv :: FuncEnv -> Env String [HpType s -> ST s [HpType s]]
+> funEvalEnv funcenv = extendsEnv 
+>   [("+",[funEval funcenv, funEval funcenv])
+>   ,("*",[funEval funcenv, funEval funcenv])
+>   ,("@",[dataEval funcenv,funEval funcenv])
 >   ,("Par",[])
 >   ,("Rec",[])
 >   ,("Empty",[])
 >   ,("Const",[consttypeEval])
->   ,("FunctorOf",[fMap (:[]) . mkFOfd])
+>   ,("FunctorOf",[dataEval funcenv])
 >   ] newEnv
 
 \end{verbatim}
-
-\begin{verbatim}
 spineWalkHpType gives (f:args)
 HpCon c -> -- a functor constructor encountered
   lookupEnv c funEvalEnv gives funs
@@ -170,16 +169,19 @@ f@(HpVar v) -> -- a functor variable
   make sure it has no arguments (it could be m g, but that is no Bifunctor)
   return [f]  
 (HpApp _ _) -> impossible ...
-\end{verbatim}
 
 
+%*** These errors should be collected in the STErr monad instead 
+%    for better reporting
 \begin{verbatim}
 
-> funEval' :: [(NodePtr s,HpNode s)] -> ST s [NodePtr s]
-> funEval' [] = error "InferType.funEval': impossible: nothing to apply"
-> funEval' ((pf,f):pnargs) = case f of
+> funEval' :: FuncEnv -> [(NodePtr s,HpNode s)] -> ST s [NodePtr s]
+> funEval' _ [] = error "InferType.funEval': impossible: nothing to apply"
+> funEval' funcenv ((pf,f):pnargs) = case f of
 >     HpVar _   -> def
->     HpCon c   -> maybe (errNoBifun c) (funEvalArgs c args) (lookupEnv c funEvalEnv)
+>     HpCon c   -> maybe (errNoBifun c) 
+>                        (funEvalArgs c args) 
+>                        (lookupEnv c (funEvalEnv funcenv))
 >     HpApp _ _ -> error "InferType.funEval': impossible: HpApp found after spine removal"
 >   where args = map (getChild . snd) pnargs
 >         def | null args  = return [pf]
@@ -205,14 +207,20 @@ If d is not a fixed datatype D:
   build FunctorOf d
   return it in a singleton list
 otherwise
-  remove it
+  if D is regular
+    remove it
+  else 
+    complain
 
 \begin{verbatim}
 
-> dataEval :: HpType s -> ST s [HpType s]
-> dataEval d = checkCon d >>= 
->              maybe (fMap (:[]) (mkFOfd d))
->                    (return . const [])
+> dataEval :: FuncEnv -> HpType s -> ST s [HpType s]
+> dataEval funcenv d = 
+>     checkCon d >>= 
+>     maybe (fMap (:[]) (mkFOfd d))
+>           checkRegular
+>   where checkRegular d | d `elem` rangeEnv funcenv = return []
+>                        | otherwise = error ("InferType.dataEval: "++d++" is not Regular")
 
 > consttypeEval :: HpType s -> ST s [HpType s]
 > consttypeEval _ = return []

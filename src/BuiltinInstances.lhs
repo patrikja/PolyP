@@ -2,12 +2,13 @@
 \begin{verbatim}
 
 > module BuiltinInstances(inn_def,out_def,either_def,fcname_def,
->                   Req,eqReq) where
+>                         makeUncurry,parseUncurry,isUncurry,
+>                         Req,eqReq) where
 > import Env(lookupEnv)
 > import Functorise(Struct)
 > import Grammar(Eqn'(..),Expr'(..),Expr,Type(..),Qualified(..),Literal(..),
 >                Eqn,Func,QType, ConID,VarID,spineWalkType,
->                tupleConstructor,listConstructor,isTupleCon)
+>                tupleConstructor,listConstructor,isTupleCon,(-=>),qualify)
 > import Folding(cataType)
 > import MonadLibrary(Error(..),ErrorMonad(..),map0,map1,map2,accumseq)
 > import MyPrelude(mapFst,mapSnd,pair,variablename,fMap)
@@ -30,11 +31,13 @@ The definition requires {\tt either} and {\tt uncurryi} for some {\tt i}.
 {\tt geninnD = uncurryk1 e1 `either` uncurryk2 e2 `either` ... `either` uncurrykn en}
 
 A very similar function can be used to handle the {\tt \{ Ci -> ei
-  \}} notation $\Rightarrow$ Generalize: Take as input a [(constructor
-replacement, arity)] = cres, find the type in question from the result
-type of the first Ci (or rather take that as an input), get the {\tt
-  ces}. For all elem's in {\tt ces}: Look up the constructor {\tt
-  cres} - if its there take, otherwise leave the elem from {\tt ces}.
+  \}} notation $\Rightarrow$ 
+
+Generalize: Take as input a [(constructor replacement, arity)] = cres,
+find the type in question from the result type of the first Ci (or
+rather take that as an input), get the {\tt ces}. For all elem's in
+{\tt ces}: Look up the constructor {\tt cres} - if its there take,
+otherwise leave the elem from {\tt ces}.
 
 The {\tt inn} function is recovered by supplying an empty list as {\tt
   cres}!
@@ -51,20 +54,13 @@ The {\tt inn} function is recovered by supplying an empty list as {\tt
 >                             (reqs,[VarBind n (Just innType) [] 
 >                                      (eitherfs (map constrs' ss))]))
 >   where 
->     noPoly = [] :=> undefined
+>     noPoly = qualify undefined
 >     reqs   = map (`pair` noPoly) needed 
 >     needed = (if length ss > 1 then ("either":) else id) 
 >              (map (uncurryn.snd) ss)
->     constrs (c,n')  = funcurry n' :@: c
+>     constrs (c,n')  = funcurry n' c
 >     constrs' = constrs 
 >              . mapFst (\c->maybe (Con c) id (lookupEnv c cres))
-
- funcurry = Var . uncurryn -- hbc takes it but Hugs doesn't !
-
-> funcurry :: Int -> Expr' a
-> funcurry n = Var (uncurryn n)
-> uncurryn :: Int -> String
-> uncurryn n = "uncurry"++show n
 
 > {-
 > firstLow :: String -> String
@@ -138,6 +134,69 @@ fconstructorname = (\_->C1) `either` ((\_->C2) `either` ... (\_->Cn))...)
 >     constf = (Lambda WildCard) . Literal . StrLit
 
 \end{verbatim}
+\subsection{Generating {\tt uncurry}}
+It is important that the matching is done lazily.
+
+unc0 :: a -> () -> a
+unc1 :: (a->b) -> (a) -> b
+unc2 :: (a->b->c) -> (a,b) -> c
+
+uncn :: (a0->a1->...->an) -> (a0,(a1,...,an-1)...) -> an
+{\tt uncurryn = uncurry . (uncurryn-1 .) }
+
+\begin{verbatim}
+
+> makeUncurry :: VarID -> Int -> ([Req], [Eqn])
+> makeUncurry name m = case m of 
+>      0 -> ([] ,[]) -- uncurry0 = const
+>      1 -> ([] ,[]) -- uncurry1 = id
+>      2 -> ([] ,[]) -- uncurry2 = uncurry
+>      n -> ([req (n-1)],
+>            unc n [f,p] ((funcurry (n-1) (f :@: p1)) :@: p2 ))
+>    where [f,p]      = map Var ["f","p"]
+>          [p1,p2]    = map ((:@:p).Var) ["fst","snd"]
+>	   unc :: Int -> [Expr] -> Expr -> [Eqn]
+>          unc n ps e = [VarBind name (Just (tunc n)) ps e]
+>          tpairf a b = TCon (tupleConstructor 2) :@@: a :@@: b
+>          req k      = (uncurryn k,tunc k)
+>          tunc n     = qualify (func n -=> righttuple n -=> var n)
+>          func n     = foldr (-=>) (var n) (map var [0..n-1])
+>          righttuple 0= TCon (tupleConstructor 0)
+>          righttuple 1= var 0
+>          righttuple n= foldr1 tpairf (map var [0..n-1])
+>	   var :: Int -> Type
+>          var n = TVar ("a"++show n)
+
+> funcurry :: Int -> Expr' a -> Expr' a
+> funcurry 0 e = Var "const" :@: e
+> funcurry 1 e = e
+> funcurry 2 e = Var uncurryName :@: e
+> funcurry n e = Var (uncurryn n) :@: e
+
+> uncurryn :: Int -> String
+> uncurryn n = uncurryName++show n
+
+> uncurryName :: String
+> uncurryName = "uncurry"
+> uncurryNameLength :: Int
+> uncurryNameLength = length uncurryName
+> isUncurry :: String -> Bool
+> isUncurry = not . null . parseUncurry
+> parseUncurry :: String -> [Int]
+> parseUncurry name | length name > uncurryNameLength && 
+>                     maybeUncurry == uncurryName = [n]
+>		    | otherwise = []
+>   where (maybeUncurry,rest) = splitAt uncurryNameLength name
+>	  n :: Int
+>         n = read rest
+
+
+\end{verbatim}
+
+
+
+
+
 \section{Requests}
 An element of the type Req is a request for a traversal of the named
 definition with the given type.

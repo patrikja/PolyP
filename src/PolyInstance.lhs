@@ -31,12 +31,13 @@ command line via flags and parameters to instantiateProgram.
 > import Grammar(Eqn'(..),Expr'(..),Type(..),Qualified(..),
 >                Eqn,TEqn,Expr,Func,QType,VarID,ConID,
 >                PrgTEqns, changeNameOfBind,
->                tupleConstructor,(-=>),qualify,Qualifier)
+>                tupleConstructor,Qualifier)
 > import Folding(cataType,stripTEqn,mmapTEqn,mapEqn)
 > import Functorise(Struct,makeFunctorStruct)
 > import FunctorNames(codeFunctors)
 > import BuiltinInstances(inn_def,out_def,either_def,fcname_def,
->                   Req,eqReq)
+>                         makeUncurry,parseUncurry,isUncurry,
+>                         Req,eqReq)
 > import TypeGraph(simplifyContext)
 > import TypeBasis(FuncEnv)
 > import InferType(qTypeEval)
@@ -347,14 +348,12 @@ Remaining bugs:
 
 \end{verbatim}
 \subsection{Uncurry$n$}
-{\tt uncurryn = uncurry . (uncurryn-1 .) }
 \begin{verbatim}
 
-> specPolyInst _       name _     | isUncurry name              
->                                     = makeUncurry name n
->   where n :: Int
->         n = read rest
->         rest = drop uncurryNameLength name
+> specPolyInst _       name _     | isUncurry
+>                                     = makeUncurry name (head p)
+>   where p = parseUncurry name
+>         isUncurry = not (null p)
 
 \end{verbatim}
 \subsection{either}
@@ -399,37 +398,6 @@ fconstructorName
 >            VarBind name (Just t) pats rhs
 > setType _ _ = error "PolyInstance.updateType: impossible - no VarBind"
 
-> makeUncurry :: VarID -> Int -> ([Req], [Eqn])
-> makeUncurry name m = case m of 
->      0 -> ([] ,unc 0 [f,p] (f))
->      1 -> ([] ,unc 1 [f,p] (f :@: p))
->      2 -> ([] ,unc 2 [f,p] (f :@: p1 :@: p2 ))
->      n -> ([req (n-1)],
->            unc n [f,p] (Var (uncurryn (n-1)):@: (f :@: p1) :@: p2 ))
->    where [f,p]      = map Var ["f","p"]
->          [p1,p2]    = map ((:@:p).Var) ["fst","snd"]
->	   unc :: Int -> [Expr] -> Expr -> [Eqn]
->          unc n ps e = [VarBind name (Just (tunc n)) ps e]
->          tpairf a b = TCon (tupleConstructor 2) :@@: a :@@: b
->          uncurryn k = uncurryName++show k
->          req k      = (uncurryn k,tunc k)
->          tunc n     = qualify (func n -=> righttuple n -=> var n)
->          func n     = foldr (-=>) (var n) (map var [0..n-1])
->          righttuple 0= TCon (tupleConstructor 0)
->          righttuple 1= var 0
->          righttuple n= foldr1 tpairf (map var [0..n-1])
->	   var :: Int -> Type
->          var n = TVar ("a"++show n)
-
-It is important that the matching is done lazily.
-
-unc0 :: a -> () -> a
-unc1 :: (a->b) -> (a) -> b
-unc2 :: (a->b->c) -> (a,b) -> c
-
-uncn :: (a0->a1->...->an) -> (a0,(a1,...,an-1)...) -> an
-{\tt uncurryn = uncurry . (uncurryn-1 .) }
-
 \end{verbatim}
 {\em To be rewritten.}
 \begin{verbatim}
@@ -445,14 +413,6 @@ uncn :: (a0->a1->...->an) -> (a0,(a1,...,an-1)...) -> an
 >         functors = getFunctors tdef tinst
 >         tracing :: Subst -> Subst
 >         tracing s = maytrace ("{- Subst:"++showsEnv s "" ++"-}\n") s
-
-> uncurryName :: String
-> uncurryName = "uncurry"
-> uncurryNameLength :: Int
-> uncurryNameLength = length uncurryName
-> isUncurry :: String -> Bool
-> isUncurry name = length name > uncurryNameLength && 
->                  take uncurryNameLength name == uncurryName
 
 > isSpecFun :: VarID -> Bool
 > specFuns :: [VarID]
@@ -539,7 +499,6 @@ Get the correct equation out of the poly case.
 > simplifyQType :: FuncEnv -> QType -> QType
 > simplifyQType funcenv = simplifyContext 
 >                       . qTypeEval funcenv
->                       . evaluateFunInQType funcenv
 
 > functorCase :: Func -> [(QType, e)] -> Maybe (e, Subst)
 > functorCase _ [] = Nothing
@@ -549,10 +508,9 @@ Get the correct equation out of the poly case.
 
 \end{verbatim} 
 
-%*** evaluateFunInQType kanske inte behövs eftersom qTypeEval sköter jobbet.
 
-The VarID is the name of the functor we are looking for, the first
-QType is the defined type and the second is the instance. The result
+The \texttt{VarID} is the name of the functor we are looking for, the first
+\texttt{QType} is the defined type and the second is the instance. The result
 is the functor instance corresponding to the named functor.
 \begin{verbatim}
 
@@ -567,16 +525,6 @@ is the functor instance corresponding to the named functor.
 > evaluateTopFun :: FuncEnv -> Func -> Func
 > evaluateTopFun funcenv (TCon "FunctorOf" :@@: TCon d) = functorOf funcenv d
 > evaluateTopFun _       f = f
-
-> evaluateFunInQType :: FuncEnv -> QType -> QType
-> evaluateFunInQType    funcenv =  fMap (evaluateFunInType funcenv)
-
-> evaluateFunInType :: FuncEnv -> Type -> Type
-> evaluateFunInType    funcenv =  ev
->   where ev :: Type -> Type
->         ev (TCon "FunctorOf" :@@: TCon d) = functorOf funcenv d
->         ev (f :@@: x)                     = ev f :@@: ev x
->         ev y                              = y
 
 > functorOf :: FuncEnv -> VarID -> Func
 > functorOf fenv d = maybe err snd (lookupEnv d fenv)

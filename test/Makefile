@@ -1,3 +1,4 @@
+export targets
 targets = 1/innoutonlist.hs                   	\
 	  2/simplemutreclist.hs               	\
 	  3/explicitfunctorsimplification.hs  	\
@@ -6,7 +7,9 @@ targets = 1/innoutonlist.hs                   	\
 	  6/parsefloat.hs			\
 	  8/testconstnames.hs
 
-check: $(targets:.hs=.check)
+check:: $(targets:.hs=.check)
+
+check:: veryclean
 
 include polyp.mk
 

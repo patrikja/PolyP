@@ -31,11 +31,11 @@ CHASE = chase
 %.out2: %.hs
 	$(runhugs) $< > $@
 
-%.check: %.out %.out2
-	diff $*.out2 $*.out
+%.check: %.out2
+	diff $*.out2 $*.out > $*.check
 
-clean:
-	rm -f $(targets:.hs=.Hs2) $(targets:.hs=.Phs2)
+clean::
+	rm -f $(targets:.hs=.check)
 
-veryclean: clean
-	rm -f $(targets)
+veryclean:: clean
+	rm -f $(targets) $(targets:.hs=.Hs2) $(targets:.hs=.Phs2) $(targets:.hs=.out2) 
