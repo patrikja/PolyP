@@ -21,6 +21,11 @@ pzipWith' ins fail op (x,y)  =
   maybe (fail (x,y)) (ins . fmap2 op (pzipWith' ins fail op)) 
         (fzip (out x, out y))
 
+{-
+pzipWith' ins fail op (x,y) =  
+  maybe (fail (x,y)) ins (fzipWith op (pzipWith' ins fail op) (out x, out y))
+-}
+
 pzipWith :: Regular d => ((a, b) -> Maybe c) -> (d a, d b) -> Maybe (d c)
 pzipWith  = pzipWith' (mapMaybe inn.fprop) (const zeroM)
 
