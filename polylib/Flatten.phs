@@ -1,5 +1,8 @@
-module Flatten(flatten,fflatten,fl_par,fl_rec,fl_all,singleton,nil,substructures) where
-import Base(pmap,fmap2)
+
+module Flatten (flatten,fflatten,fl_par,fl_rec,fl_all,singleton,nil,substructures) where
+
+import Base (pmap,fmap2)
+
 flatten :: Regular d => d a -> [a]
 flatten  =  fflatten . fmap2 singleton flatten . out
 
@@ -12,14 +15,17 @@ polytypic fflatten ::  f [a] [a] -> [a]
       Rec          ->  unRecF
       d @ g        ->  concat . flatten . pmap fflatten . unCompF
       Const t      ->  nil
+
 fl_par :: Bifunctor f => f a b -> [a]
 fl_rec :: Bifunctor f => f a b -> [b]
 fl_all :: Bifunctor f => f a a -> [a]
 fl_par = fflatten . fmap2 singleton nil
 fl_rec = fflatten . fmap2 nil       singleton
 fl_all = fflatten . fmap2 singleton singleton
+
 substructures :: Regular d => d a -> [d a]
 substructures x = x : fflatten (fmap2 nil substructures (out x))
+
 singleton   :: a -> [a]
 singleton x =  [x]
 

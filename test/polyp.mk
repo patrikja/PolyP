@@ -12,7 +12,7 @@ runhugs = runhugs
 
 -include ../boilerplate.mk
 
-PolyP = $(POLYPDIR)/bin/ghcpolyp
+PolyP = $(POLYPDIR)/bin/ghcpolyp $(POLYPFLAGS)
 #PolyP = polyp
 # CHASE = perl $(POLYPDIR)/bin/chase
 CHASE = $(POLYPDIR)/bin/chase

@@ -2,7 +2,7 @@
 -- Showing values
 --   980409 Patrik Jansson [NOT CLEANED UP]
 ----------------------------------------------------------------
-module Show(pshow,ppretty,Expr(..)) where
+module Show (pshow,ppretty,Expr(..)) where
 import Base(pmap,cata)
 import ConstructorName(constructors)
 
