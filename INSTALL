@@ -7,8 +7,8 @@ with. The compiled code runs faster with ghc, but the compilation
 takes longer. (The optional HASKELLVERSION=1.4 is for compiling with
 pre-Haskell 98 compilers, like hbc 0.9999.4 and ghc 2.10.)
 
-This leaves the executable in the file bin/Xpolyp. (It is up to you to
-rename it and put it on your path.)
+This leaves the executable in the file bin/Xpolyp and adds soft links
+from INSTALLBINDIR to this exacutable.
 
 [The makefiles are written for GNU make, sometimes called gmake.]
 

@@ -18,6 +18,8 @@ export hugs = runhugs
 
 POLYPDIR   = $(shell pwd)
 
+INSTALLBINDIR = $(HOME)/bin
+
 # Use some version of the PolyP compiler in the bin directory
 #   with polyp (somewhere on the path) as a fall-back option
 export PolyP := $(firstword $(wildcard ${POLYPDIR}/bin/*polyp) polyp)
@@ -32,6 +34,11 @@ hugs ghc hbc: bin/chase
 # compile[1] the source
 	$(MAKE) -C $@src "hc=$($@)"
 	@echo Read the files src/$@.USAGE and USAGE for details on how to run PolyP
+# install 
+	-ln -s $(POLYPDIR)/bin/$@polyp $(INSTALLBINDIR)/$@polyp
+	-ln -s $(INSTALLBINDIR)/$@polyp $(INSTALLBINDIR)/polyp
+	-ln -s $(POLYPDIR)/bin/chase $(INSTALLBINDIR)/chase
+
 
 # [1] For hbc and ghc the source is really compiled, but as hugs is an
 # interpreter, its makefile only provides a name for the call to
