@@ -8,7 +8,7 @@
 <body>
 <h1>Known bugs in PolyP</h1>
 
-<h2></h2>
+<h2>Version 1.3</h2>
 <ul>
   <li>Context simplification errors: 
       <ul>
@@ -16,10 +16,10 @@
             simply removes all contexts without type variables. This
             can err in two ways: firstly ill-typed programs can be
             accepted (too much simplification, for example removing a
-            bad context like Monad Tree => ) and secondly well-typed
-            programs can be rejected (by hugs) (too little
-            simplification, for example Monad (State s) is not
-            simplified away.)
+            bad context like <code>Monad Tree =&gt;</code>) and
+            secondly well-typed programs can be rejected (by hugs)
+            (too little simplification, for example <code>Monad (State
+            s)</code> is not simplified away.)
 
 	<li>Solution: improve the context simplification
             algorithm. Extend PolyP to handle class and instance
@@ -41,7 +41,7 @@
 
 <hr>
 <!-- hhmts start -->
-Last modified: Thu Apr  8 12:33:25 CEST 1999
+Last modified: Tue Jul 13 10:42:45 MET DST 1999
 <!-- hhmts end -->
 by
 <address>
