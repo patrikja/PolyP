@@ -377,7 +377,7 @@ In \verb|(1)| \verb|pExpr| is too general.
 
 > cookNum :: (String, Maybe String) -> Literal
 > cookNum (fore, Just aft) = FloatLit (read (fore++'.':aft))
-> cookNum (fore, Nothing ) = IntLit (read fore)
+> cookNum (fore, Nothing ) = IntLit   (read fore)
 
 > pListLit :: Parser Expr
 > pListLit = pBracketed (pCommaList pExpr `opt` []) <@ list2expr

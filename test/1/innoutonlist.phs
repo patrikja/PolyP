@@ -1,0 +1,3 @@
+outhej = out "hej"
+main = print (outhej, inn outhej)
+-- expected output: (Right ('h',"ej"),"hej")

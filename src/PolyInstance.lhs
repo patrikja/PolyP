@@ -228,8 +228,6 @@ Remaining bugs:
   local definitions may get a context that is not used in the type
     p :: Poly (FunctorOf a) => ([Char], Int)
     p = structure_compress_f0 struct
-%
-  Definition of inn, out, uncurry, ... have the wrong types.
 \subsection{Inn and out}
 \begin{verbatim}
 
@@ -254,9 +252,11 @@ Remaining bugs:
 {\tt uncurryn = uncurry . (uncurryn-1 .) }
 \begin{verbatim}
 
-> specPolyInst funcenv name tinst 
->            | take 7 name == "uncurry"  = makeUncurry name n
->   where n = read (drop 7 name) 
+> specPolyInst funcenv name tinst | isUncurry name              
+>                                     = makeUncurry name n
+>   where n :: Int
+>         n = read rest
+>         rest = drop uncurryNameLength name
 
 \end{verbatim}
 \subsection{either}
@@ -312,7 +312,7 @@ fconstructorName
 >          unit       = Con (tupleConstructor 0)
 >          pairf a b  = Con  (tupleConstructor 2) :@:  a :@:  b
 >          tpairf a b = TCon (tupleConstructor 2) :@@: a :@@: b
->          uncurryn k = "uncurry"++show k
+>          uncurryn k = uncurryName++show k
 >          req k      = (uncurryn k,tunc k)
 >          tunc n     = qualify (func n -=> righttuple n -=> var n)
 >          func n     = foldr (-=>) (var n) (map var [0..n-1])
@@ -345,11 +345,17 @@ uncn :: (a0->a1->...->an) -> (a0,(a1,...,an-1)...) -> an
 >	  tracing :: Subst -> Subst
 >	  tracing s = maytrace ("{- Subst:"++show s++"-}\n") s
 
+> uncurryName :: String
+> uncurryName = "uncurry"
+> uncurryNameLength :: Int
+> uncurryNameLength = length uncurryName
+> isUncurry name = length name > uncurryNameLength && 
+>                  take uncurryNameLength name == uncurryName
+
 > isSpecFun :: VarID -> Bool
 > specFuns :: [VarID]
 
 > isSpecFun name = name `elem` specFuns || isUncurry name
-> isUncurry name = length name > 7 && take 7 name == "uncurry"
 > specFuns = ["inn","out","fconstructorName"]
 
 \end{verbatim} 

@@ -1,0 +1,4 @@
+f = 1 : g
+g = 2 : f
+main = print $ take 10 f
+-- expected output: [1,2,1,2,1,2,1,2,1,2]

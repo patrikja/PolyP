@@ -294,7 +294,9 @@ instead of {\tt F[]} to make it possible to parse.
 >               | True   = error "Functorize.decodeTyCon: impossible: negative length"
 >    where (num,text) = span isDigit s
 >          n :: Int
->          n = read num -- error if lenght num = 0 || (read num) :: Float > maxInt
+>          n = if length num == 0 || (read num :: Float) > fromInt (maxBound :: Int)
+>              then error ("decodeTyCon: Bad number: '"++ num ++"'")
+>              else read num
 
 \end{verbatim}
 Just a test expression --- not used.
