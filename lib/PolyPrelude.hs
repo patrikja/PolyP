@@ -84,6 +84,9 @@ foldSum f g e = case e of
     InL x   -> f x
     InR y   -> g y
 
+first (x :*: y)	    = x
+second (x :*: y)    = y
+
 ---
 --  Polytypic map
 ---
