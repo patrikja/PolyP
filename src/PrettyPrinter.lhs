@@ -99,12 +99,12 @@ restriction that forbids instances for \texttt{Qualified Type}.
 >     showAlt (f, rhs) = pretty f <> text " -> " <> prExpr rhs
 
 > prEqn (Class preds def eqns)
->   = (text "class " <> prQ preds (context2type def) <> text "where")
->   $$ nest 2 (sep (map prEqn eqns))
+>   = (text "class " <> prQ preds (context2type def) <> text " where")
+>   $$ nest 2 (ppVerticalList (map prEqn eqns))
 
 > prEqn (Instance preds def eqns)
->   = (text "instance " <> prQ preds (context2type def) <> text "where")
->   $$ nest 2 (sep (map prEqn eqns))
+>   = (text "instance " <> prQ preds (context2type def) <> text " where")
+>   $$ nest 2 (ppVerticalList (map prEqn eqns))
 
 > prEqn (ExplType vars tp)
 >   = sep [ppCommaList (map text' vars) <> text " ::", nest 2 (pretty tp)]
