@@ -1,5 +1,5 @@
-# PolyPFLAGS = extra flags to PolyP
-#   example: PolyPFLAGS = -p ArrTypes.hs -r start
+# POLYPFLAGS = extra flags to PolyP
+#   example: POLYPFLAGS = -p ArrTypes.hs -r start
 # HUGSFLAGS = extra flags to hugs and runhugs
 
 # Extension names: .phs -- input polyp modules
@@ -28,7 +28,7 @@ CHASE = $(POLYPDIR)/bin/chase
 #	cat $(dir $*)type$(notdir $*).hs $< > $@
 
 #%.Hs2: %.Phs2
-#	$(PolyP) $(PolyPFLAGS) ${PolyPREQUESTS} $< > $@ 
+#	$(PolyP) $(POLYPFLAGS) ${PolyPREQUESTS} $< > $@ 
 
 #%.Phs2: %.phs
 #	$(CHASE) $(CHASEFLAGS) $< > $@
