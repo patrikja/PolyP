@@ -1,8 +1,8 @@
-module BaseM(pmapM,fmap2M,cataM,anaM,hyloM,paraM,innM,outM,idM,(@@),mapm) where
+module BaseM(pmapM,fmap2M,cataM,anaM,hyloM,paraM,innM,outM,idM,(@@)) where
 import PolyPTypes
 
 pmapM :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
-pmapM fM   = mapm inn . fmap2M fM  (pmapM fM)   . out
+pmapM fM   = liftM inn . fmap2M fM  (pmapM fM)   . out
 
 fmap2M :: (Bifunctor f,Monad m) => (a->m c) -> (b->m d) -> f a b -> m (f c d)
 fmap2M fM gM x = error "fmap2M: only useful for type checking"
@@ -26,7 +26,7 @@ outM = return . out
 idM :: Monad m => a -> m a
 idM = return
 
-mapm :: Monad m => (a->b) -> m a -> m b
-mapm f mx = mx >>= \x -> return (f x)
+liftM :: Monad m => (a->b) -> m a -> m b
+liftM f mx = mx >>= \x -> return (f x)
 (@@) :: Monad m => (b->m c) -> (a->m b) -> (a->m c)
 f @@ g = \y -> g y >>= f

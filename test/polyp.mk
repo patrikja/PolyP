@@ -29,7 +29,13 @@ CHASE = chase
 %.Phs2: %.phs
 	$(CHASE) $(CHASEFLAGS) $< > $@
 
+%.phs: %.lphs
+	lhs2TeX -code -lcodeOnly=True $< | cut -c3- > $@
+
 %.out2: %.hs
+	$(runhugs) $(HUGSFLAGS) $< > $@
+
+%.out2: %.lhs
 	$(runhugs) $(HUGSFLAGS) $< > $@
 
 %.check: %.out2

@@ -7,7 +7,7 @@
 
 {- ekvivalent definitions
 cataM iM = applyM iM . fmapM idM (cataM iM  ) . out
-anaM  oM = applyM (mapm inn . fmapM idM (anaM oM)) . oM
+anaM  oM = applyM (liftM inn . fmapM idM (anaM oM)) . oM
 cataM iM    = iM      @@ fmapM idM (cataM iM   ) @@ outM
 anaM     oM = innM    @@ fmapM idM (anaM     oM) @@   oM
 
@@ -26,16 +26,16 @@ f @@ g = applyM f . g
 -- Calculations of pmapM, fmapM, summapM, prodmapM
 {- calculation of pmapM
   pmapM fM = thread . pmap fM
-  {- Expand thread  =  cata (mapm inn . fthread) -}
-  pmapM fM = cata (mapm inn . fthread) . pmap fM
+  {- Expand thread  =  cata (liftM inn . fthread) -}
+  pmapM fM = cata (liftM inn . fthread) . pmap fM
   {- cata-pmap-fusion -}
-  pmapM fM = cata (mapm inn . fthread . fmap fM id)
+  pmapM fM = cata (liftM inn . fthread . fmap fM id)
   {- Expand cata i   = i   . fmap id (cata i  ) . out -}
-  pmapM fM = mapm inn . fthread . fmap fM id . fmap id (pmapM fM) . out
+  pmapM fM = liftM inn . fthread . fmap fM id . fmap id (pmapM fM) . out
   {- fmap is a functor, id is unit of composition -}
-  pmapM fM = mapm inn . fthread . fmap fM (pmapM fM) . out
+  pmapM fM = liftM inn . fthread . fmap fM (pmapM fM) . out
   {- define fmapM f g = fthread . fmap f g -}
-  pmapM fM = mapm inn . fmapM fM (pmapM fM) . out
+  pmapM fM = liftM inn . fmapM fM (pmapM fM) . out
 -}
 
 {- calculation of fmapM
@@ -96,10 +96,10 @@ f @@ g = applyM f . g
 
 {- calculation of summapM
   summapM f g =  sumthread . f -+- g
-  {- Expand sumthread  =  mapm Left `either` mapm Right -}
-  summapM f g = mapm Left `either` mapm Right . f -+- g
+  {- Expand sumthread  =  liftM Left `either` liftM Right -}
+  summapM f g = liftM Left `either` liftM Right . f -+- g
   {- either-(-+-)-fusion -}
-  summapM f g = (mapm Left . f) `either` (mapm Right . g)
+  summapM f g = (liftM Left . f) `either` (liftM Right . g)
 -}
 {- calculation of prodmapM
   prodmapM f g = prodthread . f -*- g 
