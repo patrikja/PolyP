@@ -1,6 +1,6 @@
 ---------------------------------------------------------------
 -- ConstructorName
---   990526 Patrik Jansson
+--   990602 Patrik Jansson
 module ConstructorName where
 ---------------------------------------------------------------
 constructorName :: Regular d => d a -> String
@@ -8,8 +8,11 @@ constructorName = fconstructorName . out
 -- fconstructorName :: Bifunctor f => f a b -> [Char]  is built in
 
 constructorNames :: Regular d => d a -> [String]
-constructorNames x = 
-  map fconstructorName (fconstructors `asTypeOf` [out x])
+constructorNames = fconstructorNames . out
+
+fconstructorNames :: Bifunctor f => f a b -> [String]
+fconstructorNames x =
+  map fconstructorName (fconstructors `asTypeOf` [x])
 
 constructors  :: Regular d => [d a]
 constructors  =  map inn fconstructors
