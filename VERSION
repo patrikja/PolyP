@@ -4,7 +4,7 @@ written in Haskell 1.4 (works with 1.3)
 to be used with hbc, ghc or hugs
 
 Revision history: 
- 980501: version 0.7 for hbc, ghc, hugs (Haskell 1.4)
+ 980503: version 0.7 for hbc, ghc, hugs (Haskell 1.4)
  980413: version 0.6 for hbc, ghc, hugs (Haskell 1.4)
  980312: version 0.5 for hbc, ghc, hugs (Haskell 1.4)
  970510: version 0.4 for hbc 0.9999.3
