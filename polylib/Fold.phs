@@ -1,0 +1,31 @@
+
+module Fold (pfoldr,ffoldr,pfoldl,ffoldl) where
+
+import Base (cata)
+
+pfoldr :: Regular d => (a -> b -> b) -> d a -> b -> b
+pfoldr f = cata (ffoldr f)
+
+pfoldl :: Regular d => (a -> b -> b) -> d a -> b -> b
+pfoldl f = cata (ffoldl f)
+
+polytypic ffoldr :: (a -> b -> b) -> f a (b -> b) -> b -> b
+    = \f -> case f of
+		g + h	-> ffoldr f `foldSum` ffoldr f
+		g * h	-> \(x :*: y) -> ffoldr f x . ffoldr f y
+		Empty	-> \_ -> id
+		Par	-> \(ParF a) -> f a
+		Rec	-> \(RecF b) -> b
+		Const t	-> \_ -> id
+		d @ g	-> \(CompF x) -> pfoldr (ffoldr f) x
+
+polytypic ffoldl :: (a -> b -> b) -> f a (b -> b) -> b -> b
+    = \f -> case f of
+		g + h	-> ffoldl f `foldSum` ffoldl f
+		g * h	-> \(x :*: y) -> ffoldl f y . ffoldl f x
+		Empty	-> \_ -> id
+		Par	-> \(ParF a) -> f a
+		Rec	-> \(RecF b) -> b
+		Const t	-> \_ -> id
+		d @ g	-> \(CompF x) -> pfoldl (ffoldl f) x
+
