@@ -242,7 +242,7 @@ instead of {\tt F[]} to make it possible to parse.
 > codeFunctors = concatMap (('_':).codeFunctor)
 
 > codeFunctor :: Func -> String
-> codeFunctor f = s f []
+> codeFunctor f = s f ""
 >   where 
 >     s (TCon "Const" :@@: c)   = ('c':) -- . codeType c
 >     s (g :@@: t)     = s g . s t
@@ -270,7 +270,9 @@ instead of {\tt F[]} to make it possible to parse.
 >     p ('S':xs)  = mapSnd plus (popp xs)
 >     p ('P':xs)  = mapSnd prod (popp xs)
 >     p ('A':xs)  = mapSnd appl (popp xs)
->     p xs | isDigit (head xs) = mapSnd TCon (decodeTyCon xs)
+>     p ( c :xs) | isDigit c = mapSnd TCon (decodeTyCon (c:xs))
+>                | otherwise = error "Functorize: decodeFunctor: bad functor encoding"
+>     p ""        = error "Functorize: decodeFunctor: functor ended prematurely"
 >     popp = p `op` p
 >     plus (t,t') = TCon "+" :@@: t :@@: t'
 >     prod (t,t') = TCon "*" :@@: t :@@: t'
