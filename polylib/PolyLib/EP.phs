@@ -1,0 +1,36 @@
+
+module PolyLib.EP where
+
+import PolyLib.Prelude
+
+data EP a b = EP (a -> b) (b -> a)
+
+epFrom (EP _ from)  = from
+epTo (EP to _)	    = to
+
+pEP :: Regular d => EP a b -> EP (d a) (d b)
+pEP ep = EP out inn <.> fEP ep (pEP ep) <.> EP inn out
+
+polytypic fEP :: EP a c -> EP b d -> EP (f a b) (f c d)
+    = \epP epR -> case f of
+	    g + h   -> epSum (fEP epP epR) (fEP epP epR)
+	    g * h   -> epProd (fEP epP epR) (fEP epP epR)
+	    Empty   -> EP (const EmptyF) (const EmptyF)
+	    Par	    -> EP unParF ParF <.> epP <.> EP ParF unParF
+	    Rec	    -> EP unRecF RecF <.> epR <.> EP RecF unRecF
+	    g > h   -> epFun (fEP epP epR) (fEP epP epR)
+	    d @ g   -> EP unCompF CompF <.> pEP (fEP epP epR) <.> EP CompF unCompF
+	    Const t -> EP unConstF ConstF <.> EP ConstF unConstF
+
+epSum epG epH = EP  (epTo epG -+- epTo epH)
+		    (epFrom epG -+- epFrom epH)
+
+epProd epG epH = EP (epTo epG -*- epTo epH)
+		    (epFrom epG -*- epFrom epH)
+
+epFun epG epH = EP  (epFrom epG ->- epTo epH)
+		    (epTo epG ->- epFrom epH)
+
+(<.>) :: EP a b -> EP b c -> EP a c
+(<.>) (EP t1 f1) (EP t2 f2) = EP (t2 . t1) (f1 . f2)
+

@@ -2,6 +2,8 @@
 
 module PolyLib.Prelude where
 
+import PolyLib.FunctorOf
+
 ---
 --    Structure types
 ---
@@ -25,13 +27,6 @@ defaultFixity = Fixity LeftAssoc 9
 
 data Associativity = NonAssoc | LeftAssoc | RightAssoc
     deriving (Eq, Show)
-
----
---  Default FunctorOf instances
----
-
-$(deriveFunctorOf $ reifyDecl [])
-$(deriveFunctorOf $ reifyDecl Maybe)
 
 ---
 --              Structure types
@@ -131,4 +126,11 @@ instance (PatternFunctor f p r t, PatternFunctor g p r u)
 	=> PatternFunctor (FunF f g) p r (t -> u) where
     to	    = FunF . (to.) . (.from)
     from    = (from.) . (.to) . unFunF
+
+---
+--  Default FunctorOf instances
+---
+
+$(deriveFunctorOf $ reifyDecl [])
+$(deriveFunctorOf $ reifyDecl Maybe)
 

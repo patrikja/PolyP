@@ -2,7 +2,7 @@
 %.hs : %.phs
 	(cd ..; polyp PolyLib/$< > PolyLib/$@)
 
-modules = BaseM Base Compare ConstructorName CrushFuns Crush Equal EqualVariants Flatten Fold Propagate Show Substructures Sum ThreadFuns Thread Zip ZipVariants
+modules = BaseM Base Compare ConstructorName CrushFuns Crush Equal EqualVariants Flatten Fold Propagate Show Substructures Sum ThreadFuns Thread Zip ZipVariants EP
 
 all : $(modules:=.hs)
 

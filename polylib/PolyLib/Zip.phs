@@ -1,4 +1,4 @@
-module PolyLib.Zip(pzip,fzip,pzipWith,pzipWith',fzipWith,fzipWith,punzip) where
+module PolyLib.Zip(pzip,fzip,pzipWith,pzipWith',fzipWith,punzip) where
 import PolyLib.Prelude
 
 import PolyLib.Base(pmap,fmap2)

@@ -1,3 +1,4 @@
 *.phi
 .*.swp
 Base.hs BaseM.hs Compare.hs ConstructorName.hs Crush.hs CrushFuns.hs Equal.hs EqualVariants.hs Flatten.hs Fold.hs Propagate.hs Show.hs Substructures.hs Sum.hs Thread.hs ThreadFuns.hs Zip.hs ZipVariants.hs
+EP.hs
