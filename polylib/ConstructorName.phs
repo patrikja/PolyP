@@ -39,7 +39,7 @@ polytypic fconstructorsAndArities :: [(f a b,Int)] =
 
 polytypic fconstructorArity :: f a b -> Int =
   case f of
-    g + h	->  fconstructorArity `foldSum` fconstructorArity
+    g + h   ->  fconstructorArity `foldSum` fconstructorArity
     g * h   ->  \(x:*:y) -> fconstructorArity x + 
                      fconstructorArity y
     Empty   ->  const 0

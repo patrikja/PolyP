@@ -20,10 +20,10 @@ polytypic fcompare :: (a->a->Ordering) -> (b->b->Ordering) ->
 --sumcompare :: (a->a->Ordering) -> (b->b->Ordering) -> 
 --              Either a b -> Either a b -> Ordering
 sumcompare f g a b = case (a,b) of
-                       (InL  x, InL  v)	->  f x v
-                       (InR y, InR w)		->  g y w
-                       (InL  _, InR _)		->  LT
-                       (InR _, InL  _)		->  GT
+                       (InL  x, InL  v) ->  f x v
+                       (InR y, InR w)           ->  g y w
+                       (InL  _, InR _)          ->  LT
+                       (InR _, InL  _)          ->  GT
 --prodcompare :: (a->a->Ordering) -> (b->b->Ordering) -> 
 --               (a,b)->(a,b) -> Ordering
 prodcompare f g (p:*:p') (q:*:q') = f p q `ordop` g p' q'

@@ -1,7 +1,5 @@
-
-module Flatten (flatten,fflatten,fl_par,fl_rec,fl_all,singleton,nil,substructures) where
-
-import Base (pmap,fmap2)
+module Flatten(flatten,fflatten,fl_par,fl_rec,fl_all,singleton,nil,substructures) where
+import Base(pmap,fmap2)
 
 flatten :: Regular d => d a -> [a]
 flatten  =  fflatten . fmap2 singleton flatten . out

@@ -4,13 +4,13 @@ pmap f   = inn . fmap2 f  (pmap f)   . out
 
 polytypic fmap2 :: (a -> c) -> (b -> d) -> f a b -> f c d
   = \p r -> case f of
-      	      g + h   ->  (fmap2 p r) -+- (fmap2 p r)
-      	      g * h   ->  (fmap2 p r) -*- (fmap2 p r)
-      	      Empty   ->  \EmptyF -> EmptyF
-      	      Par     ->  ParF . p . unParF
-      	      Rec     ->  RecF . r . unRecF
-      	      d @ g   ->  CompF . pmap (fmap2 p r) . unCompF
-      	      Const t ->  ConstF . unConstF
+              g + h   ->  (fmap2 p r) -+- (fmap2 p r)
+              g * h   ->  (fmap2 p r) -*- (fmap2 p r)
+              Empty   ->  \EmptyF -> EmptyF
+              Par     ->  ParF . p . unParF
+              Rec     ->  RecF . r . unRecF
+              d @ g   ->  CompF . pmap (fmap2 p r) . unCompF
+              Const t ->  ConstF . unConstF
 
 cata     :: Regular d => (FunctorOf d a b -> b) -> (d a -> b)
 cata i   =  i   . fmap2 id (cata i  ) . out
@@ -20,4 +20,3 @@ hylo     :: Bifunctor f => (f a b -> b) -> (c -> f a c) -> c -> b
 hylo i o =  i   . fmap2 id (hylo i o) . o
 para     :: Regular d => (d a -> FunctorOf d a b -> b) -> d a -> b
 para i x =  i x (fmap2 id (para i) (out x))
-

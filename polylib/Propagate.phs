@@ -4,8 +4,6 @@ import Base(cata,pmap)
 propagate  :: Regular d => d (Maybe a) -> Maybe (d a)
 propagate  =  cata (fmap inn . fprop)
 
-c21 f g x y = f (g x) (g y)
-
 polytypic fprop :: f (Maybe a) (Maybe b) -> Maybe (f a b)
   = case f of
       g + h     ->  sumprop . (fprop -++- fprop)

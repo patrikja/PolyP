@@ -4,12 +4,13 @@
 %   990527 Patrik Jansson
 % ------------------------------------------------------------
 
-> module Flatten(flatten,fflatten,fl_par,fl_rec,fl_all,singleton,nil) where
+> module Flatten(flatten,fflatten,fl_par,fl_rec,fl_all,singleton,nil,substructures) where
 > import Base(pmap,fmap2)
 
 %{
 %align 22
 
+>
 > flatten :: Regular d => d a -> [a]
 > flatten  =  fflatten . fmap2 singleton flatten . out
 > 
@@ -28,6 +29,7 @@
 %{
 %align 10
 
+>
 > fl_par :: Bifunctor f => f a b -> [a]
 > fl_rec :: Bifunctor f => f a b -> [b]
 > fl_all :: Bifunctor f => f a a -> [a]
@@ -49,6 +51,7 @@ Function |flatten| can also be defined using |crush| (see the module
 
 %endif
 
+>
 > substructures :: Regular d => d a -> [d a]
 > substructures x = x : fflatten (fmap2 nil substructures (out x))
 
@@ -57,6 +60,7 @@ Function |flatten| can also be defined using |crush| (see the module
 %{
 %align 15
 
+>
 > singleton   :: a -> [a]
 > singleton x =  [x]
 > 
