@@ -6,9 +6,21 @@ The default starting point for code generation in a PolyP file is the
   In this case we choose to test separate on a list, a tree and a rose
   tree.
 -}
-main = print (separate "1738",
-	      separate (Leaf 'a'),
-	      separate (Fork True [Fork False [],Fork True []]))
+main = print ( separate "1738"
+	     , separate (Leaf 'a')
+	     , separate (Fork True [Fork False [],Fork True []])
+             )
+
+{-
+
+The triple printed by main is equal to answer.
+
+-}
+
+answer = ( ([(),(),(),()],"1738")
+         , (Leaf (),"a")
+         , (Fork () [Fork () [],Fork () []],[True,False,True])
+         )
 
 {- 
 User defined (and pre-defined) regular datatypes with one type

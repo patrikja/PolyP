@@ -12,7 +12,7 @@
 >   pretty = id
 
 > showDoc :: Doc -> String
-> showDoc = layout 80 80 
+> showDoc = layout 100 100 
 > instance Show Doc where
 >   showsPrec _ x = \s -> showDoc x ++ s
 
