@@ -6,9 +6,8 @@
 > import Char(toLower)
 > import Env(lookupEnv)
 > import Grammar(Eqn'(..),Expr'(..),Expr,Type(..),Qualified(..),Literal(..),
->                Eqn,Func,QType, ConID,VarID)
+>                Eqn,Func,QType, ConID,VarID,tupleConstructor)
 > import MyPrelude(mapFst,mapSnd,pair,variablename)
-> import Parser(tupleConstructor)
 > import StartTBasis(innType,outType,fcnameType,leftname,rightname,eitherType)
 
 \end{verbatim}
@@ -56,7 +55,7 @@ The following section needs to be reworked. (Use material from Masters Thesis)
 
 Skall ga ned i tradet rekursivt.
 
-> convType def (TCon con :@@: TVar _)  
+> convType def (TCon con :@@: TVar _)  -- should compare variable with lhs
 >   | con == def = TCon "Rec"
 > convType def (TCon con :@@: t) = 
 >    TCon "@" :@@: TCon con :@@: convType def t

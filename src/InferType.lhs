@@ -505,6 +505,8 @@ without synonyms just like the evaluation of expressions to normal
 form in a simple functional language. The language has variables,
 constructors and applications.
 
+The evaluation is done by side-effecting the pointer structure.
+
 \begin{verbatim}
 
 > typeEval :: NodePtr s -> ST s ()
@@ -595,8 +597,7 @@ polytypic checking of x :: ty = case f of {fi -> ei}
 >     checkAltKind extbasis (constr, args) =
 >            assureType extbasis tp >>
 >            return (constr, qualify tp) 
->        where tp = foldr arrow res args
->     arrow x y = TCon "->" :@@: x :@@: y
+>        where tp = foldr (-=>) res args
 >     res = foldl (:@@:) (TCon tyCon) (map TVar vars)
 > inferDataDef _ _ = error "InferType: inferDataDef: impossible: not a DataDef"
 

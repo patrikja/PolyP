@@ -7,8 +7,9 @@
 
 > infixl 9 :@:
 > infixl 9 :@@:
-> infix 4 :=>
+> infixr 9 -=>
 > infixr 5 ##
+> infix  4 :=>
 
 \end{verbatim}
 \section{Equations}
@@ -222,6 +223,29 @@ all arguments.
 
 > deQualify (qs:=>t) = t
 > qualify t = []:=>t
+
+> functionConstructor :: ConID
+> functionConstructor = "->"
+
+> isFunctionType :: Type -> Bool
+> isFunctionType (TCon c) =  c == functionConstructor
+> isFunctionType _        =  False
+
+> (-=>) :: Type -> Type -> Type 
+> a -=> b = TCon functionConstructor :@@: a :@@: b
+
+> listConstructor :: String
+> listConstructor = "[]"
+
+> tupleConstructor :: Int -> ConID
+> tupleConstructor n = ( ('(':replicate (max (n-1) 0) ',')++")")
+
+> isTupleCon :: ConID -> Bool
+> isTupleCon (c:cs) = c=='('
+> isTupleCon []     = error "Parser: isTupleCon: impossible: empty constructor"
+
+
+
 > context2type (c,ts) = foldl (:@@:) (TCon c) ts
 
 > ps ## qs = ps ++ (qs \\ ps)

@@ -98,7 +98,7 @@ In H1.3 (hbc) we include the trace function from the module NonStdTrace.
    where nub []     = []
          nub (x:xs) = x : nub (filter (not.(eq x)) xs)
 
-> splitUp preds []     = copy (length preds + 1) []
+> splitUp preds []     = replicate (length preds + 1) []
 > splitUp preds (x:xs) = let lists = splitUp preds xs 
 >                        in try x preds lists
 >   where try y []       [lastList]   = [(y:lastList)]
@@ -133,13 +133,5 @@ In H1.3 (hbc) we include the trace function from the module NonStdTrace.
 >         cu qs (x:xs) | x `elemByeq` qs = cu qs xs
 >                      | otherwise   = x:cu (x:qs) xs
 >         elemByeq = any . eq
-
-\end{verbatim}
-These are predefined in Gofer but not in Hugs.
-\begin{verbatim}
-
- copy n x = take n (repeat x)
-
-> copy = replicate
 
 \end{verbatim}

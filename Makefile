@@ -51,6 +51,7 @@ packpolylib:
 	tar cf polylib.tar polylib examples 
 	gzip polylib.tar
 
+# outdated
 dist:
 	-rm -r ../polyp$(version)
 	mkdir ../polyp$(version)

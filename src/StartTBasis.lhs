@@ -9,12 +9,11 @@
 > import Parser(pType0,pType1)
 > import ParseLibrary(parse)
 > import MyPrelude(mapSnd,trace)
-> import Grammar(Eqn'(..),Qualified(..),Type(..),VarID)
+> import Grammar(Eqn'(..),Qualified(..),Type(..),VarID,(-=>),deQualify,
+>                tupleConstructor,listConstructor,functionConstructor)
 > import MonadLibrary(Error,unDone)
 > import Env(newEnv,extendsEnv)
 > import TypeBasis(TBasis)
-
-> infixr 9 -=>
 
 \end{verbatim}
 We will need three versions of the prelude:
@@ -38,15 +37,15 @@ For the PolyP version - see \verb|../comments.txt|.
 These should be read from a file.
 
 > haskellass = map (mapSnd (unDone . parse pType0))
->              [("[]","[a]"),(":","a->[a]->[a]"),
+>              [(listConstructor,"[a]"),(":","a->[a]->[a]"),
 >               (leftname ,"a->"++sumtypename++" a b"),
 >               (rightname,"b->"++sumtypename++" a b"),
 >               ("True","Bool"),("False","Bool"),
 >               ("Nothing","Maybe a"),("Just","a->Maybe a"),
 >               ("LT","Ordering"),("EQ","Ordering"),("GT","Ordering"),
->               ("()","()"),
->               ("(,)","a->b->(a,b)"),
->               ("(,,)","a->b->c->(a,b,c)"),
+>               (tupleConstructor 0,"()"),
+>               (tupleConstructor 2,"a->b->(a,b)"),
+>               (tupleConstructor 3,"a->b->c->(a,b,c)"),
 
 >               (".","(b->c)->(a->b)->(a->c)"),
 >               ("+","Num a => a->a->a"),
@@ -101,11 +100,11 @@ Gofer's {\tt cc.prelude}.
 >     kindass = kindhaskellass ++ kindpolypass
 >
 >     kindhaskellass = 
->               [("->", s2s2s),
->                ("[]",s2s),
->                ("()",star),
->                ("(,)",s2s2s),
->                ("(,,)",s2s2s)] 
+>               [(functionConstructor, s2s2s),
+>                (listConstructor,     s2s),
+>                (tupleConstructor 0,  star),
+>                (tupleConstructor 2,  s2s2s),
+>                (tupleConstructor 3,  star -=> s2s2s)] 
 >            ++ map (\x->(x,star)) 
 >                ["Char","Double","Float","Int","Integer",
 >                 "IOError","Void","Ordering"]
@@ -128,15 +127,14 @@ Gofer's {\tt cc.prelude}.
 > floatType=[] :=> TCon "Float"
 > charType= [] :=> TCon "Char"
 > boolType= [] :=> TCon "Bool"
-> strType = [] :=> TCon "[]" :@@: TCon "Char"
-> fcnameType= bifun :=> fab -=> (TCon "[]" :@@: TCon "Char")
+> strType = [] :=> TCon listConstructor :@@: TCon "Char"
+> fcnameType= bifun :=> fab -=> deQualify strType
 > fab     = TVar "f" :@@: TVar "a" :@@: TVar "b"
 > da      = TVar "d" :@@: TVar "a"
 > fada    = fofd :@@: TVar "a" :@@: da
 > regular = [("Poly",[fofd])]
 > bifun   = [("Poly",[TVar "f"])]
 > fofd    = TCon "FunctorOf" :@@: TVar "d"
-> a -=> b = TCon "->" :@@: a :@@: b
 
 > (sumtypename,[leftname,rightname]) = ("Either",["Left","Right"])
 > sumdatadef = DataDef sumtypename ["a","b"] 
@@ -144,7 +142,7 @@ Gofer's {\tt cc.prelude}.
 
 > preludedatadefs = 
 >   [DataDef "[]" ["a"] 
->            [("[]",[]), (":",[TVar "a",TCon "[]" :@@: TVar "a"])] 
+>            [("[]",[]), (":",[TVar "a",TCon listConstructor :@@: TVar "a"])] 
 >            [] -- deriving
 >   ,DataDef "Maybe" ["a"] 
 >            [("Nothing",[]), ("Just",[TVar "a"])]

@@ -181,27 +181,26 @@ import MonadLibrary(Error)
 >   pretty = prType
 
 > prType :: Type -> Doc
-> prType (TVar v) = text v
-> prType (TCon c) = text c
-> prType (TCon "[]" :@@: t) = text "[" <> prType t <> text "]"
+> prType (TVar v)                = text v
+> prType (TCon c)                = text c
+> prType (TCon c :@@: t) | c == listConstructor 
+>                                = text "[" <> prType t <> text "]"
 > prType x@(_ :@@: _) 
->   | tupletypetest fun == n  = ppTuple args
->   | isArrow fun && n==2     = prArrow (head args) (head (tail args))
->   | isTypeOp fun      = prTypeOp fun args
->   | otherwise               = sep (prT fun : map (nest 2.prT) args)
+>   | tupletypetest fun == n     = ppTuple args
+>   | isFunctionType fun && n==2 = prArrow (head args) (head (tail args))
+>   | isTypeOp fun               = prTypeOp fun args
+>   | otherwise                  = sep (prT fun : map (nest 2.prT) args)
 >   where
 >     (fun:args) = spineWalkType x
 >     n = length args
-
-> isArrow (TCon "->") = True
-> isArrow _ = False
 
 > prT x = (if isSimpleType x then id else ppParentheses) (prType x)
 
 > prArrow r d = sep [ppleft r (prType r) <> text " ->", prType d] 
 >   where
->     ppleft (TCon "->" :@@: s :@@: t) = ppParentheses 
->     ppleft   _                       = id
+>     ppleft (c :@@: s :@@: t) 
+>        | isFunctionType s    = ppParentheses 
+>     ppleft   _               = id
 
 \end{verbatim}
 \section{Literals}
@@ -300,7 +299,7 @@ prOperator&prExpr, prP            & \\
 \end{tabular}
 \\
 \begin{tabular}{lll}
-prType & prType, prT, prArrow, prTypeOp & isArrow,tupletypetest,isTypeOp\\
+prType & prType, prT, prArrow, prTypeOp & isFunctionType,tupletypetest,isTypeOp\\
 prT    & prType & isSimpleType\\
 prArrow& prType & \\
 prTypeOp & prT & \\

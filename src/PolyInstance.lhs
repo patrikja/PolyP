@@ -9,14 +9,14 @@ functions.
 > import Env(Env,mapEnv,lookasideST,lookupEnv,extendsEnv,newEnv)
 > import Grammar(Eqn'(..),Expr'(..),Type(..),Qualified(..),
 >                Eqn,TEqn,Expr,TExpr,Func,QType,VarID,ConID,
->                PrgTEqns, changeNameOfBind,noType)
+>                PrgTEqns, changeNameOfBind,noType,
+>                tupleConstructor,listConstructor)
 > import Folding(cataType,cataEqn,cataExpr,ExprFuns,EqnFuns)
 > import Functorize(inn_def,out_def,either_def,fcname_def,
 >                   makeFunctorStruct,Struct,Req,eqReq)
 > import MonadLibrary(State, executeST, mapl,(<@),(@@),unDone,
 >                     OutputT,output,runOutput,mliftOut,map0,map1,map2)
 > import MyPrelude(maytrace,pair,mapFst,mapSnd,combineUniqueBy,  debug)
-> import Parser(tupleConstructor)
 > import PrettyPrinter(Pretty(..))
 > import StartTBasis(preludeFuns,preludedatadefs)
 > import TypeBasis(TBasis,TypeEnv)
@@ -503,7 +503,7 @@ instead of {\tt F[]} to make it possible to parse.
 >     s (TCon "+")     = ('S':)
 >     s (TCon "*")     = ('P':)
 >     s (TCon "@")     = ('A':)
->     s (TCon d)       = ((codeStr d)++)
+>     s (TCon d)       = ((codeTyCon d)++)
 >     s t@(TVar v)     = error ("codeFunctor: uninstantiated functor variable " ++
 >                               show (pretty t) ++ " found as part of " ++ show (pretty f) )
 
@@ -519,7 +519,7 @@ instead of {\tt F[]} to make it possible to parse.
 >     p ('S':xs)  = mapSnd plus (popp xs)
 >     p ('P':xs)  = mapSnd prod (popp xs)
 >     p ('A':xs)  = mapSnd appl (popp xs)
->     p xs | isDigit (head xs) = mapSnd TCon (decodeStr xs)
+>     p xs | isDigit (head xs) = mapSnd TCon (decodeTyCon xs)
 >     popp = p `op` p
 >     plus (t,t') = TCon "+" :@@: t :@@: t'
 >     prod (t,t') = TCon "*" :@@: t :@@: t'
@@ -528,15 +528,16 @@ instead of {\tt F[]} to make it possible to parse.
 >       where (ys,y) = w  xs
 >             (zs,z) = w' ys
 
-> codeStr :: String -> String
-> codeStr "[]" = "0"
-> codeStr s = show (length s) ++ s
+> codeTyCon :: ConID -> String
+> codeTyCon c | c == listConstructor = "0"
+>             | otherwise            = show (length c) ++ c
 
-> decodeStr :: String -> (String,String)
-> decodeStr s | n > 0 = splitAt n text
->             | n ==0 = ("[]",text)
->             | True  = error "PolyInstance.decodeStr: impossible: negative length"
+> decodeTyCon :: String -> (ConID,String)
+> decodeTyCon s | n > 0  = splitAt n text
+>               | n == 0 = (listConstructor,text)
+>               | True   = error "PolyInstance.decodeTyCon: impossible: negative length"
 >    where (num,text) = span isDigit s
+>          n :: Int
 >          n = read num
 
 \end{verbatim}

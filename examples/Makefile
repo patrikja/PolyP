@@ -1,4 +1,5 @@
-PolyP = polyp
+PolyP := $(firstword $(wildcard ../bin/*polyp) polyp)
+#PolyP = polyp
 PERL = perl
 
 targets = testSum.hs testCrush.hs testFlatten.hs testPropagate.hs	\

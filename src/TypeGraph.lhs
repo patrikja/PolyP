@@ -87,8 +87,6 @@ We need a version of \verb|lookaside| that uses pointer equality,
 
 > mkFun a b = mkConApp functionConstructor [a, b]
 
-> functionConstructor = "->"
-
 > mkConApp conID args = mkCon conID >>= \con -> 
 >                       mfoldl mkApp con args
 

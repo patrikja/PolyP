@@ -6,10 +6,10 @@ they receive be non-space.
 
 \begin{verbatim}
 
-> module Parser(parse,pModule,pType0,pType1,tupleConstructor) where
+> module Parser(parse,pModule,pType0,pType1) where
 
 > import Char(isUpper,isLower,isAlphanum,isDigit)
-> import MyPrelude(mapSnd,copy)
+> import MyPrelude(mapSnd)
 > import MonadLibrary((<:*>),(<*>),(<@),(<@-),(<<),liftop,
 >                     mapl,ErrorMonad(failEM))
 > import ParseLibrary(Parser,item,lit,sat,digit,opt,optional,
@@ -18,7 +18,9 @@ they receive be non-space.
 >                     many,some,strip, parse)
 > import Grammar(Expr'(..),Eqn'(..),Type(..),Qualified(..),Literal(..),
 >                Expr,Eqn,Func,QType,Qualifier,VarID,ConID,
->                qualify,noType,spineWalk,spineWalkType)
+>                qualify,noType,spineWalk,spineWalkType,(-=>),
+>                tupleConstructor,listConstructor,isTupleCon,
+>		 functionConstructor)
 
 \end{verbatim}
 The parser is not in good shape and uses far too many reductions
@@ -274,7 +276,9 @@ The element of the unit type - \verb|()| - is represented by
 >        ++ pParenthesized pExprTuple
 > 
 > pExprVar = map Var pVarID
-> pExprCon = map Con pConID
+> pExprCon = map Con $
+>                  pConID
+>               ++ pTupleCon   -- () (,) (,,) ...
 
 \end{verbatim}
 Lambda expressions are currently only allowing one argument. The
@@ -374,9 +378,9 @@ characters.  This could be solved using {\tt reads :: Read a => String
 -> [(a,String)]} if it can be transformed into a Parser.
 
 \section{Types}
-The list type \verb|[]| is represented by \verb|TCon "[]"| and a
-3-tuple is represented by \verb|TCon "(,,)"|. A 1-tuple is just a
-parenthesized expression.
+The list type constructor \verb|[]| is represented by \verb|TCon "[]"|
+and a 3-tuple is represented by \verb|TCon "(,,)"|. A 1-tuple is just
+a parenthesized expression.
 
 To parse a qualified type ({\tt pType0}) we use the fact that the
 context looks like a type followed by an arrow ``\verb|=>|''. This
@@ -385,11 +389,6 @@ a context, we can start parsing a type and --- if it is followed by an
 arrow --- transform it to a context and parse the rest.
 
 \begin{verbatim}
-
-> listConstructor    = "[]"
-> tupleConstructor n = ( ('(':copy (max (n-1) 0) ',')++")")
-> isTupleCon (c:cs) = c=='('
-> isTupleCon []     = error "Parser: isTupleCon: impossible: empty constructor"
 
 > type2context :: Type -> Parser [Qualifier Type]
 > type2context = check . map spineWalkType . untuple 
@@ -408,8 +407,7 @@ arrow --- transform it to a context and parse the rest.
 
 liftop (:=>) pContext pType1
 
-> pType1 = pType2 `chainr` (symbol "->" <@- arrow)
->   where arrow a b = TCon "->" :@@: a :@@: b
+> pType1 = pType2 `chainr` (symbol "->" <@- (-=>))
  
 > pType2 = pType3 `chainl` return (:@@:)
  
@@ -421,7 +419,24 @@ liftop (:=>) pContext pType1
 ***Hack addition to allow _parsing_ of existential types. (No type checking.)
 
 > pTypeVar = map TVar (pVarID ++ sat (=='?') <:*> pVarID)
-> pTypeCon = map TCon pConID
+
+From the Haskell report:
+  gtycon -> qtycon
+	  | () (unit type)
+	  | [] (list constructor)
+	  | (->) (function constructor)
+	  | (,{,}) (tupling constructors)
+
+> pTypeCon = map TCon $
+>              pConID
+>           ++ symbol listConstructor 
+>           ++ symbol "(->)" <@- functionConstructor
+>           ++ pTupleCon
+
+> pTupleCon :: Parser ConID
+> pTupleCon = pParenthesized (many (lit ',')) <@ (tupleConstructor . tupNum)
+>   where tupNum "" = 0
+>         tupNum s  = length s + 1
 
 > pTypeList = pType1 <@ ((TCon listConstructor):@@:) 
  

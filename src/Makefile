@@ -12,23 +12,28 @@ default:	ghc
 CPP = cpp -P -C -traditional
 #CPP = gcc -E -C -P -traditional -x c-header
 
-hugssrc:
-	cp hugs.mk ../hugssrc/Makefile
-	cppdir . ../hugssrc -D__HUGS__
+# All Haskell source files in this directory
+lhs_files = $(wildcard *.lhs)
 
-oldhugssrc:
+hugssrc: $(lhs_files:%=../hugssrc/%)
 	cp hugs.mk ../hugssrc/Makefile
-	cppdir . ../hugssrc "-D__OLD_HUGS__ -D__HUGS__"
 
-ghcsrc:
+../hugssrc/%.lhs:	../src/%.lhs
+	$(CPP) -D__HUGS__ $< -o $@  
+
+ghcsrc: $(lhs_files:%=../ghcsrc/%)
 	cp ghc.mk ../ghcsrc/Makefile
 	cp rules.mk depends.mk ../ghcsrc/
-	cppdir . ../ghcsrc -D__GLASGOW_HASKELL__
 
-hbcsrc:
+../ghcsrc/%.lhs:	../src/%.lhs
+	$(CPP) -D__GLASGOW_HASKELL__ $< -o $@  
+
+hbcsrc: $(lhs_files:%=../hbcsrc/%)
 	cp hbc.mk ../hbcsrc/Makefile
 	-cp hbcdepends.mk ../hbcsrc/
-	cppdir . ../hbcsrc -D__HBC__
+
+../hbcsrc/%.lhs:	../src/%.lhs
+	$(CPP) -D__HBC__ $< -o $@  
 
 # make ghc/hbc in this directory uses cpp as a filter
 export hs_flags += -cpp
@@ -39,7 +44,7 @@ ghc:
 #   => both ghc and hbc can compile in the same directory
 
 hbc:
-# the -o prevents remaking of hbcdepends.mkAXS
+# the -o prevents remaking of hbcdepends.mk
 	$(MAKE) -f hbc.mk -o hbcdepends.mk  \
                    hs_link_flags=$(HOME)/haskell/hbcfix/fix.o
 # last line is a hack to overcome an hbc-installation problem at
@@ -62,4 +67,10 @@ hbcclean::
 veryclean::	clean
 	rm -f *.hi
 	rm -f *.g_hi
+
+# old stuff
+
+oldhugssrc:
+	cp hugs.mk ../hugssrc/Makefile
+	cppdir . ../hugssrc "-D__OLD_HUGS__ -D__HUGS__"
 
