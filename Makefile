@@ -107,6 +107,7 @@ dist: polyp-$(polyp_version).tar.gz
 polyp-$(polyp_version):
 	-rm -r $@
 	cvs export -D now -d $@  p
+	-rm polyp-$(polyp_version)/polylib/*.lphs
 
 polyp-$(polyp_version).tar.gz: polyp-$(polyp_version)
 	-rm -r $@
