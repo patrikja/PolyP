@@ -13,6 +13,7 @@
 > import PrettyPrinter(Pretty(..),($$),text,pshow)
 > import StateFix -- [(runST [,RunST])] in hugs, ghc, hbc
 > import System(getProgName)
+> import qualified IO(stderr)
 > import TypeBasis(TBasis)
 > import Flags(Flags(..),flags)
 
@@ -221,7 +222,11 @@ Two possible approaches:
 \begin{verbatim}
  
 > main :: IO ()
-> main =  report
+> main = seq IO.stderr report 
+
+The "seq stderr" is a try to work around a ghc-bug:
+  "The problem is caused by overzealous locking in our I/O library"
+(GHC 4.06 Mini-FAQ, http://haskell.org/ghc/faq_406.html)
 
 #ifdef __DEBUG__
 > testunify = do t <- getType

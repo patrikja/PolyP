@@ -1,7 +1,7 @@
 \chapter{Predefined instances}
 \begin{verbatim}
 
-> module BuiltinInstances(inn_def,out_def,either_def,fcname_def,
+> module BuiltinInstances(inn_def,out_def,either_def,fcname_def,dname_def,
 >                         makeUncurry,parseUncurry,isUncurry,
 >                         Req,eqReq) where
 > import Env(lookupEnv)
@@ -12,7 +12,8 @@
 > import Folding(cataType)
 > import MonadLibrary(Error(..),ErrorMonad(..),map0,map1,map2,accumseq)
 > import MyPrelude(mapFst,mapSnd,pair,variablename,fMap)
-> import StartTBasis(innType,outType,fcnameType,leftname,rightname,eitherType)
+> import StartTBasis(innType,outType,fcnameType,dnameType,
+>		     leftname,rightname,eitherType)
 > import PrettyPrinter(pshow)
 
 \end{verbatim}
@@ -118,6 +119,9 @@ out_name x = case x of
 \subsection{Generating {\tt fconstructorName}}
 \begin{verbatim}
 
+datatypeName :: Regular d => d a -> String
+datatypeName _ = D
+
 fconstructorname :: Bifunctor f => f a b -> String
 fconstructorname = (\_->C1) `either` ((\_->C2) `either` ... (\_->Cn))...)
 
@@ -130,8 +134,14 @@ fconstructorname = (\_->C1) `either` ((\_->C2) `either` ... (\_->Cn))...)
 >     noPoly = [] :=> undefined
 >     reqs   = map (`pair` noPoly) needed 
 >     needed = if length ss > 1 then ["either"] else []
->     constf :: ConID -> Expr' t
->     constf = (Lambda WildCard) . Literal . StrLit
+
+> constf :: ConID -> Expr' t
+> constf = (Lambda WildCard) . Literal . StrLit
+
+> dname_def :: VarID -> ConID -> (QType,([Req],[Eqn]))
+> dname_def n d = (dnameType, (noReqs, [VarBind n Nothing [] (constf d)]))
+>   where 
+>     noReqs = []
 
 \end{verbatim}
 \subsection{Generating {\tt uncurry}}

@@ -3,6 +3,9 @@
 --   990602 Patrik Jansson
 module ConstructorName where
 ---------------------------------------------------------------
+datatypeName :: Regular d => d a -> String
+-- datatypeName  is built in
+
 constructorName :: Regular d => d a -> String
 constructorName = fconstructorName . out
 -- fconstructorName :: Bifunctor f => f a b -> String -- is built in

@@ -3,14 +3,14 @@
 
 > module StartTBasis(startTBasis,preludeFuns,
 >                    innType,outType,charType,intType,floatType,
->                    eitherType,fcnameType,boolType,strType,
+>                    eitherType,fcnameType,dnameType,boolType,strType,
 >                    sumtypename,leftname,rightname,
 >                    preludedatadefs,sumdatadef) where
 > import Parser(pType0,pType1,pTypeFile)
 > import ParseLibrary(parse)
 > import MyPrelude(mapSnd,splitUp,variablename,putErrStr)
 > import Grammar(Eqn,Eqn'(..),Qualified(..),Type(..),VarID,Func,ConID,
->                (-=>),QType,Kind,qualify,deQualify,isDataDef,
+>                (-=>),QType,Kind,qualify,deQualify,isDataDef,isExplType,
 >                tupleConstructor,listConstructor,functionConstructor,
 >		 getNameOfDataDef)
 > import MonadLibrary(unDone,(<@),(<@-),unLErr)
@@ -33,9 +33,10 @@ For the PolyP version - see \verb|../lib/PolyPrel.hs|.
 
 > typeass :: [(VarID,QType)]
 > typeass = polypass ++ haskellass
-> polypass :: [(VarID,QType)]
+> polypass :: [(VarID,QType)] 
 > polypass = [("inn",innType),("out",outType),
->             ("fconstructorName",fcnameType)]
+>             ("fconstructorName",fcnameType),
+>	      ("datatypeName",dnameType)]
 
 > preludeFuns :: [VarID]
 > preludeFuns = map fst haskellass
@@ -55,7 +56,7 @@ Second try: added data-declarations also.
 > preludeAssocs = concatMap convExplType explTypes
 
 > dataDefs, explTypes, preludeEqns :: [Eqn]
-> [dataDefs, explTypes] = splitUp [isDataDef] preludeEqns
+> [dataDefs, explTypes, _] = splitUp [isDataDef,isExplType] preludeEqns
 
 > convExplType :: Eqn -> [(VarID,QType)]
 > convExplType (ExplType ns t) = ns <@ (\n->(n,t))
@@ -145,7 +146,8 @@ Gofer's {\tt cc.prelude}.
 > charType= [] :=> TCon "Char"
 > boolType= [] :=> TCon "Bool"
 > strType = [] :=> TCon listConstructor :@@: TCon "Char"
-> fcnameType= bifun :=> fab -=> deQualify strType
+> fcnameType= bifun   :=> fab -=> deQualify strType
+> dnameType = regular :=> da  -=> deQualify strType
 
 > fab, da, fada, fofd :: Type
 > fab     = TVar "f" :@@: TVar "a" :@@: TVar "b"

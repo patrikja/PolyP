@@ -35,7 +35,7 @@ command line via flags and parameters to instantiateProgram.
 > import Folding(cataType,stripTEqn,mmapTEqn,mapEqn)
 > import Functorise(Struct,makeFunctorStruct)
 > import FunctorNames(codeFunctors)
-> import BuiltinInstances(inn_def,out_def,either_def,fcname_def,
+> import BuiltinInstances(inn_def,out_def,either_def,fcname_def,dname_def,
 >                         makeUncurry,parseUncurry,isUncurry,
 >                         Req,eqReq)
 > import TypeGraph(simplifyContext)
@@ -366,6 +366,9 @@ Remaining bugs:
 
 \end{verbatim}
 \subsection{either}
+
+Either is predefined in Haskell 98.
+
 \begin{verbatim}
 either f g x = case x of 
                (Left a) -> f a
@@ -376,12 +379,13 @@ either f g x = case x of
 \end{verbatim}
 \subsection{fconstructorName}
 \begin{verbatim}
-fconstructorName
 
-> specPolyInst funcenv n@"fconstructorName" tinst = 
+> specPolyInst funcenv n tinst | n `elem` specialNameDefinitions = 
 >     case functors of
->       [TCon "FunctorOf" :@@: TCon d] -> 
+>       [TCon "FunctorOf" :@@: TCon d] | n == "fconstructorName" -> 
 >            setT funcenv tinst (fcname_def (n++extra) (struct d))
+>                                      | n == "datatypeName"     -> 
+>            setT funcenv tinst (dname_def (n++extra) d)
 >       _ -> error ("specPolyInst: fconstructorName can not be generated for "++
 >                   concat (map pshow functors))
 >   where functors = getFunctors tfusk tinst
@@ -395,6 +399,9 @@ fconstructorName
 \begin{verbatim}
 
 > specPolyInst _        n _ = error ("specPolyInst: not implemented yet:"++n)
+
+> specialNameDefinitions :: [String]
+> specialNameDefinitions = ["fconstructorName", "datatypeName"]
 
 > setT :: FuncEnv -> QType -> (QType,(a,[Eqn])) -> (a,[Eqn])
 > setT _ tinst (tdef,p) = mapSnd (map (setType tOK)) p
@@ -427,7 +434,7 @@ fconstructorName
 > specFuns :: [VarID]
 
 > isSpecFun name = name `elem` specFuns || isUncurry name
-> specFuns = ["inn","out","fconstructorName"]
+> specFuns = ["inn","out"] ++ specialNameDefinitions
 
 \end{verbatim} 
 The list {\tt preludeFuns} contains the names of the Haskell prelude

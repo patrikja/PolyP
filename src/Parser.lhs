@@ -23,6 +23,7 @@ they receive be non-space.
 >                qualify,noType,spineWalk,spineWalkType,(-=>),
 >                tupleConstructor,listConstructor,isTupleCon,
 >                functionConstructor)
+> import qualified Maybe(catMaybes)
 #ifdef __HBC__
 > import Monad() -- hbc does not import instance declarations correctly
 #endif
@@ -33,7 +34,7 @@ right now. (Plus it's UGLY!)
 
 \section{Module}
 The module parser accepts but ignores the module head, exports and imports.
-%
+
 \begin{verbatim}
 
 > pModule :: Parser [Eqn]
@@ -560,20 +561,29 @@ Function \texttt{pPack'} does not allow space after leading symbol.
 
 \subsection{Searching for explicit types and \texttt{data} declarations}
 
+The idea is to scan a Haskell file for type and data declarations but
+ignoring any other definitions. We use the hack "pAnyLine" to parse
+any line that does not look like a type or a data, but this can be
+fooled by various Haskell constructs like x::a on a single line in a
+where, or perhaps by nested comments. The alternative would be to use
+the full parser, but this would force the file to conform to the
+limited syntax of PolyP's Haskell. (And it would be inefficient, but
+this is only a secondary issue.)
+
 \begin{verbatim}
 
-> pMaybeExplType :: Parser Eqn
-> pMaybeExplType = pDataDef+++ pExplType+++ pAnyLine
+> pMaybeExplType :: Parser (Maybe Eqn)
+> pMaybeExplType = (pDataDef+++ pExplType) <@ Just 
+>               +++ pAnyLine
 
-*** fishy parser! Should accept anything not inluding type or data.
-
-> pAnyLine :: Parser Eqn
-> pAnyLine = strip (some (sat (/='\n')) >> sat (=='\n')) 
->              <@- ExplType [] (error "Parser.pAnyLine: internal error")
+> pAnyLine :: Parser (Maybe Eqn)
+> pAnyLine = many (sat (/='\n')) >> sat (=='\n')
+>              <@- Nothing
 
 > pTypeFile :: Parser [Eqn]
 > pTypeFile = pModuleHead >>  -- throw away the head
 >             pImpDecls >>    -- and the imports
->             some_offside pMaybeExplType `opt` [] -- return the types
+>             some_offside pMaybeExplType `opt` [] 
+>               <@ Maybe.catMaybes
 
 \end{verbatim}
