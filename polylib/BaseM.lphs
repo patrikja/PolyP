@@ -6,6 +6,7 @@
 %if codeOnly
 
 > module BaseM(pmapM,fmap2M,cataM,anaM,hyloM,paraM,innM,outM,idM,(@@)) where
+> import PolyPrelude
 > import Base((-*-))
 
 %else

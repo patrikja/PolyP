@@ -5,6 +5,7 @@
 % ------------------------------------------------------------
 
 > module Sum(psum,fsum,size) where 
+> import PolyPrelude
 > import Base(cata,pmap)
 
 %{

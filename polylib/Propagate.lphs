@@ -6,6 +6,7 @@
 % ------------------------------------------------------------
 
 > module Propagate(propagate,fprop,sumprop,prodprop,mapMaybe) where
+> import PolyPrelude
 > import Base(cata,inn,pmap)
 
 %{

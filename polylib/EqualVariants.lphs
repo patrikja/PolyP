@@ -5,6 +5,7 @@
 % ------------------------------------------------------------
 
 > module EqualVariants(pequal,peq) where
+> import PolyPrelude
 > import Flatten(flatten,fl_all)
 > import Zip(pzip,pzipWith')
 

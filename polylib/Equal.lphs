@@ -5,6 +5,7 @@
 % ------------------------------------------------------------
 
 > module Equal(pequal,fequal,peq) where
+> import PolyPrelude
 
 > peq :: (Regular d, Eq a) => d a -> d a -> Bool
 > peq = pequal (==)

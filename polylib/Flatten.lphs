@@ -5,6 +5,7 @@
 % ------------------------------------------------------------
 
 > module Flatten(flatten,fflatten,fl_par,fl_rec,fl_all,singleton,nil,substructures) where
+> import PolyPrelude
 > import Base(pmap,fmap2)
 
 %{

@@ -5,6 +5,7 @@
 % ------------------------------------------------------------
 
 > module Zip(pzip,fzip,pzipWith,pzipWith',fzipWith,fzipWith) where
+> import PolyPrelude
 > import Base(pmap,fmap2,(-+-),(-*-))
 > import Propagate(fprop,sumprop,prodprop,propagate,mapMaybe)
 

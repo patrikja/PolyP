@@ -5,6 +5,7 @@
 % ------------------------------------------------------------
 
 > module Compare(pcompare',pcompare,fcompare) where
+> import PolyPrelude
 
 %if simulateInHaskell
 

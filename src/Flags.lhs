@@ -35,7 +35,8 @@
 >                       version          = False,
 >                       help             = False,
 >                       requests         = [],
->                       preludeFileNames = [preludeFileName, "Prelude.phi"],
+>                       --preludeFileNames = [preludeFileName, "Prelude.phi"],
+>                       preludeFileNames = ["Prelude.phi"],
 >                       polypDir         = thePolyPDir,
 >                       fileargs         = []}
 

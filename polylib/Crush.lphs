@@ -7,6 +7,7 @@
 %align 26
 
 > module Crush(crush,fcrush) where 
+> import PolyPrelude
 > import Base(cata,pmap)
 
 > crush :: Regular d => (a->a->a) -> a -> d a -> a

@@ -5,6 +5,7 @@
 % ------------------------------------------------------------
 
 > module ThreadFuns(propagate,cross) where
+> import PolyPrelude
 > import Thread(thread)
 > 
 > cross :: Regular d => d [a] -> [d a]

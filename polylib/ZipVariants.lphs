@@ -5,6 +5,7 @@
 % -------------------------------------------------------------
 
 > module ZipVariants(pzipWith'',pzip'',pzip') where
+> import PolyPrelude
 > import Zip(pzipWith,pzipWith')
 > import Flatten(fl_all)
 > 

@@ -1,4 +1,5 @@
 module Base(pmap,fmap2,cata,ana,hylo,para,(-*-),(-+-)) where
+import PolyPrelude
 pmap :: Regular d => (a -> b) -> d a -> d b
 pmap f   = inn . fmap2 f  (pmap f)   . out
 

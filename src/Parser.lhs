@@ -553,7 +553,10 @@ From the Haskell report:
 \begin{verbatim}
 
 > pConID :: Parser ConID
-> pConID = strip (sat isUpper <:*> many (sat isVarChar))
+> pConID = do	c <- con
+>		cs <- many (lit '.' <:*> con)
+>		return $ c ++ concat cs
+>   where con = strip (sat isUpper <:*> many (sat isVarChar))
 
 > pVarID :: Parser VarID
 > pVarID = strip (sat isLower <:*> many (sat isVarChar)) 

@@ -5,6 +5,7 @@
 % ------------------------------------------------------------
 
 > module ConstructorName where
+> import PolyPrelude
 
 Functions |datatypeName| and |fconstructorName| are built in.
 

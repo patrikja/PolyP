@@ -5,6 +5,7 @@
 % ------------------------------------------------------------
 
 > module Thread(thread,pmapM,fthread,fmap2M) where
+> import PolyPrelude
 > import Base(cata,inn,pmap)
 > import BaseM(pmapM,fmap2M,(@@))
 

@@ -129,18 +129,22 @@ In verbose mode every stage of the program generation presents a summary:
 >		_			    -> ExitFailure 1
 >         (sp,err) = mapLErr pshow im
 >         im = mapLErr (addClasses $ getTypeEnv $ fst $ fst lp) im0
->         im0 = mapLErr (Module name exps (("PolyPrelude",[]):imps)) ip
+>         --im0 = mapLErr (Module name exps (("PolyPrelude",[]):imps)) ip
+>         im0 = mapLErr (Module name exps imps) ip
 >         ip = mapLErr instantiateProgram lp
 >         r3 = typeReport lp
 >         lp = labelProgram pqs
 >         r2 = dependencyReport pqs
 >         pqs= dependencyProgram qs
 >         r1 = parserReport qs
->         r0 = setImportFileNames $ map ((++".phi") . fst) imps
+>         r0 = setImportFileNames $ map ((++".phi") . dot2slash . fst) imps
 >         Module name exps imps qs = m
 >         m  = parseProgram p
 >         flush = putErrStrLn "" >> flushErr
 >         getExps (Module _ exps _ _) = exps
+>	  dot2slash = map s
+>	    where s '.' = '/'
+>		  s c = c
 
 > showVersion :: IO ()
 > showVersion = putStrLn versionText
