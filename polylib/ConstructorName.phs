@@ -8,6 +8,10 @@ constructorName :: d a -> String
 constructorName = fconstructorName . out
 -- fconstructorName :: f a b -> [Char]  is built in
 
+constructorNames :: d a -> [String]
+constructorNames x = 
+  map fconstructorName (fconstructors `asTypeOf` [out x])
+
 constructors  :: [d a]
 constructors  =  map inn fconstructors
 

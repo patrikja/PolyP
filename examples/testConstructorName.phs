@@ -2,6 +2,6 @@ module Main where
 import ConstructorName(constructorName,constructors)
 data Test a = A a | B (Test a) [Test a] | C (Test a) (Test a) (Test a)
 
-main = print (map constructorName (constructors::[Test a]))
+main = print (constructorNames (A undefined))
 
 --expected output: ["A", "B", "C"]

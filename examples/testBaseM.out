@@ -1,1 +1,1 @@
-[Fork '1' [Fork 'a' [], Fork 'q' []], Fork '1' [Fork 'b' [], Fork 'q' []], Fork '2' [Fork 'a' [], Fork 'q' []], Fork '2' [Fork 'b' [], Fork 'q' []]]
+(True, True)

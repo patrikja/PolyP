@@ -1,8 +1,10 @@
 module Main where
 import Base(pmap)
 import BaseM(pmapM)
-data Rose a = Fork a [Rose a] deriving Show
+data Rose a = Fork a [Rose a] deriving (Eq,Show)
 f = Fork 
 l x = f x []
 x = f "12" [l "ab", l "q"]
-main = print (pmapM id x)
+main = print (pmapM' True  id x == pmapM  id x
+             ,pmapM' False id x == pmapMr id x)
+
