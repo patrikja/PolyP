@@ -40,6 +40,7 @@ instance FunctorOf (SumF EmptyF ParF) Maybe where
 data    SumF f g a b  = InL (f a b)
                       | InR (g a b)                    deriving Show
 data    ProdF f g a b = f a b :*: g a b                deriving Show
+data	FunF f g a b  = FunF   {unFunF	 :: f a b -> g a b}
 data    EmptyF a b    = EmptyF                         deriving Show
 newtype ParF a b      = ParF   {unParF   :: a}         deriving Show
 newtype RecF a b      = RecF   {unRecF   :: b}         deriving Show
@@ -102,9 +103,11 @@ toPar		= ParF
 toRec		= RecF
 toConst		= ConstF
 toComp toG	= CompF . gmap toG
+toFun fromG toH	= FunF . (toH.) . (.fromG)
 
 fromPar		= unParF
 fromRec		= unRecF
 fromConst	= unConstF
 fromComp fromG	= gmap fromG . unCompF
+fromFun toG fromH   = (fromH.) . (.toG) . unFunF
 

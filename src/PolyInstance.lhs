@@ -76,6 +76,7 @@ from the sugared versions used in the PolyP code (+ -> SumF, * -> ProdF, ...)
 >              TCon "Rec"     -> TCon "RecF"
 >              TCon "@"       -> TCon "CompF"
 >              TCon "Const"   -> TCon "ConstF"
+>	       TCon ">"	      -> TCon "FunF"
 >              f :@@: g       -> realFuncNames f :@@: realFuncNames g
 >              _              -> t
 
@@ -125,12 +126,16 @@ the datatype and its functor.
 
 >           -- Takes a list of constructor arguments and computes pattern and result arguments
 >           inn'' (TCon "EmptyF":fs) names   = addP (Con "EmptyF") $ inn'' fs names
->           inn'' (TCon "ParF":fs) (n:names) = addPE (Con "ParF" :@: Var n) (Var n) $ inn'' fs names
->           inn'' (TCon "RecF":fs) (n:names) = addPE (Con "RecF" :@: Var n) (Var n) $ inn'' fs names
->           inn'' ((TCon "CompF" :@@: d :@@: g):fs) (n:names)
->              = addPE (Con "CompF" :@: Var n) (Var "gmap" :@: unF g :@: Var n) $ inn'' fs names
->           inn'' ((TCon "ConstF" :@@: t):fs) (n:names)
->              = addPE (Con "ConstF" :@: Var n) (Var n) $ inn'' fs names
+>	    inn'' (c:fs) (n:names)	    = addPE (Var n) (fromFunction c :@: Var n) $ inn'' fs names
+
+           inn'' (TCon "ParF":fs) (n:names) = addPE (Con "ParF" :@: Var n) (Var n) $ inn'' fs names
+           inn'' (TCon "RecF":fs) (n:names) = addPE (Con "RecF" :@: Var n) (Var n) $ inn'' fs names
+           inn'' ((TCon "CompF" :@@: d :@@: g):fs) (n:names)
+              = addPE (Con "CompF" :@: Var n) (Var "gmap" :@: unF g :@: Var n) $ inn'' fs names
+           inn'' ((TCon "ConstF" :@@: t):fs) (n:names)
+              = addPE (Con "ConstF" :@: Var n) (Var n) $ inn'' fs names
+	    inn'' ((TCon "FunF" :@@: f :@@: g):fs) (n:names) = addPE (Con "FunF" :@: Var n) (Var n) $ inn'' fs names
+
 >           inn'' [] _ = ([],[])
 >	    inn'' (x:fs) _ = error $ "inn'' applied to " ++ show x
 
@@ -146,13 +151,34 @@ the datatype and its functor.
 
 >           -- Takes a list of constructor arguments and computes pattern and result arguments
 >           out'' (TCon "EmptyF":fs) names   = addE (Con "EmptyF") $ out'' fs names
->           out'' (TCon "ParF":fs) (n:names) = addPE (Var n) (Con "ParF" :@: Var n) $ out'' fs names
->           out'' (TCon "RecF":fs) (n:names) = addPE (Var n) (Con "RecF" :@: Var n) $ out'' fs names
->           out'' ((TCon "CompF" :@@: d :@@: g):fs) (n:names)
->              = addPE (Var n) (Con "CompF" :@: (Var "gmap" :@: nuF g :@: Var n)) $ out'' fs names
->           out'' ((TCon "ConstF" :@@: t):fs) (n:names)
->              = addPE (Var n) (Con "ConstF" :@: Var n) $ out'' fs names
+>	    out'' (c:fs) (n:names)	     = addPE (Var n) (toFunction c :@: Var n) $ out'' fs names
+
+           out'' (TCon "ParF":fs) (n:names) = addPE (Var n) (Con "ParF" :@: Var n) $ out'' fs names
+           out'' (TCon "RecF":fs) (n:names) = addPE (Var n) (Con "RecF" :@: Var n) $ out'' fs names
+           out'' ((TCon "CompF" :@@: d :@@: g):fs) (n:names)
+              = addPE (Var n) (Con "CompF" :@: (Var "gmap" :@: nuF g :@: Var n)) $ out'' fs names
+           out'' ((TCon "ConstF" :@@: t):fs) (n:names)
+              = addPE (Var n) (Con "ConstF" :@: Var n) $ out'' fs names
+
 >           out'' [] _ = ([],[])
+
+>	    -- Remodelling
+
+>	    -- toFunction : g --> toG
+>	    toFunction (TCon "ParF")		    = Var "toPar"
+>	    toFunction (TCon "RecF")		    = Var "toRec"
+>	    toFunction (TCon "CompF" :@@: _ :@@: g) = Var "toComp" :@: toFunction g
+>	    toFunction (TCon "ConstF" :@@: _)	    = Var "toConst"
+>	    toFunction (TCon "FunF" :@@: g :@@: h)  = Var "toFun" :@: fromFunction g
+>								  :@: toFunction h
+
+>	    -- fromFunction : g --> fromG
+>	    fromFunction (TCon "ParF")			= Var "fromPar"
+>	    fromFunction (TCon "RecF")			= Var "fromRec"
+>	    fromFunction (TCon "CompF" :@@: _ :@@: g)	= Var "fromComp" :@: fromFunction g
+>	    fromFunction (TCon "ConstF" :@@: _)		= Var "fromConst"
+>	    fromFunction (TCon "FunF" :@@: g :@@: h)	= Var "fromFun" :@: toFunction g
+>									:@: fromFunction h
 
 >           -- Helpers
 >           unF (TCon "ParF") = Var "unParF"
@@ -267,6 +293,10 @@ the correct types and constraints for polytypic functions.
 >                    Instance c
 >                             (className, [TCon "ConstF" :@@: t])
 >                             [simp $ VarBind name Nothing [] e]
+>		  TCon ">" :@@: f :@@: g ->
+>		     Instance c
+>			      (className, [TCon "FunF" :@@: f :@@: g])
+>			      [simp $ VarBind name Nothing [] e]
 >                 _  -> error ("PolyInstance.rewrite: " ++ pshow e ++ ":: " ++ pshow (c :=> t))
 
 \end{verbatim}
