@@ -8,10 +8,12 @@ default:	ghc
 # Clear the implicit suffix-rules
 .SUFFIXES:
 
+POLYPDIR = $(dir $(shell pwd))
+POLYPPRELUDE = $(POLYPDIR)lib/PolyPrel.hs
 # The C-preprocessor
 CPP = gcc -E -C -P -traditional -x c-header
 #CPP = cpp -P -C -traditional
-CPPFLAGS = 
+CPPFLAGS += -D__POLYPPRELUDE__=\"$(POLYPPRELUDE)\"
 
 # All Haskell source files in this directory
 lhs_files = $(wildcard *.lhs)
@@ -54,7 +56,7 @@ hbc:
 
 hugs:
 	@echo "Ignore any warnings about closed pipes."
-	hugs -F"$(CPP) $(CPPFLAGS) -D__HUGS__" Main.lhs
+	hugs -F'$(CPP) $(CPPFLAGS) -D__HUGS__' Main.lhs
 
 clean::	ghcclean hbcclean
 	rm -f *~

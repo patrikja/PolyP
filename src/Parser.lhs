@@ -500,8 +500,8 @@ Function \texttt{pPack'} does not allow space after leading symbol.
 > pMaybeExplType :: Parser [(VarID,QType)]
 > pMaybeExplType = (pExplType <@ convExplType) ++ pAnyLine
 
-> pAnyLine :: Parser [a]
-> pAnyLine = some (sat (/='\n')) <@- []
+> pAnyLine :: Parser [a] 
+> pAnyLine = strip (some (sat (/='\n')) >> sat (=='\n')) <@- []
 
 > pExplicitTypes :: Parser [(VarID,QType)]
 > pExplicitTypes = some_offside pMaybeExplType <@ concat

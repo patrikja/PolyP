@@ -12,10 +12,11 @@
 > import Grammar(Eqn'(..),Qualified(..),Type(..),VarID,(-=>),QType,
 >                deQualify,
 >                tupleConstructor,listConstructor,functionConstructor)
-> import MonadLibrary(Error,unDone)
+> import MonadLibrary(Error,unDone,(<@))
 > import Env(newEnv,extendsEnv)
 > import TypeBasis(TBasis)
 > import NonStdTrace(unsafePerformIO)
+> import System(getEnv,getArgs)
 
 \end{verbatim}
 We will need three versions of the prelude:
@@ -47,14 +48,46 @@ ignored.
 
 \begin{verbatim}
 
-> haskellass2 :: [(String,QType)]
-> haskellass2 = unDone . parse pExplicitTypes . unsafePerformIO $ prelfileIO
+> preludeAssocs :: [(String,QType)]
+> preludeAssocs = unDone . parse pExplicitTypes . unsafePerformIO $ prelfileIO
+
+> getEnvDef :: String -> String -> IO String
+> getEnvDef e d = getEnv e `catch` \ _ -> return d
+
+
+> preludeFileName :: String
+
+#ifdef __POLYPPRELUDE__
+> preludeFileName = __POLYPPRELUDE__
+#else
+> preludeFileName = "PolyPrel.hs"
+#endif
 
 > prelfileIO :: IO String
-> prelfileIO = readFile "prelude.hs"
+> prelfileIO = do 
+>    preludename  <- getEnvDef "POLYPPRELUDE" preludeFileName
+>    includenames <- getArgs <@ preludeFileNames
+>    mapM (readFileDef "") (preludename : includenames) <@ concat
+
+
+> readFileDef :: String -> FilePath -> IO String
+> readFileDef d n = readFile n `catch` \_ -> return d
+
+> includeFlag :: String
+> includeFlag = "-p"
+
+> preludeFileNames :: [String] -> [String]
+> preludeFileNames []       = []
+> preludeFileNames (fl:name:rest) 
+>    | fl == includeFlag    = name:preludeFileNames rest
+> preludeFileNames (_:rest) = preludeFileNames rest
+
 
 > haskellass :: [(String,QType)]
-> haskellass = map (mapSnd (unDone . parse pType0))
+> haskellass = haskellConstructorAssoc ++ preludeAssocs
+
+> haskellConstructorAssoc :: [(String,QType)]
+> haskellConstructorAssoc = map (mapSnd (unDone . parse pType0))
 >              [(listConstructor,"[a]"),(":","a->[a]->[a]"),
 >               (leftname ,"a->"++sumtypename++" a b"),
 >               (rightname,"b->"++sumtypename++" a b"),
@@ -63,59 +96,7 @@ ignored.
 >               ("LT","Ordering"),("EQ","Ordering"),("GT","Ordering"),
 >               (tupleConstructor 0,"()"),
 >               (tupleConstructor 2,"a->b->(a,b)"),
->               (tupleConstructor 3,"a->b->c->(a,b,c)"),
-
->               (".","(b->c)->(a->b)->(a->c)"),
->               ("+","Num a => a->a->a"),
->               ("-","Num a => a->a->a"),
->               ("*","Num a => a->a->a"),
->               ("<=","Ord a => a->a->Bool"),
->               (">=","Ord a => a->a->Bool"),
->               (">" ,"Ord a => a->a->Bool"),
->               ("<" ,"Ord a => a->a->Bool"),
->               ("==","Eq a => a->a->Bool"),
->               ("/=","Eq a => a->a->Bool"),
->               ("&&","Bool->Bool->Bool"),
->               ("||","Bool->Bool->Bool"),
->               ("$","(a->b)->a->b"),
->               ("not","Bool->Bool"),
->               ("and","[Bool]->Bool"),
->               ("all","(a -> Bool) -> [a] -> Bool"),
->               ("any","(a -> Bool) -> [a] -> Bool"),
->               ("compare","Ord a => a -> a -> Ordering"),
->               ("or" ,"[Bool]->Bool"),
->               ("foldr","(a -> b -> b) -> b -> [a] -> b"),
->               ("negate","Num a => a->a"),
->               ("uncurry","(a -> b -> c) -> (a,b) -> c"),
->               ("error","[Char] -> a"),
->               ("undefined","a"),
->               ("print","Show a => a -> IO ()"),
->               ("length","[a]->Int"),
->--               ("",""),
->               ("concat","[[a]]->[a]"),
->               ("maybe","a -> (b -> a) -> Maybe b -> a"),
->               ("const","a->b->a"),
->               ("either",eitherTextType),
->               ("id","a->a"),
->               ("flip","(a -> b -> c) -> b -> a -> c"),
->               ("map","(a->b)->[a]->[b]"),
->               ("++","[a]->[a]->[a]"),
->               ("fst","(a,b)->a"),("snd","(a,b)->b"),
->               ("head","[a]->a"),("tail","[a]->[a]"),
->               ("take","Int->[a]->[a]"),
->               ("filter","(a->Bool)->[a]->[a]"),
->               ("asTypeOf","a->a->a"),
->               ("!!","[a] -> Int -> a"),
->               ("show","Show a => a -> String"),
->               ("isSpace","Char->Bool"),
->               ("words","String->[String]"),
->               ("unwords","[String]->String"),
->               ("zip","[a] -> [b] -> [(a,b)]"),
->--               ("@@","Monad m => (b->m c) -> (a->m b) -> (a->m c)"),
->               ("return","Monad m => a -> m a"),
->               (">>=",   "Monad m => m a -> (a -> m b) -> m b"),
->               (">>",    "Monad m => m a -> m b -> m b"),
->               ("applyM","Monad m => (a -> m b) -> m a -> m b")
+>               (tupleConstructor 3,"a->b->c->(a,b,c)")
 >               ]
 
 \end{verbatim}

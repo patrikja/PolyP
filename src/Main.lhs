@@ -53,13 +53,20 @@ In verbose mode every stage of the program generation presents s summary:
 \begin{verbatim}
 
 > report :: IO ()
-> report = (putStrLn "{-" >>  -- Resync the emacs haskell mode -}
+> report = (putStrLn "{-" >>  -- Resync the emacs haskell mode: -}
 >           getArgs       >>=  
->           handleargs)   >>=  
+>           handleArgs)   >>=  
 >           report' 
->   where handleargs [] = putStr "Filename: " >> getLine
->         handleargs (('-':c:str):rest) | c `elem` "?h" = showUsage
->         handleargs (file:rest)= return file
+
+> includeFlag :: String
+> includeFlag = "-p"
+
+> handleArgs :: [String] -> IO String
+> handleArgs [] = putStr "Filename: " >> getLine
+> handleArgs (('-':c:str):rest) | c `elem` "?h" = showUsage
+> handleArgs (fl:fileName:rest) | fl == includeFlag = print fileName >> handleArgs rest
+> handleArgs (file:rest)= return file
+
 
 > report' :: PrgName -> IO ()
 > report' n = readFile n >>= report''
