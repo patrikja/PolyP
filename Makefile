@@ -1,6 +1,8 @@
 # The Makefile is for the following PolyP-version
 export polyp_version = 1.6
 
+default: ghc
+
 help: 
 	@echo Makefile for PolyP by Patrik Jansson
 	@echo Usage: 
