@@ -79,7 +79,7 @@
 >        $$ text ("the error was: "++mess)
 
 
-> newtype ErrMsg t = ErrMsg {unErrMsg :: Maybe (LocalErrMsg, t, t)}
+> newtype ErrMsg t = ErrMsg (Maybe (LocalErrMsg, t, t))
 > noErrMsg :: ErrMsg t
 > noErrMsg = ErrMsg Nothing
 

@@ -1,0 +1,19 @@
+import Base(fmap2)
+-- PJ 990705
+
+dc :: (Regular d, Regular e) => 
+      (FunctorOf e a (d b) -> FunctorOf d b (d b)) ->
+      e a -> d b
+dc f = inn . f . fmap2 id (dc f) . out
+
+flist2ftree :: FunctorOf ([]) a (Tree a) -> FunctorOf Tree a (Tree a)
+flist2ftree x = case x of 
+  (Left ())     -> Left ()
+  (Right (x,y)) -> Right (Right (Leaf x, y))
+
+data Tree a = Empty | Leaf a | Bin (Tree a) (Tree a) deriving Show
+
+list2tree = dc flist2ftree
+
+main = print (list2tree "Hej")
+
