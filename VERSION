@@ -1,10 +1,10 @@
 PolyP 
 version 1.3
-written in Haskell 1.4 (works with 1.3)
+written in Haskell 98 + ST (works with 1.4 + ST)
 to be used with hbc, ghc or hugs
 
 Revision history: 
- 990303: version 1.3 (For Haskell 98)
+ 990526: version 1.3 (For Haskell 98)
  980820: version 1.2 (Improved type inference.)
  980807: version 1.1 (Improved type generation.)
  980731: version 1.0
