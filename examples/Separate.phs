@@ -5,49 +5,60 @@ There has to be a value main in every PolyP file. It is the starting
   point for the code generation - everything possibly reachable from
   main is instantiated.
 -}
-main = (separate "1738",
-        separate (Leaf 'a'),
-        separate (Fork True [Fork False [],Fork True []]))
+main = print (separate "1738",
+	      separate (Leaf 'a'),
+	      separate (Fork True [Fork False [],Fork True []]))
 
-{-
-Userdefined regular datatypes with one type parameter and the
-predefined list type ([a]) can be used as arguments to polytypic
-functions.
+{- 
+User defined (and pre-defined) regular datatypes with one type
+  parameter can be used as arguments to polytypic functions.
 -}
 data Tree a = Leaf a | Bin (Tree a) (Tree a) deriving Show
 data Rose a = Fork a [Rose a] deriving Show
 {- 
 Function separate takes an element of a regular datatype (of type d a)
-and generates a pair. The first component of the pair is just the
-structure of the datatype without the contents (of type d ()) and the
-second component is just the contents without the structure (of type
-[a]).
+  and generates a pair. The first component of the pair is just the
+  structure of the datatype without the contents (of type d ()) and
+  the second component is just the contents without the structure (of
+  type [a]).
 -}
---separate :: Poly (FunctorOf d) => d a -> (d (), [a])
+separate :: Regular d => d a -> (d (), [a])
 separate x = (pmap (const ()) x,flatten x)
 {-
 The definition of pmap is taken from ../polylib/Base.phs.
 -}
---pmap :: Poly (FunctorOf d) => (a -> b) -> d a -> d b
-pmap f = inn . fmap f (pmap f) . out
+pmap :: Regular d => (a -> b) -> d a -> d b
+pmap f   = inn . fmap f  (pmap f)   . out
 
 polytypic fmap :: (a -> c) -> (b -> d) -> f a b -> f c d
   = \p r -> case f of                             
-      	      g + h     ->  (fmap p r) -+- (fmap p r)
-      	      g * h     ->  (fmap p r) -*- (fmap p r)
-      	      Empty     ->  id                    
-      	      Par       ->  p                     
-      	      Rec       ->  r                     
-      	      d @ g     ->  pmap (fmap p r)       
-      	      Const t   ->  id                    
+      	      g + h   ->  (fmap p r) -+- (fmap p r)
+      	      g * h   ->  (fmap p r) -*- (fmap p r)
+      	      Empty   ->  id                    
+      	      Par     ->  p                     
+      	      Rec     ->  r                     
+      	      d @ g   ->  pmap (fmap p r)       
+      	      Const t ->  id                    
+      
+cata :: Regular d => (FunctorOf d a b -> b) -> (d a -> b)
+cata i   = i   . fmap id (cata i  ) . out
 
--- cata :: Regular d => (FunctorOf d a b -> b) -> (d a -> b)
-cata i   = i . fmap id (cata i) . out
+{- 
+Non-polytypic help functions. In Haskell the datatype for sums is
+  predefined together with its catamorphism: either.
+  data Either a b = Left a | Right b 
+  either :: (a -> c) -> (b -> c) -> Either a b -> c
+-}
+(-*-) :: (a -> c) -> (b -> d) -> (a,b) -> (c,d)
+(-+-) :: (a -> c) -> (b -> d) -> Either a b -> Either c d
+
+(f -*- g) = \p -> (f (fst p), g (snd p))
+(f -+- g) = either (Left . f) (Right . g)
 
 {-
 The definition of flatten is taken from ../polylib/Flatten.phs.
 -}
--- flatten :: Regular d => d a -> [a]
+flatten :: Regular d => d a -> [a]
 flatten  =  cata fflatten
 
 polytypic fflatten :: f a [a] -> [a]
@@ -57,27 +68,12 @@ polytypic fflatten :: f a [a] -> [a]
       Empty     ->  nil
       Par       ->  singleton
       Rec       ->  id
-      d @ g     ->  concat . flatten . pmap fflatten
+      d @ g     ->  concat . flatten . pmap fflatten 
       Const t   ->  nil
 
-{-
-The datatype for sums is predefined together with its catamorphism: either
-  data Either a b = Left a | Right b
-  either :: (a -> c) -> (b -> c) -> Either a b -> c
--}
--- Map for sum
---(-+-) :: (a -> c) -> (b -> d) -> Either a b -> Either c d
-(f -+- g) = either (Left . f) (Right . g)
+{- Help functions for lists -}
 
--- Map for product
---(-*-) :: (a -> c) -> (b -> d) -> (a,b) -> (c,d)
-(f -*- g) = \p -> (f (fst p), g (snd p))
-
----------------------------------------------------------------
--- Help functions for lists
-
-singleton x = [x]
-nil x = []
-
-
-
+singleton :: a -> [a]
+singleton    x =  [x]
+nil :: a -> [b]
+nil    x =  []

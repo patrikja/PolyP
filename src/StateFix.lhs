@@ -72,7 +72,7 @@ equality.
 #endif 
 
 #ifndef __Haskell98__
-# if defined(__GLASGOW_HASKELL__) || defined(__OLD_HUGS__)
+# if __GLASGOW_HASKELL__ < 401 || defined(__OLD_HUGS__)
 > instance Functor (ST s) where
 >   map f m = m >>= \ x -> return (f x)
 # endif 

@@ -1,1 +1,1 @@
-([Bin (Leaf 'a') (Leaf '1'), Bin (Leaf 'a') (Leaf '2'), Bin (Leaf 'b') (Leaf '1'), Bin (Leaf 'b') (Leaf '2')], Just "PJ")
+([Bin (Leaf 'a') (Leaf '1'),Bin (Leaf 'a') (Leaf '2'),Bin (Leaf 'b') (Leaf '1'),Bin (Leaf 'b') (Leaf '2')],Just "PJ")

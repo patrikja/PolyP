@@ -15,8 +15,8 @@ CPP = gcc -E -C -P -traditional -x c-header
 #CPP = cpp -P -C -traditional
 
 # Choose between the following line (the first is for Haskell 98 compilers)
-# CPPFLAGS += -D__Haskell98__ -D__FMAPNAME__=fmap
-CPPFLAGS += -D__FMAPNAME__=map
+CPPFLAGS += -D__Haskell98__ -D__FMAPNAME__=fmap
+# CPPFLAGS += -D__FMAPNAME__=map
 
 # The defined names are not expanded if CPP thinks we're in a string or character
 #   For example after a single '

@@ -1,47 +1,35 @@
+###################
+## Simple tests of the PolyP compiler (requires GNU make)
+# If the PolyP installation works as it should make check should only
+# print lines starting with "--!!!"
+
+###################
+## Compiler selection
+# Use some version of the compiler in the ../bin directory
+#   with polyp as a fall-back option
 PolyP := $(firstword $(wildcard ../bin/*polyp) polyp)
 #PolyP = polyp
 PERL = perl
+CHASE = $(PERL) ../bin/chase -i ../polylib
 
+###################
+# The target Haskell files of the tests to be performed
 targets = testSum.hs testCrush.hs testFlatten.hs testPropagate.hs	\
           testThread.hs testZip.hs testConstructorName.hs testEqOrd.hs 	\
           testEqual.hs testSubstructures.hs testShow.hs testBaseM.hs
 
-CHASE = $(PERL) ../bin/chase -i ../polylib
-
 default: check
  
-# Files in this directory:
-# README
-# contents.txt
-# Makefile
-
-# testConstructorName.phs
-# testCrush.phs
-# testEqOrd.phs
-# testEqual.phs
-# testFlatten.phs
-# testPropagate.phs
-# testShow.phs
-# testSubstructures.phs
-# testSum.phs
-# testThread.phs
-# testZip.phs	
-
-# Show.phs
-# Substructures.phs
-# stub.phs
-
-
 all: $(targets)
 
 .SUFFIXES: 
 .SUFFIXES: .phs .hs .check
 
-# using the perl-script chase for import-chasing this rule translates
-# its input file using polyp, prepends possible extra type
-# information, and runs it under hugs if it PolyP worked. Otherwise it
-# renames the file (to indicate failure) and shows the output to help
-# find the error.
+###################
+# using CHASE for import-chasing this rule translates its input file
+# using PolyP, prepends possible extra type information, and runs it
+# under hugs if it PolyP worked. Otherwise it renames the file (to
+# indicate failure) and shows the output to help find the error.
 
 test%.hs : test%.phs
 	$(CHASE) $< >tmp.phs
@@ -49,9 +37,6 @@ test%.hs : test%.phs
           && cat $(wildcard type$*.hs) tmp.hs >$@ \
           && hugs $@) \
          || (mv $@ tmp.hs; more tmp.hs)
-
-# If the PolyP installation works as it should
-# make check should only print lines starting with "--!!!"
 
 check:: $(targets:.hs=.check) $(wildcard ../polylib/*.phs)
 
@@ -63,9 +48,12 @@ test%.check : test%.phs
 	@$(CHASE) $< >tmp.phs
 	@-($(PolyP) tmp.phs | cat $(wildcard type$*.hs) - >test$*.hs \
           && runhugs test$*.hs > test$*.check) || echo >test$*.check
-	@diff -w test$*.check test$*.out
+	@diff test$*.check test$*.out
+## For older hugs systems (pre 1998)
+#	@diff -w test$*.check test$*.out
 # The -w argument to diff is to ignore white space differences
 # caused by the change of printing of hugs in 1998. "(1, 2)" -> "(1,2)"
+# The .out files contain the (correct) output (without the extra space)
 
 genfiles = $(targets) $(targets:.hs=.check) tmp.phs tmp.hs Separate.hs
 
