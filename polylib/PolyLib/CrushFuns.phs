@@ -2,8 +2,8 @@ module PolyLib.CrushFuns(psum,prod,conc,pand,por,size,flatten,pall,pany,pelem) w
 import PolyLib.Prelude
 import PolyLib.Crush(crush)
 import PolyLib.Base(pmap)
-psum    :: Regular d => d Int -> Int
-prod    :: Regular d => d Int -> Int
+psum    :: (Regular d, Num a) => d a -> a
+prod    :: (Regular d, Num a) => d a -> a
 comp    :: Regular d => d (a->a) -> (a->a)
 conc    :: Regular d => d [a] -> [a]
 pand    :: Regular d => d Bool -> Bool
@@ -26,3 +26,4 @@ pany p  =  por  . pmap p
 pelem x =  pany (\y->x==y)
 flatten':: Regular d => d a -> [a] -> [a]
 flatten'=  comp . pmap (:)
+

@@ -162,7 +162,8 @@ Gofer's {\tt cc.prelude}.
 > innType = regular :=> fada -=> da
 > outType = regular :=> da -=> fada
 > eitherType= [] :=> pT eitherTextType
-> intType = [] :=> TCon "Int"
+> --intType = [] :=> TCon "Int"
+> intType = [("Num",[TVar "a"])] :=> TVar "a"
 > floatType=[] :=> TCon "Float"
 > charType= [] :=> TCon "Char"
 > boolType= [] :=> TCon "Bool"
