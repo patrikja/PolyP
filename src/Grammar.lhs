@@ -48,7 +48,7 @@ corresponding {\tt VarBind}s.
 >    | Class    [Context] Context [Eqn' t] 
 >    | Instance [Context] Context [Eqn' t]
 
->    deriving Eq
+>    deriving (Eq)
 
 > type Func = Type
 
@@ -85,7 +85,7 @@ variables, constants, applications, literals and wildcards. )
 >    | Letrec [[Eqn' t]] (Expr' t)
 >    | Typed (Expr' t) t
 
->    deriving Eq
+>    deriving (Eq)
 
 > type Pat' t = Expr' t
 
@@ -147,7 +147,7 @@ Integers, floats, characters, booleans and strings supported so far.
 >    | BoolLit Bool
 >    | CharLit Char
 >    | StrLit String
->    deriving Eq
+>    deriving (Eq)
 
 \end{verbatim}
 \section{Miscellaneous types}

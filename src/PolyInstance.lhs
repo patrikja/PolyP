@@ -97,7 +97,7 @@ the datatype and its functor.
 
 >				-- Pattern and result for one constructor case
 >				inn' fs (con, _)	=	let (ps,es) = inn'' fs varNames in
->											(foldr1 (\f g -> (Con "ProdF" :@: f) :@: g) ps, foldl1 (:@:) $ Con con:es)
+>											(foldr1 (\f g -> (Con ":*:" :@: f) :@: g) ps, foldl1 (:@:) $ Con con:es)
 
 >				-- Takes a list of constructor arguments and computes pattern and result arguments
 >				inn'' (TCon "EmptyF":fs) names	= addP (Con "EmptyF") $ inn'' fs names
@@ -117,7 +117,7 @@ the datatype and its functor.
 
 >				-- Pattern and result for one constructor case
 >				out' fs (con, _)	=	let (ps,es) = out'' fs varNames in
->											(foldl1 (:@:) $ Con con:ps, foldr1 (\f g -> (Con "ProdF" :@: f) :@: g) es)
+>											(foldl1 (:@:) $ Con con:ps, foldr1 (\f g -> (Con ":*:" :@: f) :@: g) es)
 
 >				-- Takes a list of constructor arguments and computes pattern and result arguments
 >				out'' (TCon "EmptyF":fs) names	= addE (Con "EmptyF") $ out'' fs names
@@ -213,39 +213,32 @@ the correct types and constraints for polytypic functions.
 >					case t of
 >						TCon "+"	:@@: f :@@: g ->
 >							Instance c
->										(className, [TVar "SumF" :@@: f :@@: g])
->										[simp $ VarBind name Nothing []
->													$ (Var "to" :@: convert tipe' var (Var "sumEP")) :@: e]
+>										(className, [TCon "SumF" :@@: f :@@: g])
+>										[simp $ VarBind name Nothing [] e]
 >						TCon "*"	:@@: f :@@: g ->
 >							Instance c
->										(className, [TVar "ProdF" :@@: f :@@: g])
->										[simp $ VarBind name Nothing []
->													$ (Var "to" :@: convert tipe' var (Var "prodEP")) :@: e]
+>										(className, [TCon "ProdF" :@@: f :@@: g])
+>										[simp $ VarBind name Nothing [] e]
 >						TCon "Empty" ->
 >							Instance c
 >										(className, [TCon "EmptyF"])
->										[simp $ VarBind name Nothing []
->													$ (Var "to" :@: convert tipe' var (Var "emptyEP")) :@: e]
+>										[simp $ VarBind name Nothing [] e]
 >						TCon "Par" ->
 >							Instance c
 >										(className, [TCon "ParF"])
->										[simp $ VarBind name Nothing []
->													$ (Var "to" :@: convert tipe' var (Var "parEP")) :@: e]
+>										[simp $ VarBind name Nothing [] e]
 >						TCon "Rec" ->
 >							Instance c
 >										(className, [TCon "RecF"])
->										[simp $ VarBind name Nothing []
->													$ (Var "to" :@: convert tipe' var (Var "recEP")) :@: e]
+>										[simp $ VarBind name Nothing [] e]
 >						TCon "@" :@@: d :@@: g ->
 >							Instance c
 >										(className, [TCon "CompF" :@@: d :@@: g])
->										[simp $ VarBind name Nothing []
->													$ (Var "to" :@: convert tipe' var (Var "compEP")) :@: e]
+>										[simp $ VarBind name Nothing [] e]
 >						TCon "Const" :@@: t ->
 >							Instance c
 >										(className, [TCon "ConstF" :@@: t])
->										[simp $ VarBind name Nothing []
->													$ (Var "to" :@: convert tipe' var (Var "constEP")) :@: e]
+>										[simp $ VarBind name Nothing [] e]
 >						_	-> error ("PolyInstance.rewrite: " ++ pshow e ++ ":: " ++ pshow (c :=> t))
 
 \end{verbatim}

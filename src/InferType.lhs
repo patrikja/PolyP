@@ -320,14 +320,14 @@ applying the following rewrite rules: \\
 \begin{verbatim}
 
 > typeSynEnv :: Env VarID (Int,QType)
-> typeSynEnv = extendsEnv [typeSyn "+" "fgab" "Either (f a b) (g a b)",
->                          typeSyn "*" "fgab" "(f a b, g a b)",
+> typeSynEnv = extendsEnv [typeSyn "+" "fgab" "SumF f g a b",
+>                          typeSyn "*" "fgab" "ProdF f g a b",
 >                          typeSyn ">" "fgab" "f a b -> g a b",
->                          typeSyn "@" "dgab" "d (g a b)",
->                          typeSyn "Par" "ab" "a",
->                          typeSyn "Rec" "ab" "b",
->                          typeSyn "Const" "tab" "t",
->                          typeSyn "Empty" "ab" "()"
+>                          typeSyn "@" "dgab" "CompF d g a b",
+>                          typeSyn "Par" "ab" "ParF a b",
+>                          typeSyn "Rec" "ab" "RecF a b",
+>                          typeSyn "Const" "tab" "ConstF t a b",
+>                          typeSyn "Empty" "ab" "EmptyF a b"
 >                         ] newEnv
 
 \end{verbatim}

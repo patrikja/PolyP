@@ -395,7 +395,8 @@ alternatives one by one.
 > labelPoly :: Basis s -> HpTEqn s -> STErr s (HpTEqn s)
 > labelPoly basis (Polytypic n hpty' _ cases) =
 >    changeError (\e->n++": error in type checking:\n"++e) $ 
->    let (funs',es) = maytrace "labelPoly starts\n" $ unzip cases
+>    let (funs',es) = maytrace "labelPoly starts\n"
+>								$ unzip cases
 >    in mapl (basis |->) es  <@ unzip >>= \(es',ti)->
 
 \end{verbatim}
@@ -413,7 +414,7 @@ in the list.
 \begin{verbatim}
 
 >       lift (instantiate allGeneric hpty') >>= \hpty@(((_,hpf:_):_):=>_)-> 
->       lift (mapl (instantiate allGeneric) funs') >>= \funs->
+>       lift (mapl (maytrace "instantiating\n" $ instantiate allGeneric) funs') >>= \funs->
 >       lift (mapl (tevalAndSubst basis hpty) 
 >                  (maytrace "teval\n" funs)) >>= \taui ->
 

@@ -29,6 +29,10 @@ endif
 #   (if not set correctly, the environment variable POLYPPRELUDE can be set later)
 CPPFLAGS += -D__POLYPPRELUDE__=\"$(POLYPPRELUDE)\"
 
+ifdef DEBUG
+CPPFLAGS += -D__DEBUG__
+endif
+
 # All Haskell source files in this directory
 lhs_files = $(wildcard *.lhs)
 

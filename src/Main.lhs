@@ -2,6 +2,39 @@
 \begin{verbatim}
 
 > module Main(main) where
+#ifdef __DEBUG__
+> import BuiltinInstances
+> import Chase
+> import CommandLine
+> import DependencyAnalysis
+> import Env
+> import Flags
+> import Folding
+> import FunctorNames
+> import Functorise
+> import Grammar
+> import GraphLibrary
+> import InferKind
+> import InferType
+> import LabelType
+> import MonadLibrary
+> import MyPrelude
+> import NonStdTrace
+> import ParseLibrary
+> import Parser
+> import PolyInstance
+> import PrettyPrintExtra
+> import PrettyPrintLibrary
+> import PrettyPrinter
+> import StartTBasis
+> import StateFix
+> import TypeBasis
+> import TypeError
+> import TypeGraph
+> import UnifyTypes
+> import System(getProgName)
+> import List(intersperse)
+#else
 > import DependencyAnalysis(dependencyProgram)
 > import Grammar(Eqn'(..),Eqn,PrgEqns,PrgTEqns,getHeadOfEqn)
 > import List(intersperse)
@@ -17,17 +50,19 @@
 > import qualified IO(stderr)
 > import TypeBasis(TBasis,getFuncEnv)
 > import Flags(Flags(..),flags)
+#endif
 
 \end{verbatim}
 \section{The main compilation function}
 \begin{verbatim}
 
 #ifdef __DEBUG__
+
 > comp :: PrgName -> IO ()
-> comp = putStr @@ compile 
+> comp f = putStr =<< compile f
 
 > compile :: PrgName -> IO PrgText
-> compile fpath = readFile fpath <@ compile'
+> compile fpath = fmap compile' $ readFile fpath
 
 > compile' :: PrgText -> PrgText
 > compile' = showLErr
@@ -37,6 +72,7 @@
 >          . labelProgram 
 >          . dependencyProgram 
 >          . parseProgram
+
 #endif
 
 \end{verbatim}
@@ -198,7 +234,7 @@ These are still preliminary versions.
 \begin{verbatim}  
 
 > showTBasis :: LErr TBasis -> String
-> showTBasis (~(tenv,kenv),err) = concat (
+> showTBasis (~((tenv,kenv),fenv),err) = concat (
 >    ("Kinds:\n":map showpair (assocsEnv kenv) ) ++
 >    ("Types:\n":map showpair (assocsEnv tenv) ) ++ [errtext] )
 >   where showpair (name,t) = ' ':name ++ " :: " ++ pshow t
@@ -252,19 +288,20 @@ It does not seem to work.
 >         m = mliftErr (kindIntoHeap t) >>= \ht-> 
 >             mliftErr (kindIntoHeap t')>>= \ht'->
 >             unify ht ht'              >>
->             mliftErr (typesOutOfHeap [] (ht,ht'))
+>             mliftErr (typesOutOfHeap allGeneric [ht,ht']) >>= \[x,y] ->
+>             return (x,y)
 
 > getType :: IO Type
 > getType = getLine <@ parse pType1 <@ unDone
 
 > testlabel :: IO ()
-> testlabel = mloopit (map labelling . readFile)
+> testlabel = mloopit (fmap labelling . readFile)
 
 > testpretord :: IO ()
-> testpretord = mloopit (map prettyordered . readFile)
+> testpretord = mloopit (fmap prettyordered . readFile)
 
 > testpretty :: IO ()
-> testpretty = mloopit (map prettify . readFile)
+> testpretty = mloopit (fmap prettify . readFile)
 
 > testall :: IO ()
 > testall = comp @@ const getLine @@ putStr $ "Filename: "

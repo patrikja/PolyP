@@ -8,7 +8,7 @@ they receive be non-space.
 
 \begin{verbatim}
 
-> module Parser(parse,pModule,pType0,pType1,pTypeFile) where
+> module Parser (parse,pModule,pType0,pType1,pTypeFile) where
 
 > import Char(isUpper,isLower,isAlpha,isDigit)
 > import MyPrelude(mapSnd,fMap)
