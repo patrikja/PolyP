@@ -100,11 +100,11 @@ restriction that forbids instances for \texttt{Qualified Type}.
 
 > prEqn (Class preds def eqns)
 >   = (text "class " <> prQ preds (context2type def) <> text " where")
->   $$ nest 2 (ppVerticalList (map prEqn eqns))
+>   $$ nest 2 (ppVerticalList eqns)
 
 > prEqn (Instance preds def eqns)
 >   = (text "instance " <> prQ preds (context2type def) <> text " where")
->   $$ nest 2 (ppVerticalList (map prEqn eqns))
+>   $$ nest 2 (ppVerticalList eqns)
 
 > prEqn (ExplType vars tp)
 >   = sep [ppCommaList (map text' vars) <> text " ::", nest 2 (pretty tp)]
