@@ -209,6 +209,7 @@
 >   pretty = prLit
 
 > prLit (IntLit  n) = text (show n)
+> prLit (FloatLit f)= text (show f)
 > prLit (BoolLit b) = text (show b)
 > prLit (CharLit c) = text (show c)
 > prLit (StrLit s)  = text (show s)

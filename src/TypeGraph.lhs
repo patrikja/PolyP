@@ -72,6 +72,7 @@ We need a version of \verb|lookaside| that uses pointer equality,
 
 > typeIntoHeap  :: QType -> ST s (HpQType s)
 > kindIntoHeap  :: Kind  -> ST s (HpKind s)
+> eqnIntoHeap   :: Eqn   -> ST a (HpTEqn a)
 
 \end{verbatim}
 \section{Implementation}
@@ -277,11 +278,11 @@ To translate from the abstract syntax to the heap we need a maping
 from type variables to heap type variables to build a DAG (directed
 acyclic graph).  (An extension could be to share constructors or even
 common subexpressions. {\em Do it!})
+The types are in the Interface section above.
 \begin{verbatim}
 
 > kindIntoHeap = executeSTM newEnv . typeIntoHeap'
-
-> eqnIntoHeap = mmapEqn typeIntoHeap
+> eqnIntoHeap  = mmapEqn typeIntoHeap
 > typeIntoHeap = executeSTM newEnv . mmapQualified typeIntoHeap'
 
 > type Name2HpType s a = StateM (ST s) (Cache VarID (HpType s)) a

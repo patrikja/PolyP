@@ -4,5 +4,5 @@
 # alias polyp runhugs `pwd`/Main.lhs
 
 default:
-	echo runhugs `pwd`/Main.lhs $$\* >../bin/hugspolyp 
+	echo runhugs -h200000 `pwd`/Main.lhs $$\* >../bin/hugspolyp 
 	chmod +x ../bin/hugspolyp

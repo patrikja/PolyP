@@ -71,5 +71,14 @@ disthugs:
 	gzip ../polyphugs$(version).tar
 	cd ../polyphugs$(version); tar -zcf hugssrc.tar.gz hugssrc
 
+# compile with all three compilers and check the results
+checkdist: check.ghc check.hbc check.hugs
+
+check.% : %
+	$(MAKE) -C examples check PolyP=../bin/$*polyp
+
+
 # These targets are not real files
 .PHONY: default install hugs ghc hbc clean distclean packpolylib dist disthugs
+
+# for some reason, sheckhbc, checkghc, chechhugs should not be in that list

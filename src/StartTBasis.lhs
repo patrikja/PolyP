@@ -2,7 +2,7 @@
 \begin{verbatim}
 
 > module StartTBasis(startTBasis,preludeFuns,
->                    innType,outType,charType,intType,
+>                    innType,outType,charType,intType,floatType,
 >                    eitherType,fcnameType,boolType,strType,
 >                    sumtypename,leftname,rightname,
 >                    preludedatadefs,sumdatadef) where
@@ -124,6 +124,7 @@ Gofer's {\tt cc.prelude}.
 > outType = regular :=> da -=> fada
 > eitherType= [] :=> pT eitherTextType
 > intType = [] :=> TCon "Int"
+> floatType=[] :=> TCon "Float"
 > charType= [] :=> TCon "Char"
 > boolType= [] :=> TCon "Bool"
 > strType = [] :=> TCon "[]" :@@: TCon "Char"

@@ -1,9 +1,10 @@
 \chapter{Monadic parsing combinators} 
-Converted from Gofer to Hugs to Haskell 1.3: This means that some
+Converted from Gofer to Hugs to Haskell 1.3 to 1.4: This means that some
 comments are now obsolete.
 \begin{verbatim}
 
 > module ParseLibrary where
+> --      (optional, digit, ...)
 > import MonadLibrary((<@),(<@-),(<<),(<:*>),(<*>),liftop,
 >                     StateM(..),fetchSTM,updateSTM,
 >                     Error(..),ErrorMonad(..))
@@ -62,6 +63,9 @@ A parser that consumes single characters satisfying a given predicate.
 > sat :: (Char -> Bool) -> Parser Char
 > sat p  = item >>= \v-> if p v then return v else zero
 
+> digit :: Parser Char
+> digit = sat isDigit
+
 \end{verbatim}
 Parsers for specific characters and strings are defined by:
 \begin{verbatim}
@@ -116,6 +120,9 @@ But we will use specialized versions for efficiency.
 >                                 []     -> [(v,s)]
 >                                 (x:xs) -> [x]
 >                       )
+
+> optional :: Parser a -> Parser (Maybe a)
+> optional p = (p <@ Just) `opt` Nothing
 
 > cut :: Parser a -> Parser a
 > cut (STM p) = STM (take 1 . p)

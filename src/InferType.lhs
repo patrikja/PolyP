@@ -12,7 +12,7 @@
 >                  getNonGenerics,makeNonGeneric,lookupType,ramTypeToRom,
 >                  extendTypeEnv,ramKindToRom,getKindEnv,instantiate,
 >                  extendKindEnv,extendKindTBasis)
-> import StartTBasis(startTBasis,charType,intType,boolType,strType)
+> import StartTBasis(startTBasis,charType,intType,floatType,boolType,strType)
 > import Env(newEnv,lookupEnv,extendsEnv)
 > import MyPrelude(pair,splitUp)
 > import MonadLibrary(STErr,mliftErr,convertSTErr,Error(..),unDone,(@@),
@@ -115,14 +115,20 @@ way that they can be lazily pulled out of it one group at a time.
 
 > inferGroup :: [Eqn] -> TBasis -> Error [(VarID,QType)]
 #ifndef __HBC__
-> inferGroup eqns tbasis = runST ((convertSTErr m))
+> inferGroup eqns tbasis = runST (convertSTErr (mInferGroup eqns tbasis))
 #else /* __HBC__ */
-> inferGroup eqns tbasis = runST (RunST (convertSTErr m))
+> inferGroup eqns tbasis = runST (RunST (convertSTErr (mInferGroup eqns tbasis)))
 #endif /* __HBC__ */
->   where m ::  STErr s [(String,QType)]
->         m = inferBlock basis eqns   >>= \basis' ->
->             mliftErr (ramTypeToRom basis')
->         basis = (tbasis,(newEnv,[]))
+
+> mInferGroup :: [Eqn] -> TBasis -> STErr s [(String,QType)]
+> mInferGroup eqns tbasis = inferBlock basis eqns   >>= \basis' ->
+>                           mliftErr (ramTypeToRom basis')
+>   where basis = (tbasis,(newEnv,[]))
+
+   where m ::  STErr s [(String,QType)]
+         m = inferBlock basis eqns   >>= \basis' ->
+             mliftErr (ramTypeToRom basis')
+         basis = (tbasis,(newEnv,[]))
 
 \end{verbatim}
 \section{Expressions}
@@ -188,11 +194,12 @@ predicates. Adapt mkFun, mkVar to QTypes. (How to do with inferPat?)
 
 \end{verbatim}
 \section{Literals}
-Just selects the type of the literal. (Currently only integers and characters are supported.)
+Just selects the type of the literal. 
 \begin{verbatim}
 
 > inferLiteral :: Basis s -> Literal -> STErr s (HpQType s)
 > inferLiteral basis (IntLit _)  = mliftErr (typeIntoHeap intType)
+> inferLiteral basis (FloatLit _)= mliftErr (typeIntoHeap floatType)
 > inferLiteral basis (BoolLit _) = mliftErr (typeIntoHeap boolType)
 > inferLiteral basis (CharLit _) = mliftErr (typeIntoHeap charType)
 > inferLiteral basis (StrLit _)  = mliftErr (typeIntoHeap strType)

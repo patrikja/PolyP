@@ -1,7 +1,8 @@
 \chapter{The parser}
-The basic idea for all these parsers is that they should end by eating
-white space (and comments) and assume that the first character they
-receive be non-space. 
+
+The basic idea for all these parsers is that they should {\em end} by
+eating white space (and comments) and assume that the first character
+they receive be non-space.
 
 \begin{verbatim}
 
@@ -11,7 +12,7 @@ receive be non-space.
 > import MyPrelude(mapSnd,copy)
 > import MonadLibrary((<:*>),(<*>),(<@),(<@-),(<<),liftop,
 >                     mapl,ErrorMonad(failEM))
-> import ParseLibrary(Parser,item,lit,sat,opt,
+> import ParseLibrary(Parser,item,lit,sat,digit,opt,optional,
 >                     some_offside,mustbe,symbol,sepby,
 >                     chainl,chainr,spaces,number,
 >                     many,some,strip, parse)
@@ -330,11 +331,22 @@ In \verb|(1)| \verb|pExpr| is too general.
 \begin{verbatim}
 
 > pLiteral :: Parser Expr
-> pLiteral  = ( ( (number   <@ IntLit ) ++
+> pLiteral  = ( ( pNumber ++
 >                 (pCharLit <@ CharLit) ++   
 >                 (pBoolLit <@ BoolLit) ++ 
 >                 (pStrLit  <@ StrLit ) ) <@ Literal ) ++
 >             pListLit 
+
+
+> pRawNumber :: Parser (String,Maybe String)
+> pRawNumber = strip (some digit <*> optional (lit '.' >> some digit))
+
+> pNumber :: Parser Literal
+> pNumber = pRawNumber <@ cookNum
+
+> cookNum :: (String, Maybe String) -> Literal
+> cookNum (fore, Just aft) = FloatLit (read (fore++'.':aft))
+> cookNum (fore, Nothing ) = IntLit (read fore)
 
 > pListLit :: Parser Expr
 > pListLit = pBracketed (pCommaList pExpr `opt` []) <@ list2expr

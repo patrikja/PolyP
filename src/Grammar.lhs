@@ -139,11 +139,12 @@ Expressions labelled with types can be expressed with elements of
 
 \end{verbatim}
 \section{Literals}
-Integers,characters, booleans and strings supported so far.
+Integers, floats, characters, booleans and strings supported so far.
 \begin{verbatim}
 
 > data Literal
 >    = IntLit Int
+>    | FloatLit Float
 >    | BoolLit Bool
 >    | CharLit Char
 >    | StrLit String
