@@ -22,13 +22,13 @@ answer = ( ([(),(),(),()],"1738")
          , (Fork () [Fork () [],Fork () []],[True,False,True])
          )
 
-{- 
+{-
 User defined (and pre-defined) regular datatypes with one type
   parameter can be used as arguments to polytypic functions.
 -}
 data Tree a = Leaf a | Bin (Tree a) (Tree a) deriving Show
 data Rose a = Fork a [Rose a] deriving Show
-{- 
+{-
 Function separate takes an element of a regular datatype (of type d a)
   and generates a pair. The first component of the pair is just the
   structure of the datatype without the contents (of type d ()) and
@@ -44,26 +44,30 @@ pmap :: Regular d => (a -> b) -> d a -> d b
 pmap f   = inn . fmap2 f  (pmap f)   . out
 
 polytypic fmap2 :: (a -> c) -> (b -> d) -> f a b -> f c d
-  = \p r -> case f of                             
+  = \p r -> case f of
       	      g + h   ->  (fmap2 p r) -+- (fmap2 p r)
       	      g * h   ->  (fmap2 p r) -*- (fmap2 p r)
-      	      Empty   ->  id                    
-      	      Par     ->  p                     
-      	      Rec     ->  r                     
-      	      d @ g   ->  pmap (fmap2 p r)       
-      	      Const t ->  id                    
-      
+      	      Empty   ->  \EmptyF -> EmptyF
+      	      Par     ->  ParF . p . unParF
+      	      Rec     ->  RecF . r . unRecF
+      	      d @ g   ->  CompF . pmap (fmap2 p r) . unCompF
+      	      Const t ->  \(ConstF x) -> ConstF x
+
 {-
 Non-polytypic help functions. In Haskell the datatype for sums is
   predefined together with its catamorphism: either.
-  data Either a b = Left a | Right b 
+  data Either a b = Left a | Right b
   either :: (a -> c) -> (b -> c) -> Either a b -> c
 -}
-(-*-) :: (a -> c) -> (b -> d) -> (a,b) -> (c,d)
-(-+-) :: (a -> c) -> (b -> d) -> Either a b -> Either c d
 
-f -*- g = \p -> (f (fst p), g (snd p))
-f -+- g = either (Left . f) (Right . g)
+(f -*- g) (x :*: y) = f x :*: g y
+f -+- g = foldSum (InL . f) (InR . g)
+
+foldProd f (x :*: y) = f x y
+
+foldSum f g e = case e of
+	InL x	-> f x
+	InR y	-> g y
 
 {-
 The definition of flatten is taken from ../polylib/Flatten.phs.
@@ -80,12 +84,12 @@ cata i   = i   . fmap2 id (cata i  ) . out
 
 polytypic fflatten :: f [a] [a] -> [a]
   = case f of
-      g + h     ->  fflatten `either` fflatten
-      g * h     ->  \(x,y) -> fflatten x ++ fflatten y
+      g + h     ->  fflatten `foldSum` fflatten
+      g * h     ->  \(x :*: y) -> fflatten x ++ fflatten y
       Empty     ->  nil
-      Par       ->  id
-      Rec       ->  id
-      d @ g     ->  concat . flatten . pmap fflatten 
+      Par       ->  unParF
+      Rec       ->  unRecF
+      d @ g     ->  concat . flatten . pmap fflatten . unCompF
       Const t   ->  nil
 
 {- Help functions for lists -}
