@@ -49,7 +49,7 @@ A variant: defining |flatten| using |cata|:
 \paragraph{Help functions for lists}
 
 %{
-%align 18
+%align 15
 
 > singleton   :: a -> [a]
 > singleton x =  [x]
