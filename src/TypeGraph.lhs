@@ -152,7 +152,7 @@ avoids the use of \verb|++| making the function linear in the size of
 the type.
 \begin{verbatim}
 
-> flattenHpType :: HpType s -> ST s [HpType s] 
+> flattenHpType :: HpType s -> ST s [HpType s]
 > flattenHpType = map appnil . cataHpType var (\c l -> l) (.)
 >  where var v = return (v:) 
 >        appnil f = f []
@@ -351,3 +351,18 @@ occursInType :: NodePtr s -> HpType s -> ST s Bool
 
 \end{verbatim}
 
+\section{Misc.}
+
+For debugging purposes it is good to be able to see what the actual
+pointer structure looks like.
+
+\begin{verbatim}
+
+> showNodePtr :: NodePtr s -> ST s String
+> showNodePtr p = readVar p >>= \n-> case n of
+>              HpVar v | v === p -> return "Var"
+>                      | True    -> map ('-':) (showNodePtr v)
+>              HpCon c -> return ('C':c)
+>              HpApp p1 p2 -> liftop (++) (showNodePtr p1) (showNodePtr p2 <@ ('@':))
+
+\end{verbatim}

@@ -18,15 +18,9 @@ default: $(prog)
 %.o:	%.lhs
 	$(hc) -c $(hs_flags) $<
 
-o_files= Main.o DependencyAnalysis.o Env.o Grammar.o LabelType.o	\
-         MonadLibrary.o Parser.o PolyInstance.o PrettyPrinter.o		\
-         StateFix.o TypeBasis.o TypeGraph.o UnifyTypes.o Folding.o	\
-         GraphLibrary.o MyPrelude.o InferType.o StartTBasis.o		\
-         ParseLibrary.o Functorize.o PrettyPrintExtra.o			\
-         PrettyPrintLibrary.o NonStdTrace.o InferKind.o
-         
-lhs_files = $(o_files:.o=.lhs)
-hi_files  = $(o_files:.o=.hi)
+lhs_files = $(wildcard *.lhs)
+hi_files  = $(lhs_files:.lhs=.hi)
+o_files   = $(lhs_files:.lhs=.o)
 
 clean::	
 	rm -f *~

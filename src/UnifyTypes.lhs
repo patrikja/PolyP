@@ -1,16 +1,15 @@
 \chapter{Unification}
 \begin{verbatim}
 
-> module UnifyTypes(unify,checkInstance,  unifyVar,showP) where
+> module UnifyTypes(unify,checkInstance,  unifyVar) where
 > import TypeGraph(HpType,fetchNode,occursInType,
 >                  typeIntoHeap, flattenNgs,
->                  typeOutOfHeap,typesOutOfHeap,
 >                  flattenHpType,mkCon,mkApp,
->                  HpNode(..),HpQType,NonGenerics,(==>),   NodePtr)
+>                  HpNode(..),HpQType,NonGenerics,(==>))
+> import TypeError
 > import MonadLibrary(STErr,mliftErr,ErrorMonad(failEM),(<@),mIf,liftop,
 >                     ST,(===),readVar)
 > import Env(newEnv,lookupEnv,extendsEnv)
-> import PrettyPrinter(Pretty(..),($$),nest,text,sep,prType)
 > import Grammar(Type(..),Qualified(..),qualify,deQualify)
 
 #ifdef __DEBUG_UNIFY__
@@ -47,6 +46,7 @@ effect'!)
 > unify a b = maytrace "<" 
 >               (punify a b >> maytrace ">" (return ()))
 
+#ifdef FALSE
 > unifyold :: HpType s -> HpType s -> STErr s ()
 > unifyold a b 
 >   = lifE (fetchNode a) >>= \(a', nodeA) -> 
@@ -62,12 +62,12 @@ effect'!)
 >               unify af bf        >>
 >               unify ax bx 
 >            (HpCon conA, HpCon conB) | conA==conB -> ok
->            _ -> failWith a' b'
+>            _ -> failWith "Constructor mismatch" a' b'
 >     where ok = return () 
->           failWith t1 t2 = failEM ("can't unify")
+#endif /* FALSE */
 
 > unifyVar :: HpType s -> HpType s -> STErr s ()
-> unifyVar a b= -- showargs a b >>
+> unifyVar a b= -- mayshowargs a b >>
 >               if a === b then error "unifyVar: equal pointers"
 >               else
 >                 mIf (a `occursIn` b) 
@@ -75,29 +75,13 @@ effect'!)
 >                  (lifE (a ==> b))
 >   where   t1 `occursIn` t2 = lifE (t1 `occursInType` t2)
 
-> showargs a b = mliftErr (typesOutOfHeap [] (a,b) >>= showtypes a b)
-> showtypes a b (t,t') = showP a >>= \sa -> 
->                        showP b >>= \sb -> 
->                        maytrace (concat [ "a=",sa,"=",st,
->                                           ",b=",sb,"=",st']) 
->                        (return ())
->    where st = show (pretty t) 
->          st'= show (pretty t') 
-
-
-> showP :: NodePtr s -> ST s String
-> showP p = readVar p >>= \n-> case n of
->              HpVar v | v === p -> return "Var"
->                      | True    -> map ('-':) (showP v)
->              HpCon c -> return ('C':c)
->              HpApp p1 p2 -> liftop (++) (showP p1) (showP p2 <@ ('@':))
-
 \end{verbatim}
 This unification algorithm should be extended with a shell that takes
 two qualified types, unifies the type parts and merges the predicates.
 (In the impl. of Gofer every type variable points to its predicates?).
 Example: {\tt unify (Show a => a) (Read b => b)} gives {\tt (Show
   a,Read a) => a}.
+
 \section{Type ordering}
 Function \verb|checkInstance ngs a b| tries to instantiate \verb|b|
 (with non-generic variables in the list \verb|ngs|) to \verb|a|. It is
@@ -107,31 +91,21 @@ assumed not to contain any non-generic variables this means
 monotypes.)
 
 Should also check that the predicates are related.
+
+Using {\tt allngs} below is an optimization in that the list of
+variables is calculated only once, but for correctness this requires
+that the list will not change during execution of {\tt
+isInstance}. Unfortunately this is not necessarily true as the
+algorithm changes the types pointer structure using {\tt (==>)}.
+
 \begin{verbatim}
 
 > checkInstance :: NonGenerics s -> HpQType s -> HpQType s -> 
 >                    STErr s ()
 > checkInstance ngs (_:=>a) (_:=>b) =
 >      lifE (flattenNgs ngs >>= \allngs ->
->            isInstance allngs a b) >>= \i -> 
->      case i of
->        TOk -> return ()
->        TBad msg t u -> 
->           lifE (outofhp (a,t) u) >>= \((tA,tT),tU)->
->           failEM (show (typeerror msg tA tT tU))
->    where 
->      outofhp p u =
->            typesOutOfHeap ngs p >>= \tp    -> 
->            typeOutOfHeap  ngs ([]:=>u) >>= \([]:=>typeU) -> 
->            return (tp,typeU)
->      typeerror mess ta t u =
->        (text "Type instantiation error in:")
->        $$ nest 3 (pretty ta)
->        $$ text mess
->        $$ nest 3 (pretty t $$ pretty u)
-
-> data TError t = TOk
->               | TBad String t t
+>            isInstance allngs a b) >>= 
+>      mayreportTError ngs a
 
 \end{verbatim}
 This function answers the equivalent questions:
@@ -187,15 +161,21 @@ The algorithm implements the following (successful) cases:
 >         mismatch   = "The types don't match."
 
 \end{verbatim}
+
 A non-generic type variable may only be instantiated to a type without
 generic typevariables. In all cases where \verb|checkInstance| is used
 the specified type has only generic type variables so the checking
 that a type is non-generic is reduced to checking that it has no
-variables at all.
+variables at all. (Otherwise we would need to have access to the list
+of all non-generic variables and we could then simply check that all
+variables in the type are in this list.)
+
 \begin{verbatim}
 
 > isMonoType :: HpType s -> ST s Bool
-> isMonoType ht = flattenHpType ht <@ null
+> isMonoType ht = flattenHpType ht <@ allNonGeneric
+>   where allNonGeneric :: [HpType s] -> Bool
+>         allNonGeneric = null
 
 \end{verbatim}
 
@@ -326,7 +306,7 @@ datatype and try to unify this functor with the rhs.
 
 >        err = error "unifyFun: FunctorOf <not datatype>"
 
->    unifyFun p a b x n = showargs a b >> 
+>    unifyFun p a b x n = mayshowargs a b >> 
 >                         failEM ("unifyFun: "++baderr)
 >    baderr = "Application expected (this should not happen!)"
 
@@ -338,11 +318,6 @@ a=CFunctorOf@Var=FunctorOf a
 unifyFun: Application expected (this should not happen!)
 
 >    ok = return () 
->    failWith s a b = mliftErr (typesOutOfHeap [] (a,b)) >>= \p->
->                     failEM (show (err p))
->      where err (a,b)= sep [text "can't unify:",
->                            nest 3 (sep [pretty a,text "with",pretty b])] 
->                       $$ text ("as "++s)
 
 > punifyfuns = extendsEnv l newEnv
 >      where l = error "punify: Needs functor environment (to be implemented)"
