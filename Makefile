@@ -15,9 +15,12 @@ export HASKELLVERSION = 98
 export ghc  = ghc
 export hbc  = hbc
 export hugs = runhugs
+
+POLYPDIR   = $(shell pwd)
+
 # Use some version of the PolyP compiler in the bin directory
 #   with polyp (somewhere on the path) as a fall-back option
-export PolyP := $(firstword $(wildcard bin/*polyp) polyp)
+export PolyP := $(firstword $(wildcard ${POLYPDIR}/bin/*polyp) polyp)
 
 # For a quick test of PolyP - use hugs to avoid compilation
 
@@ -37,17 +40,16 @@ hugs ghc hbc: bin/chase
 # Run some regression tests
 #   -s makes the testcompilations silent (unless there is an error)
 check:
-	$(MAKE) -s -C examples check
-	$(MAKE) -s -C test check
+	$(MAKE) -e -s -C examples check
+	$(MAKE) -e -s -C test check
 
 check.% : %
-	$(MAKE) -s -C examples check PolyP=../bin/$*polyp
-	$(MAKE) -s -C test check PolyP=../bin/$*polyp
+	$(MAKE) -e -s -C examples check PolyP=../bin/$*polyp
+	$(MAKE) -e -s -C test check PolyP=../bin/$*polyp
 
 # compile with all three compilers and check the results
 checkdist: check.ghc check.hbc check.hugs
 
-POLYPDIR   = $(shell pwd)
 POLYLIBDIR = $(POLYPDIR)/polylib
 PERL       = $(shell which perl)
 
