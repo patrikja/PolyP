@@ -4,6 +4,7 @@ written in Haskell 98 + ST monad
 to be used with ghc, hugs or perhaps hbc
 
 Revision history: 
+ 031113: version 2   snapshot - more standard build process (make; make check; make install)
  031028: version 2   (snapshot - bug fixes)
  030521: version 2   (class based translation)
    (new numbering scheme: 2.`date`)
