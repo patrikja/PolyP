@@ -43,9 +43,18 @@
 > (-*-)    :: (a -> c) -> (b -> d) -> (a,b) -> (c,d)
 > (-+-)    :: (a -> c) -> (b -> d) -> Either a b -> Either c d
 > 
-> f -*- g  = \p -> (f (fst p), g (snd p))
+> f -*- g  = \(x,y) -> (f x, g y)
 > f -+- g  = either (Left . f) (Right . g)
 
 %align
 %}
 
+%if variants
+
+The following definition is lazier but is not a functor as it does not
+preserve identities: |(id -*- id) undefined = (undefined,undefined) /=
+undefined = id undefined|.
+
+< f -*- g  = \p -> (f (fst p), g (snd p))
+
+%endif variants

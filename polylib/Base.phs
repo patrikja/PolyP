@@ -23,5 +23,5 @@ para i x = i x (fmap2 id (para i) (out x))
 (-*-)    :: (a -> c) -> (b -> d) -> (a,b) -> (c,d)
 (-+-)    :: (a -> c) -> (b -> d) -> Either a b -> Either c d
 
-f -*- g  = \p -> (f (fst p), g (snd p))
+f -*- g  = \(x,y) -> (f x, g y)
 f -+- g  = either (Left . f) (Right . g)
