@@ -297,8 +297,16 @@ encountered we need either its already defined name or a fresh name.
 \end{verbatim}
 To translate from the abstract syntax to the heap we need a maping
 from type variables to heap type variables to build a DAG (directed
-acyclic graph).  (An extension could be to share constructors or even
-common subexpressions. {\em Do it!})
+acyclic graph).  An extension could be to share constructors or even
+common subexpressions. 
+
+The improved sharing will help the unifier and the type
+labelling. Idea: keep a mapping from Type to HpType. At every level:
+check if the type is in the environment, if so use that
+pointer. Otherwise, create new structure, store this structure in the
+environment.
+
+
 The types are in the Interface section above.
 \begin{verbatim}
 
@@ -307,6 +315,7 @@ The types are in the Interface section above.
 > eqnIntoHeap  = mmapEqn qtypeIntoHeap
 > qtypeIntoHeap = executeSTM newEnv . mmapQualified typeIntoHeap'
 
+> --                                  could be Type (HpType s)
 > type Name2HpType s a = StateM (ST s) (Cache VarID (HpType s)) a
 
 > typeIntoHeap' :: Type -> Name2HpType s (HpType s)

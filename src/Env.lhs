@@ -53,8 +53,8 @@ lookupEnv key ((key', val') : env)
 > extendEnv key val env = (key, val) : env
 
 \end{verbatim}
-Maybe the show should give \{ {\tt k1 |-> v1 , ... } \}.
-The implementation of extendsEnv is important when it comes to
+Maybe the show should give \texttt{\{ {\tt k1 |-> v1 , ... } \}}.
+The implementation of \texttt{extendsEnv} is important when it comes to
 efficiency and laziness. There are several tradeoffs:
 \begin{itemize}
 \item If the new entries are put in the end of the list the list can

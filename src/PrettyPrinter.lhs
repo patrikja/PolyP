@@ -106,6 +106,7 @@ import MonadLibrary(Error)
 > instance Pretty a => Pretty (Expr' a) where
 >   pretty = prExpr
 
+> prId :: Expr' t -> String -> Doc
 > prId e name = (if isOperator e then ppParentheses else id ) (text name)
 
 > prExpr :: Pretty a => Expr' a -> Doc
@@ -173,8 +174,10 @@ import MonadLibrary(Error)
 > prQ [c] t = sep [prContext c <> text " =>", nest 2 (pretty t)]
 > prQ cs  t = sep [prContexts cs <> text " =>", nest 2 (pretty t)]
 
+> prContexts :: (Pretty t) => [(String, [t])] -> Doc
 > prContexts cs = ppTuple (map prContext cs)
 
+> prContext :: (Pretty t) => (String, [t]) -> Doc
 > prContext (c,ts) =  sep (text c: map (nest 2.ppParentheses) ts)
 
 > instance Pretty Type where 
@@ -194,8 +197,10 @@ import MonadLibrary(Error)
 >     (fun:args) = spineWalkType x
 >     n = length args
 
+> prT :: Type -> Doc
 > prT x = (if isSimpleType x then id else ppParentheses) (prType x)
 
+> prArrow :: Type -> Type -> Doc
 > prArrow r d = sep [ppleft r (prType r) <> text " ->", prType d] 
 >   where
 >     ppleft (c :@@: s :@@: t) 
@@ -209,6 +214,7 @@ import MonadLibrary(Error)
 > instance Pretty Literal where
 >   pretty = prLit
 
+> prLit :: Grammar.Literal -> Doc
 > prLit (IntLit  n) = text (show n)
 > prLit (FloatLit f)= text (show f)
 > prLit (BoolLit b) = text (show b)

@@ -473,7 +473,9 @@ $\tau$ of this type we want to find the functor corresponding to $f$.
 This can be done by unifying the two types and extracting the part of
 the substitution that refers to $f$.
 
-Make sure match works for variables too. (together with functorCase)
+Make sure match works for variables too. (insert dictionaries?)
+(together with functorCase)
+
 \begin{verbatim}
 
 > type Subst = [(VarID,Type)]

@@ -1,7 +1,8 @@
 \chapter{More pretty printing combinators} 
 \begin{verbatim}
 
-> module PrettyPrintExtra(module PrettyPrintLibrary,module PrettyPrintExtra) where
+> module PrettyPrintExtra(module PrettyPrintLibrary,
+>                         module PrettyPrintExtra) where
 > import PrettyPrintLibrary
 
 > class Pretty a where
@@ -15,7 +16,7 @@
 >   showsPrec _ x = \s -> showDoc x ++ s
 
 \end{verbatim}
-\section{Basic combinators}
+\section{Combinators}
 \begin{verbatim}
 
 > ppHorizontalList :: Pretty a => [a] -> Doc

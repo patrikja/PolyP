@@ -98,7 +98,8 @@ variables to be instantiated to non-generic types. (As \verb|a| is
 assumed not to contain any non-generic variables this means
 monotypes.)
 
-Should also check that the predicates are related.
+Should also check that the predicates are related, and handle
+polytypic types.
 
 Using {\tt allngs} below is an optimization in that the list of
 variables is calculated only once, but for correctness this requires
@@ -121,15 +122,15 @@ This function answers the equivalent questions:
 \begin{itemize}
 \item Is a an instance of b
 \item Is b more general than a
-\item Can a and b be unified with the substitution only affecting
+\item Can a and b be unified with a substitution only affecting
   variables in b.
 \end{itemize}
 The algorithm implements the following (successful) cases:
 \begin{itemize}
-\item t <= forall b . b
-\item t <= b, if t is a monotype
-\item f1 e1 <= f2 e2, if f1 <= f2 and e1 <= e2
-\item c <= c 
+\item \texttt{t <= forall b . b}
+\item \texttt{t <= b}, if t is a monotype
+\item \texttt{f1 e1 <= f2 e2}, if \texttt{f1 <= f2} and \texttt{e1 <= e2}
+\item \texttt{c <= c} 
 \end{itemize}
 \begin{verbatim}
 

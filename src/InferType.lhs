@@ -144,7 +144,9 @@ The algorithm is split up into different cases corresponding to the
 alternatives in the abstract syntax of expressions. 
 
 Let unify take the whole QType as argument and return the new list of
-predicates. Adapt mkFun, mkVar to QTypes. (How to do with inferPat?)
+predicates. Adapt mkFun, mkVar to QTypes. (How to do with inferPat in
+Case exression?)
+
 \begin{verbatim}
 
 > basis |- (Var name) = name `lookupType` basis
@@ -156,6 +158,10 @@ predicates. Adapt mkFun, mkVar to QTypes. (How to do with inferPat?)
 >     mliftErr (mkFun tX tApp) >>= \tF'  -> 
 >     unify tF tF'             >> 
 >     return (ps ### qs :=> tApp)
+
+
+
+
 
 > basis |- (Lambda pat expr)
 >   = inferPat basis pat >>= \(ps:=>tPat, basis')-> 
