@@ -19,7 +19,7 @@ polytypic fmap :: (a -> c) -> (b -> d) -> f a b -> f c d
       
 cata :: Regular d => (FunctorOf d a b -> b) -> (d a -> b)
 ana  :: Regular d => (b -> FunctorOf d a b) -> (b -> d a)
-hylo :: Bifunctor f => (f a b -> d)-> (c -> f a b) -> c -> d
+hylo :: Bifunctor f => (f a b -> b) -> (c -> f a c) -> c -> b
 cata i   = i   . fmap id (cata i  ) . out
 ana    o = inn . fmap id (ana    o) . o
 hylo i o = i   . fmap id (hylo i o) . o

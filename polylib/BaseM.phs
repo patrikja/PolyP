@@ -28,7 +28,7 @@ prodmapMr f g p = g (snd p) >>= \y-> f (fst p) >>= \x-> return (x,y)
 
 cataM :: Regular d => (FunctorOf d a b -> m b) -> (d a -> m b)
 anaM  :: Regular d => (b -> m (FunctorOf d a b)) -> (b -> m (d a))
-hyloM :: Bifunctor f => (f a b -> m d)-> (c -> m (f a b)) -> c -> m d
+hyloM :: Bifunctor f => (f a b -> m b)-> (c -> m (f a c)) -> c -> m b
 cataM iM    = iM      @@ fmapM idM (cataM iM   ) . out
 anaM     oM = mapm inn . fmapM idM (anaM     oM) @@ oM
 hyloM iM oM = iM      @@ fmapM idM (hyloM iM oM) @@ oM
