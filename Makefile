@@ -87,7 +87,7 @@ clean:
 	-$(MAKE) -C examples clean
 	$(MAKE) -C polylib clean
 	$(MAKE) -C book clean
-	rm -fr polyp$(polyp_version) polyp$(polyp_version).tar.gz
+	rm -fr polyp-$(polyp_version) polyp-$(polyp_version).tar.gz
 
 veryclean:	clean
 	$(MAKE) -C src veryclean
@@ -102,19 +102,21 @@ distclean:	veryclean
 
 
 # Distribution
-polyp$(polyp_version):
+dist: polyp-$(polyp_version).tar.gz
+
+polyp-$(polyp_version):
 	-rm -r $@
 	cvs export -D now -d $@  p
 
-polyp$(polyp_version).tar.gz: polyp$(polyp_version)
+polyp-$(polyp_version).tar.gz: polyp-$(polyp_version)
 	-rm -r $@
 	gtar -zcf $@ $<
 
 WWWDIR = $(HOME)/pub/www/poly
 
-www: polyp$(polyp_version).tar.gz
+www: polyp-$(polyp_version).tar.gz
 	cp polyp$(polyp_version).tar.gz $(WWWDIR)
-	cd $(WWWDIR); $(MAKE) -e polyp$(polyp_version)
+	cd $(WWWDIR); $(MAKE) -e polyp-$(polyp_version)
 	rm -rf polyp$(polyp_version).tar.gz polyp$(polyp_version)
 # `-e' `--environment-overrides'
 #     Give variables taken from the environment precedence over
@@ -123,17 +125,17 @@ www: polyp$(polyp_version).tar.gz
 packpolylib:
 	gtar -zcf polylib.tar.gz polylib examples 
 
-local:	polyp$(polyp_version)
-	$(MAKE) -C polyp$(polyp_version) ghc
-	$(MAKE) -C polyp$(polyp_version) check.ghc
-	cp polyp$(polyp_version)/bin/ghcpolyp $(HOME)/bin/polyp
+local:	polyp-$(polyp_version)
+	$(MAKE) -C polyp-$(polyp_version) ghc
+	$(MAKE) -C polyp-$(polyp_version) check.ghc
+	cp polyp-$(polyp_version)/bin/ghcpolyp $(HOME)/bin/polyp
 	@echo Skicka brev lokalt och meddela detta
 
 fromwww:
 	lynx -source 'http://www.cs.chalmers.se/~patrikj/poly/polyp.tar.gz'\
            > polyp.tar.gz
 	gunzip < polyp.tar.gz | tar xf -
-	cd polyp$(polyp_version); $(MAKE) check.ghc
+	cd polyp-$(polyp_version); $(MAKE) check.ghc
 
 WEBSITE = http://www.cs.chalmers.se/~patrikj/poly/polyp/
 WEBDIR  = $(HOME)/pub/www/poly/polyp
@@ -148,4 +150,4 @@ README:	index.html
 .PHONY: help install hugs ghc hbc clean distclean packpolylib \
 	www fromwww local 
 
-# for some reason, checkhbc, checkghc, chechhugs should not be in that list
+# for some reason, checkhbc, checkghc, checkhugs should not be in that list
