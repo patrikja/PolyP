@@ -3,24 +3,22 @@
 
 > module LabelType where
 > import List(nub)
-
-> import Env(newEnv,lookupEnv,extendsEnv)
 > import Folding(freeVarsPat,mapEqn)
 > import Grammar(VarID, Eqn'(..), Expr'(..), Type(..), Eqn, 
->                TEqn, TExpr, PrgEqns, PrgTEqns, QType, Qualified((:=>)),
+>                TEqn, PrgEqns, PrgTEqns, QType, Qualified((:=>)),
 >                deQualify,qualify,isPolytypic,getNameOfVarBind)
 > import InferKind(inferDataDefs)
 > import InferType(inferLiteral,patBindToVarBind,checkTypedInstance,tevalAndSubst)
 > import MonadLibrary(STErr, (<@),(<@-), mliftErr, unDone, LErr, mapLErr,
 >                     convertSTErr, Error(..), mapl, foreach)
-> import MyPrelude(pair,mapFst,mapSnd,splitUp,fMap,  maytrace)
+> import MyPrelude(pair,mapSnd,splitUp,fMap,  maytrace)
 > import StartTBasis(startTBasis)
 > import StateFix-- (ST [,runST [,RunST]]) in hugs, ghc, hbc
-> import TypeBasis(Basis,TBasis,extendKindEnv,
->                  tBasis2Basis,extendKindTBasis,extendTypeAfterTBasis,
->                  extendTypeEnv,extendTypeTBasis,getKindEnv,
+> import TypeBasis(Basis,TBasis,
+>                  tBasis2Basis,extendTypeAfterTBasis,
+>                  extendTypeEnv,extendTypeTBasis,
 >                  getNonGenerics,getRamTypes,instantiate,inventTypes,
->                  lookupType,makeNonGeneric,ramKindToRom,ramTypeToRom)
+>                  lookupType,makeNonGeneric)
 > import TypeGraph(HpQType,HpType, HpTExpr, HpTEqn, 
 >                  mkVar, mkFun, (+#+), mkQFun,
 >                  eqnIntoHeap, blockOutOfHeap,allGeneric)
@@ -144,7 +142,7 @@ inference.
 > basis |-> e@(Literal lit)
 >   = inferLiteral basis lit <@ pair e
 
-> basis |-> e@WildCard
+> _     |-> e@WildCard
 >   = lift (mkVar <@ ([]:=>) <@ pair e)
 
 > basis |-> (Case expr alts)
@@ -196,7 +194,7 @@ than the supplied type. Label with the (less general) explicit type.
 >     checkTypedInstance allGeneric hpType tExpr >>
 >     return hpType <@ 
 >     mkTyped expr' 
->   where ngs = getNonGenerics basis
+>   -- where ngs = getNonGenerics basis
 
 \end{verbatim}
 \section{Patterns}
@@ -296,7 +294,8 @@ recursive, n is mostly 1.)
 >     foreach veqns typeVar  <@
 >     pair (extendTypeEnv (map typePoly peqns) basis)
 >  where typeVar veqn = mkVar <@ (pair (getNameOfVarBind veqn) . ([]:=>))
->        typePoly (Polytypic v hpt f cs) = (v,hpt)
+>        typePoly (Polytypic v hpt _ _) = (v,hpt)
+>	 typePoly _	                = error "LabelType.prepBasis: Impossible!"
 
 > splitEqns :: [Eqn' (Qualified t)] -> 
 >              ([Eqn' (Qualified t)],[Eqn' (Qualified t)])
@@ -351,9 +350,9 @@ To label a block of equations with types we
 >     in return (maytrace "labelBlock finished\n" $
 >                conc pq',finalbasis)
 >  where conc (pqs,vqs) = vqs ++ pqs
->        pq@(peqns,veqns) = splitEqns eqns
+>        pq = splitEqns eqns
 >        n = length eqns + 1
->        rep 0 f x = return x
+>        rep 0 _ x = return x
 >        rep m f x = f x >>= rep (m-1) f
 >        labelit base peve (vals',_) = labelBlock' base (vals',peve)
 
@@ -366,12 +365,12 @@ labelling rules.
 > labelVal :: Basis s -> (HpTEqn s,HpType s) -> 
 >                STErr s (HpTEqn s,HpQType s)
 > labelVal basis (eqn,tLhs) = 
->     basis |-> e >>= \(e',t@(ps:=>tRhs)) -> 
+>     basis |-> e >>= \(e',t@(_:=>tRhs)) -> 
 >     unify tLhs tRhs <@-
 >     (insType t (inv e'),t)
 >  where (e,inv) = patBindToVarBind eqn
 >        insType t (VarBind v Nothing ps e') = VarBind v (Just t) ps e'
->        insType t q = q
+>        insType _ q = q
 
 \end{verbatim}
 \subsection{labelPoly in the heap}
@@ -380,7 +379,7 @@ alternatives one by one.
 \begin{verbatim}
 
 > labelPoly :: Basis s -> HpTEqn s -> STErr s (HpTEqn s)
-> labelPoly basis (Polytypic n hpty' f cases) =
+> labelPoly basis (Polytypic n hpty' _ cases) =
 >    let (funs',es) = maytrace "labelPoly starts\n" $ unzip cases
 >    in mapl (basis |->) es  <@ unzip >>= \(es',ti)->
 
@@ -416,7 +415,7 @@ calculated types.
 >    ngs = getNonGenerics basis
 >    moreGeneral ngs' (t,tau) = checkInstance ngs' tau t
 
-> labelPoly basis _ = error "LabelType.labelPoly: not a polytypic definition"
+> labelPoly _     _ = error "LabelType.labelPoly: not a polytypic definition"
 
 \end{verbatim}
  

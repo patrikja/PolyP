@@ -58,8 +58,8 @@ Auxilliary functions
 > fitunion (Nest n (Text m s : _)) (Nest _ as) = Nest n (Text m s:as)
 > fitunion _ d  = d
 
-> nice w r (Text n s)    = n <= min r w
-> nice w r (Above n s d) = n <= min r w
+> nice w r (Text n _)    = n <= min r w
+> nice w r (Above n _ _) = n <= min r w
 
 > choose w r d d' = if nice w r d then d else d'
 
@@ -68,11 +68,11 @@ Auxilliary functions
 >       Text _ s    -> indnt (n+m) s ""
 >       Above _ s d -> indnt (n+m) s (nestbest (n+m) (w-m) r d)
 
+> indnt :: Int -> ([Char] -> [Char]) -> [Char] -> [Char]
 > indnt n s c | n >= 8 = '\t' : indnt (n-8) s c
 > indnt n s c | n >= 1 = ' '  : indnt (n-1) s c
 > indnt 0 s c          = s ('\n': c)
-
-indnt is only defined for n>=0
+> indnt _ _ _ = error "PrettyPrintLibrary.indnt is only defined for n>=0"
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 

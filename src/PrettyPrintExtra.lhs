@@ -11,6 +11,7 @@
 > instance Pretty Doc where
 >   pretty = id
 
+> showDoc :: Doc -> String
 > showDoc = layout 80 80 
 > instance Show Doc where
 >   showsPrec _ x = \s -> showDoc x ++ s

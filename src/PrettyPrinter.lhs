@@ -252,7 +252,7 @@ output Haskell code violates the monomorphism restriction.
 > prArrow :: Type -> Type -> Doc
 > prArrow r d = sep [ppleft r (prType r) <> text " ->", prType d] 
 >   where
->     ppleft (c :@@: s :@@: t) 
+>     ppleft (c :@@: _ :@@: _) 
 >        | isFunctionType c    = ppParentheses 
 >     ppleft   _               = id
 
@@ -331,8 +331,8 @@ and thus do not need to be parenthesized when used as type arguments.
 > isTypeOp _        = False
 
 > isOperatorName :: String -> Bool
-> isOperatorName ('(':s) = False 
-> isOperatorName (c  :s) = not (isAlpha c) 
+> isOperatorName ('(':_) = False 
+> isOperatorName (c  :_) = not (isAlpha c) 
 > isOperatorName ""      = error "PrettyPrinter.isOperatorName: empty name"
 
 \end{verbatim}
@@ -344,13 +344,13 @@ constructors are () (,) (,,) (,,,) ...
 > tupletest (Con ('(':xs)) = f (length xs)
 >   where f 1 = 0
 >         f n = n
-> tupletest c = -1
+> tupletest _ = -1
 
 > tupletypetest :: Type -> Int
 > tupletypetest (TCon ('(':xs)) =  f (length xs)
 >   where f 1 = 0
 >         f n = n
-> tupletypetest c = -1
+> tupletypetest _ = -1
 
 \end{verbatim}
 \section{Dependencies}

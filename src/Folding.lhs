@@ -115,8 +115,8 @@ explicit types are there to stop Gofer from complaining about
 >       where without2 ((_,l),(_,r)) = r `without` l
 >     letrec ys x = let (f, s) = concat' (concat ys)
 >                   in  free ((snd x ++ s) `without` f)
->     typed e t   = e 
->     varBind name typ pats body = 
+>     typed e _   = e 
+>     varBind name _ pats body = 
 >       ([name],  (snd body) `without` 
 >                 (concat (map snd pats)) :: [VarID])
 >     dataDef _ _ _ _        = nil
@@ -166,7 +166,8 @@ explicitly typed expressions) to another.
 >        where polycase (func,me) = g func <*> me
 >      explType g vs t = map1 (ExplType vs) (g t)
 
-> mmapMaybe f Nothing = map0 Nothing
+> mmapMaybe :: (Functor m, Monad m) => (a -> m b) -> Maybe a -> m (Maybe b)
+> mmapMaybe _ Nothing = map0 Nothing
 > mmapMaybe f (Just t)= map1 Just (f t)
 
 \end{verbatim}
@@ -242,7 +243,7 @@ variables are typed.  Should be rewritten to update the state \'a la
 >   where 
 >     mt (Typed (Var v) t) = f v t <@ ((`Typed` t).Var)
 >     mt (Typed e       t) = mt e   <@ (`Typed` t)
->     mt (Var v) = error "Folding.mmapTExpr: untyped variable encountered"
+>     mt (Var v) = error ("Folding.mmapTExpr: untyped variable "++v++" encountered")
 >     mt e = m e -- now e can't be Typed
 
 >     m (Con c)       = map0 (Con c)
@@ -253,7 +254,7 @@ variables are typed.  Should be rewritten to update the state \'a la
 >     m (Case e cs)   = map2 Case (mt e) (mapl (uncurry (map2 pair)) 
 >                                              (map mt2 cs)          )
 >     m (Letrec qss e)= map2 Letrec (mapl (mapl mq) qss) (mt e)
->     m (Typed e t)   = error ("Folding: mmapTExpr: unexpected Typed expression: "++
+>     m e@(Typed _ _) = error ("Folding: mmapTExpr: unexpected Typed expression: "++
 >                              pshow e)
 >     m e             = error ("Folding: mmapTExpr: unexpected expression: "++
 >                              pshow e)

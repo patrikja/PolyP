@@ -5,7 +5,7 @@ comments are now obsolete.
 
 > module ParseLibrary where
 > --      (optional, digit, ...)
-> import MonadLibrary((<@),(<@-),(<<),(<:*>),(<*>),(<|),liftop,mguard,(+++),
+> import MonadLibrary((<@),(<@-),(<<),(<:*>),(<*>),(<|),mguard,(+++),
 >                     StateM(..),fetchSTM,updateSTM,
 >                     Error(..),ErrorMonad(..))
 > import MyPrelude(fMap)
@@ -122,8 +122,8 @@ But we will use specialized versions for efficiency.
 
 > opt :: Parser a -> a -> Parser a
 > (STM p) `opt` v = STM (\s -> case p s of
->                                 []     -> [(v,s)]
->                                 (x:xs) -> [x]
+>                                 []    -> [(v,s)]
+>                                 (x:_) -> [x]
 >                       )
 
 > optional :: Parser a -> Parser (Maybe a)
@@ -217,6 +217,7 @@ offside position to its original setting.
 >    fetch_off <*> fetch_pos >>= \((ol,oc),(l,c)) -> 
 >    (set_off (l,c+1) >> (p `sepby` offside_op c)) << set_off (ol,oc)          
 
+> offside_op :: Int -> Parser ()
 > offside_op oc = fetch_pos       >>= \(l,c) -> 
 >                 mguard (oc == c) >> 
 >                 set_off (l,c+1)

@@ -15,6 +15,7 @@ export HASKELLVERSION = 98
 export ghc  = ghc
 export hbc  = hbc
 export hugs = runhugs
+export PolyP = polyp
 
 # For a quick test of PolyP - use hugs to avoid compilation
 

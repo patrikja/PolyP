@@ -2,7 +2,6 @@
 \begin{verbatim}
 
 > module Grammar where
-> import List((\\))
 > import MyPrelude(mapSnd)
 
 > infixl 9 :@:
@@ -222,7 +221,7 @@ all arguments.
 > getNameOfDataDef (DataDef name _ _ _) = name
 > getNameOfDataDef _ =error "Grammar.getNameOfDataDef: wrong argument"
 
-> deQualify (qs:=>t) = t
+> deQualify (_:=>t) = t
 > qualify t = []:=>t
 
 > functionConstructor :: ConID
@@ -242,7 +241,7 @@ all arguments.
 > tupleConstructor n = ( ('(':replicate (max (n-1) 0) ',')++")")
 
 > isTupleCon :: ConID -> Bool
-> isTupleCon (c:cs) = c=='('
+> isTupleCon (c:_) = c=='('
 > isTupleCon []     = error "Grammar.isTupleCon: impossible: empty constructor"
 
 > context2type (c,ts) = foldl (:@@:) (TCon c) ts

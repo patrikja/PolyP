@@ -4,25 +4,27 @@
 > module UnifyTypes(unify,checkInstance,  unifyVar) where
 > import TypeGraph(HpType,fetchNode,occursInType,
 >                  typeIntoHeap, flattenNgs,
->                  flattenHpType,mkCon,mkApp,mkFOfd,(==>),
+>                  flattenHpType,mkFOfd,(==>),
 >                  HpNode(..),HpQType,NonGenerics,isGenericApproximation)
 >                  
 > import TypeError
 > import MonadLibrary(STErr,mliftErr,ErrorMonad(failEM),
->                     (<@),mIf,liftop,applyM,applyM2,
->                     ST,(===),readVar)
-> import Env(newEnv,lookupEnv,extendsEnv)
-> import Grammar(Type(..),Qualified(..),qualify,deQualify)
-> import MyPrelude(swap,pair)
+>                     (<@),mIf,applyM,applyM2,
+>                     ST,(===))
+> import Env(Env,newEnv,lookupEnv,extendsEnv)
+> import Grammar(Qualified(..),Func)
+> import MyPrelude(pair)
 
 #ifdef __DEBUG_UNIFY__
 > import MyPrelude(maytrace)
 #else
 #ifndef __OLD_HUGS__
+> maytrace :: String -> a -> a
 > maytrace _ = id
 #endif
 #endif
 
+> lifE :: ST s a -> STErr s a
 > lifE = mliftErr   -- local short name
 
 \end{verbatim}
@@ -44,6 +46,7 @@ effect'!)
 
 \begin{verbatim}
 
+> unify :: HpType s -> HpType s -> STErr s ()
 > unify a b = maytrace "<" 
 >               (punify a b >> 
 >             maytrace ">" 
@@ -93,8 +96,7 @@ algorithm changes the types pointer structure using {\tt (==>)}.
 
 > checkInstance :: NonGenerics s -> HpQType s -> HpQType s -> 
 >                    STErr s ()
-> checkInstance ngs (ac:=>a) (bc:=>b) =
->      
+> checkInstance ngs (_:=>a) (_:=>b) =
 >      lifE (flattenNgs ngs >>= \allngs ->
 >            isInstance allngs a b) >>= 
 >      mayreportTError ngs a
@@ -214,7 +216,7 @@ run into.
 
 > analyzeApp :: HpType s -> HpType s -> ST s (HpTy s)
 > analyzeApp f' x' 
->   = fetchNode f' <@ \(f, nodeF) ->
+>   = fetchNode f' <@ \(_, nodeF) ->
 >     case nodeF of
 >       HpCon c | c == "Mu"        -> Mu   x'
 >               | c == "FunctorOf" -> FOf  x'
@@ -247,7 +249,7 @@ The first five cases are dealt with by the variable rule
 \texttt{unifyVar}: it checks for circularity (occur check), performs
 the substitution.
 
-> punify2 (a,V v )  (b, _   ) = unifyVar a b
+> punify2 (a,V _ )  (b, _   ) = unifyVar a b
 
 The four remaining diagonal cases are handled as usual - by unifying
 the children pairwise.
@@ -263,15 +265,15 @@ Now there is the classical mismatch case, and a new error case due to
 kind mismatch as \texttt{Mu f :: *->*} and \texttt{FOf d :: *->*->*}.
 
 > punify2 (a,C cA)  (b,A _ _) = failWith (show (EUnifyConstApp cA)) a b
-> punify2 (a,Mu f ) (b,FOf e) = failHere EUnifyKind
+> punify2 (_,Mu _)  (_,FOf _) = failHere EUnifyKind
 
 Finally we have the four interesting new cases when the functor
 constructors are matched against other types.
 
-> punify2 (a,C cA ) (b,Mu f ) = punifyMu a f
-> punify2 (a,A g x) (b,Mu f ) = failHere ENoMuApp
-> punify2 (a,C cA ) (b,FOf d) = punifyFOf d a
-> punify2 (a,A f x) (b,FOf d) = punifyFOf d a
+> punify2 (a,C _  ) (_,Mu f ) = punifyMu a f
+> punify2 (_,A _ _) (_,Mu _ ) = failHere ENoMuApp
+> punify2 (a,C _  ) (_,FOf d) = punifyFOf d a
+> punify2 (a,A _ _) (_,FOf d) = punifyFOf d a
 
 As an extra precaution a base case checks for missed cases or
 violations of the invariant that the arguments to \texttt{punify2}
@@ -317,6 +319,7 @@ unifyFun: Application expected (this should not happen!)
 > ok :: Monad m => m ()
 > ok = return () 
 
+> punifyfuns :: Env String Func
 > punifyfuns = extendsEnv l newEnv
 >      where l = error "UnifyTypes.punify: Needs functor environment (to be implemented)"
 

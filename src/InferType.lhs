@@ -4,27 +4,27 @@
 > module InferType where
 > import InferKind(inferDataDefs)
 > import UnifyTypes(unify,checkInstance)
-> import TypeGraph(HpType,HpKind,NodePtr,HpNode(..),HpQType,NonGenerics,
->                  mkFun,mkCon,mkVar,mkFOfd,mkQFun,
->                  (==>),fetchNode,checkCon,
+> import TypeGraph(HpType,NodePtr,HpNode(..),HpQType,NonGenerics,
+>                  mkFun,mkVar,mkFOfd,mkQFun,
+>                  (==>),checkCon,
 >                  qtypeIntoHeap,qtypeOutOfHeap,allGeneric,
 >                  spineWalkHpType,getChild, (+#+))
 > import TypeBasis(Basis,TBasis,
 >                  tBasis2Basis,extendTypeTBasis,extendTypeAfterTBasis,
 >                  getNonGenerics,makeNonGeneric,lookupType,ramTypeToRom,
->                  extendTypeEnv,ramKindToRom,getKindEnv,instantiate,
->                  extendKindEnv,extendKindTBasis,inventTypes)
+>                  extendTypeEnv,instantiate,
+>                  inventTypes)
 > import StartTBasis(startTBasis,charType,intType,floatType,boolType,strType)
 > import Env(Env,newEnv,lookupEnv,extendsEnv)
 > import MyPrelude(pair,splitUp,fMap)
 > import MonadLibrary(STErr,mliftErr,convertSTErr,Error(..),unDone,(@@),
->                     foreach,mapl,(<@),(<@-),LErr,map2,accumseq,accumseq_)
+>                     foreach,mapl,(<@),(<@-),LErr,accumseq,accumseq_)
 > import StateFix-- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 > import Grammar -- (Qualified,Type(..),PrgEqns)
-> import Folding(freeVarsPat,cataType)
+> import Folding(freeVarsPat)
 > import ParseLibrary(parse)
 > import Parser(pType1)
-> import PrettyPrinter(Pretty(..))
+> import PrettyPrinter()
 > import Monad(foldM)
 
 \end{verbatim}
@@ -35,8 +35,8 @@
 > inferProgram (dataDefs, bindss) = 
 >   let p@(basis,err) = inferDataDefs startTBasis dataDefs
 >   in case err of 
->        Err msg -> p
->        _       -> inferGroups bindss basis
+>        Err _ -> p
+>        _     -> inferGroups bindss basis
 
 \end{verbatim}
 \section{Groups}
@@ -149,7 +149,7 @@ alternatives in the abstract syntax of expressions.
 >     mliftErr (mkQFun tPat tExpr)
 
 > basis |- (Literal lit) = inferLiteral basis lit
-> basis |- WildCard      = mliftErr (mkVar <@ qualify)
+> _     |- WildCard      = mliftErr (mkVar <@ qualify)
 
 > basis |- (Case expr alts)
 >   = basis |- expr            >>= \(ps:=>tExpr) -> 
@@ -183,11 +183,11 @@ Just selects the type of the literal.
 \begin{verbatim}
 
 > inferLiteral :: Basis s -> Literal -> STErr s (HpQType s)
-> inferLiteral basis (IntLit _)  = mliftErr (qtypeIntoHeap intType)
-> inferLiteral basis (FloatLit _)= mliftErr (qtypeIntoHeap floatType)
-> inferLiteral basis (BoolLit _) = mliftErr (qtypeIntoHeap boolType)
-> inferLiteral basis (CharLit _) = mliftErr (qtypeIntoHeap charType)
-> inferLiteral basis (StrLit _)  = mliftErr (qtypeIntoHeap strType)
+> inferLiteral _ (IntLit _)  = mliftErr (qtypeIntoHeap intType)
+> inferLiteral _ (FloatLit _)= mliftErr (qtypeIntoHeap floatType)
+> inferLiteral _ (BoolLit _) = mliftErr (qtypeIntoHeap boolType)
+> inferLiteral _ (CharLit _) = mliftErr (qtypeIntoHeap charType)
+> inferLiteral _ (StrLit _)  = mliftErr (qtypeIntoHeap strType)
 
 \end{verbatim}
 \section{Patterns}
@@ -241,7 +241,7 @@ right kind.)
 >   where
 >     [peqns,veqns] = splitUp [isPolytypic] eqns
 >     typeVar veqn = mkVar <@ (pair (getNameOfVarBind veqn) . qualify)
->     typePoly (Polytypic v (ps:=>t) f cs) = 
+>     typePoly (Polytypic v (ps:=>t) f _) = 
 >                 qtypeIntoHeap (poly f ps :=> t) <@ pair v
 >     typePoly _ = error "InferType.inferBlock: impossible: not Polytypic"
 >     poly :: QType -> [Context]-> [Context]
@@ -276,12 +276,12 @@ position.
 \begin{verbatim}
 
 > patBindToVarBind :: Eqn' t -> (Expr' t,Expr' t -> Eqn' t)
-> patBindToVarBind q@(VarBind v t pats rhs) = (expr',inv t)
+> patBindToVarBind (VarBind v t pats rhs) = (expr',inv t)
 >   where expr'= maybe id (flip Typed) t (foldr Lambda rhs pats)
 >         inv' 0 e = ([],e)
 >         inv' n (Lambda p e) = (p:ps,e')
 >              where (ps,e') = inv' (n-1) e
->         inv' n _ = error "InferType.patBindToVarBind: impossible: wrong no of Lambdas"
+>         inv' _ _ = error "InferType.patBindToVarBind: impossible: wrong no of Lambdas"
 >         inv Nothing = uncurry (VarBind v Nothing) . (inv' (length pats))
 >         inv (Just _)= invfun
 >         invfun (Typed e ty) =
@@ -291,7 +291,7 @@ position.
 
 > checkVal :: Basis s -> (Eqn,HpType s) -> STErr s (HpQType s)
 > checkVal basis (eqn,tLhs) = 
->    basis |- e >>= \t@(ps:=>tRhs) -> 
+>    basis |- e >>= \t@(_:=>tRhs) -> 
 >    unify tLhs tRhs <@- t
 >  where (e,_) = patBindToVarBind eqn
 
@@ -301,7 +301,7 @@ alternatives one by one.
 \begin{verbatim}
 
 > checkPoly :: Basis s -> Eqn -> STErr s ()
-> checkPoly basis (Polytypic _ ty f cases) =
+> checkPoly basis (Polytypic _ ty _ cases) =
 >    let (funs,es) = unzip cases  
 >    in mapl (basis |-) es >>= \ti -> 
 
@@ -338,7 +338,7 @@ in the context list.
 > tevalAndSubst :: HpQType s -> HpQType s -> -- type, functor
 >                  ST s (HpQType s)          -- evaluated type
 > tevalAndSubst hpty' (_:=>hpfi) = 
->   instantiate allGeneric hpty' >>= \hpty@((_,pf:_):_:=>pt) ->
+>   instantiate allGeneric hpty' >>= \hpty@((_,pf:_):_:=>_) ->
 >   pf ==> hpfi                  >> -- substitution by destructive update
 >   hpQTypeEval hpty             >> -- type evaluation  
 >   return hpty
@@ -555,6 +555,7 @@ rewrite rules: \\
 \end{tabular} \\
 \begin{verbatim}
 
+> typeSynEnv :: Env VarID (Int,QType)
 > typeSynEnv = extendsEnv [typeSyn "+" "fgab" "Either (f a b) (g a b)",
 >                          typeSyn "*" "fgab" "(f a b, g a b)",
 >                          typeSyn "@" "dgab" "d (g a b)",
@@ -573,12 +574,15 @@ that we can use for substitution.
 Problem: The program loops if not all synonyms are present. 
 \begin{verbatim}
 
+> typeSyn :: name -> String -> String -> (name,(Int,QType))
 > typeSyn n cs rhs = (n, (length cs, ps :=> unDone (parse pType1 rhs)))
 >   where ps = map (\c->("",[TVar [c]])) cs
+> splitTypeSyn :: Qualified t -> ([t],t)
 > splitTypeSyn (ps:=>rhs) = (map f ps,rhs)
 >   where f (_,[pv]) = pv
 >         f _ = error "InferType.splitTypeSyn: not a type variable"
 
+> applySynonym :: QType -> [HpType s] -> ST s (HpType s)
 > applySynonym syn args = 
 >     qtypeIntoHeap syn <@ splitTypeSyn  >>= \(vars,rhs)->
 >     accumseq (zipWith (==>) vars args) <@- rhs

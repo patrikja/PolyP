@@ -3,16 +3,16 @@
 
 > module Functorize(inn_def,out_def,either_def,fcname_def,
 >                   Struct,makeFunctorStruct,Req,eqReq,codeFunctors) where
-> import Char(isDigit,toLower)
+> -- import Char(isDigit)
 > import Env(lookupEnv)
 > import Grammar(Eqn'(..),Expr'(..),Expr,Type(..),Qualified(..),Literal(..),
 >                Eqn,Func,QType, ConID,VarID,spineWalkType,
 >                tupleConstructor,listConstructor,isTupleCon)
 > import Folding(cataType)
-> import MonadLibrary(Error(..),ErrorMonad(..),map0,map2,accumseq)
+> import MonadLibrary(Error(..),ErrorMonad(..),map0,map1,map2,accumseq)
 > import MyPrelude(mapFst,mapSnd,pair,variablename,fMap)
 > import StartTBasis(innType,outType,fcnameType,leftname,rightname,eitherType)
-> import PrettyPrinter(Pretty(),pshow)
+> import PrettyPrinter(pshow)
 
 \end{verbatim}
 \section{Extracting functors from {\tt data}-definitions} 
@@ -26,12 +26,15 @@ The type {\tt Struct} represents the top level structure of the
 datatype definition: 
 \begin{verbatim}
 
+> {-
 > makeFunctor :: Eqn -> Func
 > makeFunctor = snd . makeFunctorStruct
 
-> type PList a = (a,[a])
+> mapPList :: (a->b) -> PList a -> PList b
 > mapPList f (a,as) = (f a,map f as)
+> -}
 
+> type PList a = (a,[a])
 > type Struct = PList (ConID,Int)
 
 \end{verbatim}
@@ -42,7 +45,7 @@ in inn, out, or forbidden below.
 \begin{verbatim}
 
 > makeFunctorStruct :: Eqn -> (Struct,Func)
-> makeFunctorStruct (DataDef def [arg] alts _)
+> makeFunctorStruct (DataDef def [_] alts _)
 >   = ( ((def,1),map (mapSnd length) alts) , convAlts def alts)
 > makeFunctorStruct _ = error "Functorize.makeFunctorStruct: impossible: not a DataDef"
 
@@ -51,15 +54,15 @@ in inn, out, or forbidden below.
 >   where x `plus` y = TCon "+" :@@: x :@@: y
 
 > convProd :: ConID -> [Type] -> Func
-> convProd def [] = TCon "Empty" 
+> convProd _   [] = TCon "Empty" 
 > convProd def ts = foldr1 prodFunctor (map (convType def) ts)
 
 > prodFunctor :: Func -> Func -> Func
 > prodFunctor f g = TCon "*" :@@: f :@@: g
 
 > convType :: ConID -> Type -> Func
-> convType def (TVar _) = TCon "Par" -- indexed if multiple params
-> convType def t | isConstantType t = TCon "Const" :@@: t
+> convType _   (TVar _) = TCon "Par" -- indexed if multiple params
+> convType _   t | isConstantType t = TCon "Const" :@@: t
 > convType def (TCon con :@@: TVar _)
 >   | con == def = TCon "Rec"
 > convType def t | isTupleCon tup   = convProd def ts
@@ -109,26 +112,30 @@ The {\tt inn} function is recovered by supplying an empty list as {\tt
 > type CEList = [(ConID, Expr)]
 
 > geninn_def :: VarID -> CEList -> Struct -> (QType,([Req],[Eqn]))
-> geninn_def n cres ((name,_),ss) = (innType,
->                                    (reqs,[VarBind n (Just innType) [] 
->                                            (eitherfs (map constrs' ss))]))
+> geninn_def n cres (_,ss) = (innType,
+>                             (reqs,[VarBind n (Just innType) [] 
+>                                      (eitherfs (map constrs' ss))]))
 >   where 
 >     noPoly = [] :=> undefined
 >     reqs   = map (`pair` noPoly) needed 
 >     needed = (if length ss > 1 then ("either":) else id) 
 >              (map (uncurryn.snd) ss)
->     constrs (c,n)  = funcurry n :@: c
+>     constrs (c,n')  = funcurry n' :@: c
 >     constrs' = constrs 
 >              . mapFst (\c->maybe (Con c) id (lookupEnv c cres))
 
  funcurry = Var . uncurryn -- hbc takes it but Hugs doesn't !
 
+> funcurry :: Int -> Expr' a
 > funcurry n = Var (uncurryn n)
+> uncurryn :: Int -> String
 > uncurryn n = "uncurry"++show n
 
+> {-
 > firstLow :: String -> String
 > firstLow (c:cs) = toLower c:cs
 > firstLow [] = error "Functorize.firstLow: impossible: empty string"
+> -}
 
 > eitherfs :: [Expr' t] -> Expr' t
 > eitherfs = foldr1 eitherf
@@ -148,9 +155,9 @@ out_name x = case x of
                Cn an1 .. ankn  -> Right (.. (Right (Left (an1 ... )))..)
 
 > out_def :: VarID -> Struct -> (QType,([Req],[Eqn]))
-> out_def n ((name,_),ss) = (outType,
->                            ([],[VarBind n (Just outType) [x] 
->                                 (Case x (calts ss))]))
+> out_def n (_,ss) = (outType,
+>                     ([],[VarBind n (Just outType) [x] 
+>                            (Case x (calts ss))]))
 >   where 
 >     x = Var "x"
 >     calt (nam,num) = (apply nam vars,nestpairs vars)
@@ -168,12 +175,7 @@ out_name x = case x of
 >     nestpairs [] = Con (tupleConstructor 0)
 >     tup2 = Con (tupleConstructor 2)
 
-> eithertext = unlines 
->   [-- "either :: (a -> b) -> (c -> b) -> Either a c -> b",
->    "either f g x = case x of",
->    "              (Left a) -> f a",
->    "              (Right b) -> g b"]
-
+> either_def :: ([Req],[Eqn])
 > either_def = ([],[--unDone (parse pEqn eithertext)
 >                 VarBind "either" (Just eitherType) [f,g,x] eithercase])
 >    where eithercase = Case x [(left a,f :@: a),(right b,g :@: b)]
@@ -189,10 +191,10 @@ fconstructorname :: Bifunctor f => f a b -> String
 fconstructorname = (\_->C1) `either` ((\_->C2) `either` ... (\_->Cn))...)
 
 > fcname_def :: VarID -> Struct -> (QType,([Req],[Eqn]))
-> fcname_def n ((name,_),ss) = (fcnameType,
->                               (reqs,
->                                [VarBind n Nothing []
->                                  (eitherfs (map (constf . fst) ss))]))
+> fcname_def n (_,ss) = (fcnameType,
+>                        (reqs,
+>                         [VarBind n Nothing []
+>                            (eitherfs (map (constf . fst) ss))]))
 >   where 
 >     noPoly = [] :=> undefined
 >     reqs   = map (`pair` noPoly) needed 
@@ -249,7 +251,7 @@ instead of {\tt F[]} to make it a legal Haskell identifier(-suffix).
 > codeFunctor f = fMap ($ "") (s f)
 >   where 
 >     s :: Func -> Error (String -> String)
->     s (TCon "Const" :@@: c)   = map0 ('c':) -- . codeType c
+>     s (TCon "Const" :@@: c)   = map1 (('c':).) (codeType c)
 >     s (g :@@: t)     = map2 (.) (s g) (s t)
 >     s (TCon "Empty") = map0 ('e':)
 >     s (TCon "Par")   = map0 ('p':)    
@@ -260,8 +262,15 @@ instead of {\tt F[]} to make it a legal Haskell identifier(-suffix).
 >     s (TCon "*")     = map0 ('P':)
 >     s (TCon "@")     = map0 ('A':)
 >     s (TCon d)       = map0 ((codeTyCon d)++)
->     s t@(TVar v)     = failEM ("Functorize.codeFunctor: uninstantiated functor variable " ++
+>     s t@(TVar _)     = failEM ("Functorize.codeFunctor: uninstantiated functor variable " ++
 >                               pshow t ++ " found as part of " ++ pshow f )
+
+> codeType :: Type -> Error (String -> String)
+> codeType _ = Done id
+
+> {- 
+> decodeType :: String -> (String, Func)
+> decodeType xs = (xs,TCon "Const" :@@: TVar "t")
 
 > decodeFunctor :: String -> Func
 > decodeFunctor s = snd (p s)
@@ -271,7 +280,7 @@ instead of {\tt F[]} to make it a legal Haskell identifier(-suffix).
 >     p ('r':xs)  = (xs,TCon "Rec")
 >     p ('m':xs)  = (xs,TCon "Mu")
 >     p ('f':xs)  = (xs,TCon "FunctorOf")
->     p ('c':xs)  = (xs,TCon "Const" :@@: TVar "t") -- use decodeType
+>     p ('c':xs)  = decodeType xs
 >     p ('S':xs)  = mapSnd plus (popp xs)
 >     p ('P':xs)  = mapSnd prod (popp xs)
 >     p ('A':xs)  = mapSnd appl (popp xs)
@@ -285,10 +294,6 @@ instead of {\tt F[]} to make it a legal Haskell identifier(-suffix).
 >     op w w' xs = (zs,(y,z))
 >       where (ys,y) = w  xs
 >             (zs,z) = w' ys
-
-> codeTyCon :: ConID -> String
-> codeTyCon c | c == listConstructor = "0"
->             | otherwise            = show (length c) ++ c
 
 > decodeTyCon :: String -> (ConID,String)
 > decodeTyCon s | n > 0  = splitAt n text
@@ -313,5 +318,10 @@ Just a test expression --- not used.
 >            fVarTree  = "Sc"++fTree
 >            fVNumber  = "SeSrSPrrPrr"
 >            fBoolAlg  = "Se"++fVNumber
+> -}
+
+> codeTyCon :: ConID -> String
+> codeTyCon c | c == listConstructor = "0"
+>             | otherwise            = show (length c) ++ c
 
 \end{verbatim}

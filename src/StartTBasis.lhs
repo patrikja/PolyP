@@ -8,11 +8,11 @@
 >                    preludedatadefs,sumdatadef) where
 > import Parser(pType0,pType1,pTypeFile)
 > import ParseLibrary(parse)
-> import MyPrelude(mapSnd,splitUp,maytrace,variablename,putErrStr)
+> import MyPrelude(mapSnd,splitUp,variablename,putErrStr)
 > import Grammar(Eqn,Eqn'(..),Qualified(..),Type(..),VarID,
 >                (-=>),QType,Kind,qualify,deQualify,isDataDef,
 >                tupleConstructor,listConstructor,functionConstructor)
-> import MonadLibrary(Error,unDone,(<@),(<@-),unLErr)
+> import MonadLibrary(unDone,(<@),(<@-),unLErr)
 > import Env(newEnv,extendsEnv)
 > import TypeBasis(TBasis)
 > import InferKind(inferDataDefs)
@@ -31,7 +31,9 @@ For the PolyP version - see \verb|../lib/PolyPrel.hs|.
 
 \begin{verbatim}
 
+> typeass :: [(VarID,QType)]
 > typeass = polypass ++ haskellass
+> polypass :: [(VarID,QType)]
 > polypass = [("inn",innType),("out",outType),
 >             ("fconstructorName",fcnameType)]
 
@@ -124,10 +126,15 @@ Gofer's {\tt cc.prelude}.
 > starKind :: Kind
 > starKind = TCon "*" 
 
-
+> pT :: String -> Type
 > pT = unDone . parse pType1
 
+> eitherTextType, sumtypename, leftname, rightname :: String
 > eitherTextType = "(a -> b) -> (c -> b) -> Either a c -> b"
+
+> innType, outType, eitherType, 
+>   intType, floatType, charType, boolType, strType, 
+>   fcnameType:: QType
 
 > innType = regular :=> fada -=> da
 > outType = regular :=> da -=> fada
@@ -138,13 +145,19 @@ Gofer's {\tt cc.prelude}.
 > boolType= [] :=> TCon "Bool"
 > strType = [] :=> TCon listConstructor :@@: TCon "Char"
 > fcnameType= bifun :=> fab -=> deQualify strType
+
+> fab, da, fada, fofd :: Type
 > fab     = TVar "f" :@@: TVar "a" :@@: TVar "b"
 > da      = TVar "d" :@@: TVar "a"
 > fada    = fofd :@@: TVar "a" :@@: da
+
+> regular, bifun :: [(String,[Type])]
 > regular = [("Poly",[fofd])]
 > bifun   = [("Poly",[TVar "f"])]
 > fofd    = TCon "FunctorOf" :@@: TVar "d"
 
+> sumdatadef :: Eqn' a
+> preludedatadefs :: [Eqn]
 > (sumtypename,[leftname,rightname]) = ("Either",["Left","Right"])
 > sumdatadef = DataDef sumtypename ["a","b"] 
 >                      [(leftname,[TVar "a"]),(rightname,[TVar "b"])] []

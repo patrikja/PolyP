@@ -14,7 +14,7 @@
 >		      mZero,
 >		      accumseq,accumseq_,mguard) where
 > import StateFix
-> import MyPrelude(pair,mapFst,putErrStrLn,fMap)
+> import MyPrelude(pair,mapFst,fMap)
 
 #ifdef __Haskell98__
 > import Monad(MonadPlus(..),join)
@@ -63,7 +63,9 @@ but earlier \textt{accumulate}.
 > accumseq_ :: Monad m => [m a] -> m ()
 > accumseq_ = foldr (>>) (return ())
 
+> (<@) :: Functor f => f a -> (a -> b) -> f b
 > x <@ f  = fMap f x
+> (<@-) :: Functor f => f a -> b -> f b
 > x <@- e = fMap (\_->e) x
 
 join      :: Monad m => m (m a) -> m a
@@ -85,22 +87,22 @@ Removed from the prelude:
 > (@@) f g x        = g x >>= f
 
 The original LHS: {\tt (f @@ g) x} proves not to be allowed by
-Haskell 1.4. (Though it should be, in my opinion.)
+Haskell 1.4. (Though it should be, in my opinion.) It is OK in Haskell 98.
 
 > mfoldl           :: Monad m => (a -> b -> m a) -> a -> [b] -> m a
-> mfoldl f a []     = return a
+> mfoldl _ a []     = return a
 > mfoldl f a (x:xs) = f a x >>= (\fax -> mfoldl f fax xs)
 
 > mfoldr           :: Monad m => (a -> b -> m b) -> b -> [a] -> m b
-> mfoldr f a []     = return a
+> mfoldr _ a []     = return a
 > mfoldr f a (x:xs) = mfoldr f a xs >>= (\y -> f x y)
 
 > mapl             :: Monad m => (a -> m b) -> ([a] -> m [b])
-> mapl f []         = return [] 
+> mapl _ []         = return [] 
 > mapl f (x:xs)     = f x >>= \y -> mapl f xs >>= \ys -> return (y:ys) 
 
 > mapr             :: Monad m => (a -> m b) -> ([a] -> m [b])
-> mapr f []         = return []
+> mapr _ []         = return []
 > mapr f (x:xs)     = mapr f xs >>= \ys -> f x >>= \y-> return (y:ys) 
 
 > mIf :: Monad m => m Bool -> m a -> m a -> m a
@@ -129,12 +131,12 @@ instance Functor (ST a) where
 
 > instance Functor Error where
 >   __FMAPNAME__ f (Done x) = Done (f x)
->   __FMAPNAME__ f (Err s)  = Err s
+>   __FMAPNAME__ _ (Err s)  = Err s
 
 > instance Monad Error where
 >     return         = Done
 >     Done x  >>= f  = f x
->     Err msg >>= f  = Err msg
+>     Err msg >>= _  = Err msg
 
 > instance ErrorMonad Error where
 >   failEM = Err
@@ -155,8 +157,8 @@ instance Functor (ST a) where
 > unLErr = handleLErr (error.("MonadLibrary.handleLErr:"++))
 
 > handleLErr :: (String -> a) -> LErr a -> a
-> handleLErr def (x,Done ()) = x
-> handleLErr def (x,Err msg) = def msg
+> handleLErr _   (x,Done ()) = x
+> handleLErr def (_,Err msg) = def msg
 
 > handleError :: (String -> a) -> Error a -> a
 > handleError d = h
@@ -164,7 +166,7 @@ instance Functor (ST a) where
 >         h (Err mess) = d mess
 
 > instance ErrorMonad [] where
->   failEM msg = []
+>   failEM _ = []
 
 \end{verbatim}
 \section{IOErr monad}
@@ -202,6 +204,7 @@ instance Functor (ST a) where
 > instance ErrorMonad IOErr where
 >   failEM = failIOE
 > 
+> {-
 > liftIOtoIOErr :: IO a -> IOErr a
 > liftIOtoIOErr = IOErr . fMap Done
 > 
@@ -219,6 +222,7 @@ instance Functor (ST a) where
 >     case x of 
 >       Done a  -> success a
 >       Err msg -> putErrStrLn msg >> failure
+> -}
 
 \end{verbatim}
 \section{STErr monad}
@@ -258,6 +262,7 @@ instance Functor (ST a) where
 > liftSTtoSTErr :: ST s a -> STErr s a
 > liftSTtoSTErr = STErr . fMap Done
 > 
+> {- 
 > dropSTErrtoST :: STErr s a -> ST s a
 > dropSTErrtoST (STErr m)
 >     = m >>= \x -> 
@@ -272,6 +277,7 @@ instance Functor (ST a) where
 >     case x of 
 >       Done a  -> success a
 >       Err msg -> failure msg
+> -}
 > 
 > convertSTErr :: STErr s a -> ST s (Error a)
 > convertSTErr (STErr x) = x
@@ -292,7 +298,9 @@ instance Functor (ST a) where
 >                              ST f'  = f x
 >                          in  f' s')
 > 
+> updateST :: (s->s) -> State s s
 > updateST f = ST (\s -> (s, f s))
+> fetchST :: State s s
 > fetchST = updateST id
 > 
 > executeST :: s -> State s a -> a
@@ -317,7 +325,7 @@ instance Functor (ST a) where
 >                         )  
 >
 > mZeroSTM :: MONADZERONAME m => StateM m s a
-> mZeroSTM = STM (\s -> mZero)
+> mZeroSTM = STM (\_ -> mZero)
 >
 #ifdef __Haskell98__
 > instance MonadPlus m => MonadPlus (StateM m s) where
@@ -332,8 +340,9 @@ instance Functor (ST a) where
 #endif
 > 
 > instance ErrorMonad m => ErrorMonad (StateM m s) where
->   failEM msg = STM (\s -> failEM msg)
+>   failEM msg = STM (\_ -> failEM msg)
 > 
+> updateSTM :: Monad m => (s->s) -> StateM m s s
 > updateSTM f = STM (\s -> return (s, f s))
 > 
 > fetchSTM :: Monad m => StateM m a a
@@ -346,8 +355,10 @@ instance Functor (ST a) where
 \section{Conversions between monads}
 \begin{verbatim}
 
+> mliftErr :: ST s a -> STErr s a
 > mliftErr = liftSTtoSTErr
 > 
+> mliftSTM :: Functor f => f a -> StateM f s a
 > mliftSTM m = STM (\s -> fMap (`pair` s) m)
 
 > mliftOut :: Functor m => m a -> OutputT b m a

@@ -44,7 +44,7 @@ lookupEnv key ((key', val') : env)
   = if key == key' then Just val' else lookupEnv key env
 
 > lookupEqEnv eq = lookup' 
->   where lookup' k [] = Nothing
+>   where lookup' _ [] = Nothing
 >         lookup' k ((k', val') : env)
 >           = if k `eq` k' then Just val' else lookup' k env
 
@@ -89,7 +89,9 @@ Interface functions for using an environment as a state in a state monad.
 > rememberST :: a -> b -> State (Env a b) b
 > rememberST key val = updateST (extendEnv key val) <@- val
 
+> lookaside :: (Eq key, Functor m, Monad m) => key -> StateM m (Env key val) (Maybe val)
 > lookaside key   = fetchSTM <@ lookupEnv key
+> lookasideST :: Eq key => key -> State (Env key val) (Maybe val)
 > lookasideST key = fetchST  <@ lookupEnv key
 
 \end{verbatim}

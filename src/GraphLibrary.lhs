@@ -31,7 +31,7 @@ Representing graphs:
 
 > outdegree :: Graph -> Table Int
 > outdegree  = mapT numEdges
->              where numEdges v ws = length ws
+>              where numEdges _ ws = length ws
 
 > buildG :: Bounds -> [Edge] -> Graph
 > buildG  = accumArray (flip (:)) []
@@ -77,7 +77,7 @@ Depth-first search
 >                             chop m ts)
 
 > chop         :: Set s -> Forest Vertex -> ST s (Forest Vertex)
-> chop m []     = return []
+> chop _ []     = return []
 > chop m (Node v ts : us)
 >               = contains m v >>= \visited ->
 >                 if visited then

@@ -2,7 +2,7 @@
 \begin{verbatim}
 
 > module TypeGraph where
-> import MyPrelude(variablename,pair,mapSnd,splitUp,maytrace)
+> import MyPrelude(variablename,pair,mapSnd,splitUp)
 > import Grammar
 > import PrettyPrinter(Pretty(..),text)
 > import MonadLibrary(State,StateM,(<@),liftop,(<@-),
@@ -187,7 +187,7 @@ the type.
 \begin{verbatim}
 
 > flattenHpType :: HpType s -> ST s [HpType s]
-> flattenHpType = fMap appnil . cataHpType var (\c l -> l) (.)
+> flattenHpType = fMap appnil . cataHpType var (\_ l -> l) (.)
 >  where var v = return (v:) 
 >        appnil f = f []
 
@@ -201,14 +201,14 @@ right pointers of the apply nodes.
 
 > spineWalkHpType :: NodePtr s -> ST s [(NodePtr s,HpNode s)]
 > spineWalkHpType t = s t <@ ($[])
->  where s p = fetchNode p  >>= \ pn@(ptr, node) -> 
+>  where s p = fetchNode p  >>= \ pn@(_, node) -> 
 >              case node of                        
->                HpVar v     -> return  (pn:)
->                HpCon c     -> return  (pn:)       
->                HpApp pf px -> s pf <@ (.(pn:))
+>                HpVar _     -> return  (pn:)
+>                HpCon _     -> return  (pn:)
+>                HpApp pf _  -> s pf <@ (.(pn:))
 
 > getChild :: HpNode s -> NodePtr s
-> getChild (HpApp pf px) = px
+> getChild (HpApp _ px) = px
 > getChild _ = error "TypeGraph.getChild: not an application node"
 
 \end{verbatim}
@@ -415,7 +415,7 @@ occursInType :: NodePtr s -> HpType s -> ST s Bool
 > tyVar `occursInType` t = occursIn t
 >   where 
 >     occursIn p =
->       fetchNode p >>= \(ptr, node) -> 
+>       fetchNode p >>= \(_, node) -> 
 >       case node of
 >         HpVar v -> return (tyVar === v)
 >         HpCon _ -> return False
@@ -425,7 +425,7 @@ occursInType :: NodePtr s -> HpType s -> ST s Bool
 
 > flattenNgs :: NonGenerics s -> ST s (NonGenerics s)
 > flattenNgs (NGS ngs) = mfoldr flat allGeneric ngs
->   where flat t ngs = flattenHpType t <@ (`addtoNGS` ngs)
+>   where flat t ngs' = flattenHpType t <@ (`addtoNGS` ngs')
 
 \end{verbatim}
 
@@ -493,7 +493,7 @@ elsewhere.
 > simpQual q = mIf (isConstantQualifier q) (return []) (return [q])
 
 > isConstantQualifier :: Qualifier (HpType s) -> ST s Bool
-> isConstantQualifier (n,ts) = mapl flattenHpType ts <@ (null . concat)
+> isConstantQualifier (_,ts) = mapl flattenHpType ts <@ (null . concat)
 
 \end{verbatim}
 A qualifier is constant if the list of all variables in it is empty.

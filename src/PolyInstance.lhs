@@ -28,19 +28,18 @@ command line via flags and parameters to instantiateProgram.
 > module PolyInstance(instantiateProgram) where
 > import Env(Env,mapEnv,lookasideST,lookupEnv,extendsEnv,newEnv,showsEnv)
 > import Grammar(Eqn'(..),Expr'(..),Type(..),Qualified(..),
->                Eqn,TEqn,Expr,TExpr,Func,QType,VarID,ConID,
->                PrgTEqns, changeNameOfBind,noType,
+>                Eqn,TEqn,Expr,Func,QType,VarID,ConID,
+>                PrgTEqns, changeNameOfBind,
 >                tupleConstructor,(-=>),qualify)
-> import Folding(cataType,cataEqn,cataExpr,ExprFuns,EqnFuns,
->                stripTEqn,mmapTEqn,mapEqn)
+> import Folding(cataType,stripTEqn,mmapTEqn,mapEqn)
 > import Functorize(inn_def,out_def,either_def,fcname_def,
 >                   Struct,makeFunctorStruct,Req,eqReq,codeFunctors)
 > import TypeGraph(simplifyContext)
 > import InferType(qTypeEval)
-> import MonadLibrary(State, executeST, mapl,(<@),(@@),unDone,handleError,
->                     OutputT,output,runOutput,mliftOut,map0,map1,map2)
-> import MyPrelude(maytrace,pair,mapFst,mapSnd,combineUniqueBy,fMap,maydebug)
-> import PrettyPrinter(Pretty(),pshow)
+> import MonadLibrary(State, executeST,(@@),handleError,
+>                     OutputT,output,runOutput,mliftOut)
+> import MyPrelude(maytrace,mapSnd,combineUniqueBy,fMap,maydebug)
+> import PrettyPrinter(pshow)
 > import StartTBasis(preludeFuns,preludedatadefs)
 > import TypeBasis(TBasis,TypeEnv)
 > import Flags(Flags(..),flags)
@@ -256,7 +255,7 @@ both the type at the definition and the type at the instance.
 >                             "\n  (Probably error in type inference)\n")
 
 > pairType :: FuncEnv -> TypeEnv -> Eqn -> QType -> (Eqn, Subst, QType)
-> pairType funcenv typeenv (VarBind name t as e) tinst = 
+> pairType _       typeenv (VarBind name _ as e) tinst = 
 >      (VarBind name (Just tOK) as e,
 >       subst,
 >       tdef)
@@ -303,7 +302,7 @@ Remaining bugs:
 {\tt uncurryn = uncurry . (uncurryn-1 .) }
 \begin{verbatim}
 
-> specPolyInst funcenv name tinst | isUncurry name              
+> specPolyInst _       name _     | isUncurry name              
 >                                     = makeUncurry name n
 >   where n :: Int
 >         n = read rest
@@ -316,7 +315,7 @@ either f g x = case x of
                (Left a) -> f a
                (Right b) -> g b
 
-> specPolyInst funcenv "either" tinst = either_def
+> specPolyInst _       "either" _     = either_def
 
 \end{verbatim}
 \subsection{fconstructorName}
@@ -339,17 +338,18 @@ fconstructorName
 \end{verbatim}
 \begin{verbatim}
 
-> specPolyInst datadefs n _ = error ("specPolyInst: not implemented yet:"++n)
+> specPolyInst _        n _ = error ("specPolyInst: not implemented yet:"++n)
 
 > setT :: FuncEnv -> QType -> (QType,(a,[Eqn])) -> (a,[Eqn])
-> setT funcenv tinst (tdef,p) = mapSnd (map (setType tOK)) p
+> setT _ tinst (tdef,p) = mapSnd (map (setType tOK)) p
 >   where 
 >     tOK   = substQType subst tdef
 >     subst = matchfuns (tdef,tinst)
 
+> setType :: t -> Eqn' t -> Eqn' t
 > setType t (VarBind name _        pats rhs) = 
 >            VarBind name (Just t) pats rhs
-> setType t _ = error "PolyInstance.updateType: impossible - no VarBind"
+> setType _ _ = error "PolyInstance.updateType: impossible - no VarBind"
 
 > makeUncurry :: VarID -> Int -> ([Req], [Eqn])
 > makeUncurry name m = case m of 
@@ -360,9 +360,8 @@ fconstructorName
 >            unc n [f,p] (Var (uncurryn (n-1)):@: (f :@: p1) :@: p2 ))
 >    where [f,p]      = map Var ["f","p"]
 >          [p1,p2]    = map ((:@:p).Var) ["fst","snd"]
+>	   unc :: Int -> [Expr] -> Expr -> [Eqn]
 >          unc n ps e = [VarBind name (Just (tunc n)) ps e]
->          unit       = Con (tupleConstructor 0)
->          pairf a b  = Con  (tupleConstructor 2) :@:  a :@:  b
 >          tpairf a b = TCon (tupleConstructor 2) :@@: a :@@: b
 >          uncurryn k = uncurryName++show k
 >          req k      = (uncurryn k,tunc k)
@@ -371,6 +370,7 @@ fconstructorName
 >          righttuple 0= TCon (tupleConstructor 0)
 >          righttuple 1= var 0
 >          righttuple n= foldr1 tpairf (map var [0..n-1])
+>	   var :: Int -> Type
 >          var n = TVar ("a"++show n)
 
 It is important that the matching is done lazily.
@@ -402,6 +402,7 @@ uncn :: (a0->a1->...->an) -> (a0,(a1,...,an-1)...) -> an
 > uncurryName = "uncurry"
 > uncurryNameLength :: Int
 > uncurryNameLength = length uncurryName
+> isUncurry :: String -> Bool
 > isUncurry name = length name > uncurryNameLength && 
 >                  take uncurryNameLength name == uncurryName
 
@@ -493,7 +494,7 @@ Get the correct equation out of the poly case.
 >                       . evaluateFunInQType funcenv
 
 > functorCase :: Func -> [(QType, e)] -> Maybe (e, Subst)
-> functorCase f [] = Nothing
+> functorCase _ [] = Nothing
 > functorCase f ((_:=>p,eqn):cs) = case match (p,f) of
 >    (Just s) -> Just (eqn,s)
 >    Nothing  -> functorCase f cs
@@ -505,7 +506,7 @@ is the functor instance corresponding to the named functor.
 \begin{verbatim}
 
 > getFunctor :: FuncEnv -> VarID -> QType -> QType -> Func
-> getFunctor funcenv fname (ps:=>t) (qs:=>tinst) = 
+> getFunctor funcenv fname (ps:=>_) (qs:=>_) = 
 >     case [ fun | (("Poly",TVar fn:_),(_,fun:_)) <- zip ps qs, fn==fname] of
 >       (fun:_) -> evaluateTopFun funcenv fun
 >       _       -> error ("PolyInstance.getFunctor: "++
@@ -514,7 +515,7 @@ is the functor instance corresponding to the named functor.
 
 > evaluateTopFun :: FuncEnv -> Func -> Func
 > evaluateTopFun funcenv (TCon "FunctorOf" :@@: TCon d) = functorOf funcenv d
-> evaluateTopFun funcenv f = f
+> evaluateTopFun _       f = f
 
 > evaluateFunInQType :: FuncEnv -> QType -> QType
 > evaluateFunInQType    funcenv =  fMap (evaluateFunInType funcenv)
@@ -608,11 +609,11 @@ Make sure match works for variables too. (insert dictionaries?)
 > type Subst = Env VarID Type
 
 > getFunctors :: QType -> QType -> [Func] -- used by traverseEqn
-> getFunctors (ps:=>t) (qs:=>tinst) = 
+> getFunctors (ps:=>_) (qs:=>_) = 
 >     [ fun | (("Poly",_),(_,fun:_)) <- zip ps qs]
 
 > matchfuns :: (QType, QType) -> [(String, Func)]
-> matchfuns (ps:=>t , qs:=>tinst) = subst
+> matchfuns (ps:=>_ , qs:=>_) = subst
 >   where fts = [ f | ("Poly",[f]) <- ps] :: [Func]
 >         ftis= [ f | ("Poly",[f]) <- qs] 
 >         pairs= zip fts ftis

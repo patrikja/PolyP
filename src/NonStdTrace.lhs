@@ -19,7 +19,7 @@ In Gofer and older hugs - this was required
 
 #ifndef __DEBUG__
 > trace :: String -> a -> a
-> trace x y = y
+> trace _ y = y
 
 #endif 
 

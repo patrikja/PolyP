@@ -9,7 +9,7 @@
 >                isDataDef,isExplType)
 > import GraphLibrary(Graph,Tree(..),scc')
 > import MyPrelude(splitUp)
-> import PrettyPrinter(Pretty(),pshow,prQualified,Qualified,Type,QType,Eqn)
+> import PrettyPrinter(pshow,prQualified,QType,Eqn)
 > import TypeBasis(TypeEnv)
 
 \end{verbatim}
@@ -102,6 +102,7 @@ program as a whole.
 
 > dependencyEqns = dependencyEqns' . handleExplTypes
  
+> dependencyEqns' :: [Eqn] -> [[Eqn]]
 > dependencyEqns' eqns = map (map (eqnarr !)) groups
 >   where
 >     eqnarr = array (0, length eqns -1) (zip [0..] eqns)
@@ -162,6 +163,6 @@ so the explicit type can not simply be placed on the rhs.
 >                       " with two different types:\n"++
 >                       show (prQualified ty1) ++ " and " ++ 
 >                       show (prQualified ty2)
-> mayInsType t q = error ("mayInsType: Unexpected equation:\n"++pshow q)
+> mayInsType _ q = error ("mayInsType: Unexpected equation:\n"++pshow q)
 
 \end{verbatim}

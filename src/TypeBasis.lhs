@@ -115,6 +115,7 @@ variables are non-generic.
 > lookupKindinram name hpkindEnv = 
 >   lookupEnv name hpkindEnv 
 
+> lookupKindinrom :: String -> KindEnv -> Maybe (ST s (HpKind s))
 > lookupKindinrom name kindEnv = 
 >   lookupEnv name kindEnv <@ kindIntoHeap
 
@@ -137,11 +138,13 @@ variables are non-generic.
 
 > extendTypeTBasis :: [(VarID,QType)] -> TBasis -> TBasis
 > extendTypeTBasis      l (ts,ks) = (extendsEnv l ts     ,ks)
+> extendTypeAfterTBasis :: [(VarID,QType)] -> TBasis -> TBasis
 > extendTypeAfterTBasis l (ts,ks) = (extendsAfterEnv l ts,ks)
 
 > extendKindTBasis :: [(VarID,Kind)] -> TBasis -> TBasis
 > extendKindTBasis      l (ts,ks) = (ts,extendsEnv      l ks)
-> extendkindAfterTBasis l (ts,ks) = (ts,extendsAfterEnv l ks)
+> extendKindAfterTBasis :: [(VarID,Kind)] -> TBasis -> TBasis
+> extendKindAfterTBasis l (ts,ks) = (ts,extendsAfterEnv l ks)
 
 > makeNonGeneric extraNgs (Basis (rom,(typeEnv, ngs)))
 >   = Basis (rom,(typeEnv, addtoNGS extraNgs ngs))

@@ -3,7 +3,6 @@
 
 > module MyPrelude(module MyPrelude,trace) where
 > import NonStdTrace(trace)
-> import List(nubBy)
 > import qualified IO(hFlush,hPutStr,stdout,stderr)
 > import Flags(Flags(..),flags)
 > import System(exitWith,ExitCode(..))
@@ -51,9 +50,6 @@ earlier Haskell versions.
 > without :: Eq a => [a] -> [a] -> [a]
 > withoutBy:: (a -> a -> Bool) -> [a] -> [a] -> [a]
 > splitUp :: [a -> Bool] -> [a] -> [[a]]
-
- nubBy   :: (a->a->Bool) -> [a] -> [a]  -- remove duplicates from list
-
 > unique  :: Eq a => [a] -> [a]
 > combineUniqueBy :: (a -> a -> Bool) -> [a] -> [a] -> [a]
 
@@ -98,6 +94,7 @@ In H1.3 (hbc) we include the trace function from the module NonStdTrace.
 \begin{verbatim}
 
 > debug :: Show a => a -> a
+> maytrace :: String -> a -> a
 
 #ifdef __DEBUG__
 > maytrace = trace  -- debug info on
@@ -130,10 +127,6 @@ In H1.3 (hbc) we include the trace function from the module NonStdTrace.
 > withoutBy eq xs ys = filter (\x -> not (myelem x ys)) xs
 >     where myelem = any . eq
 
- nubBy eq = nub
-   where nub []     = []
-         nub (x:xs) = x : nub (filter (not.(eq x)) xs)
-
 > splitUp preds []     = replicate (length preds + 1) []
 > splitUp preds (x:xs) = let lists = splitUp preds xs 
 >                        in try x preds lists
@@ -155,7 +148,7 @@ In H1.3 (hbc) we include the trace function from the module NonStdTrace.
 > swap (x,y) = (y,x)
 
 > variablename n | n<26 = [num2chr n]
->   where num2chr n = toEnum (fromEnum 'a' + n )
+>   where num2chr m = toEnum (fromEnum 'a' + m)
 > variablename n = variablename (n `div` 26 - 1) ++ 
 >                  variablename (n `mod` 26) 
 
@@ -163,11 +156,12 @@ In H1.3 (hbc) we include the trace function from the module NonStdTrace.
 > unJust Nothing  = error "unJust!"
 
 > unique xs = unique' xs [] 
+> unique'  :: Eq a => [a] -> [a] -> [a]
 > unique' [] = id
 > unique' (x:xs) = (x:).(unique' [y|y<-xs,y/=x])
 
 > combineUniqueBy eq = cu
->   where cu qs [] = []
+>   where cu _  [] = []
 >         cu qs (x:xs) | x `elemByeq` qs = cu qs xs
 >                      | otherwise   = x:cu (x:qs) xs
 >         elemByeq = any . eq

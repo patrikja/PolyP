@@ -3,22 +3,17 @@
 
 > module Main(main) where
 > import DependencyAnalysis(dependencyProgram)
-> import Env(assocsEnv)
-> import Grammar(Eqn'(..),Eqn,Type,PrgEqns,PrgTEqns,getNameOfEqn)
+> import Grammar(Eqn'(..),Eqn,PrgEqns,PrgTEqns,getNameOfEqn)
 > import List(intersperse)
 > import LabelType(labelProgram)
-> import MonadLibrary(Error(..), handleError, unDone, 
->                     LErr, showLErr, mapLErr, 
->                     convertSTErr,mliftErr,(<@),(@@))
+> import MonadLibrary(handleError, LErr, showLErr, mapLErr)
 > import MyPrelude(putErrStr,putErrStrLn,fatalError,fMap)
-> import Parser(parse,pModule,pType1)
+> import Parser(parse,pModule)
 > import PolyInstance(instantiateProgram)
 > import PrettyPrinter(Pretty(..),($$),text,pshow)
 > import StateFix -- [(runST [,RunST])] in hugs, ghc, hbc
-> import System(getArgs,getProgName)
+> import System(getProgName)
 > import TypeBasis(TBasis)
-> import TypeGraph(kindIntoHeap,typesOutOfHeap)
-> import UnifyTypes(unify)
 > import Flags(Flags(..),flags)
 
 \end{verbatim}
@@ -98,8 +93,6 @@ In verbose mode every stage of the program generation presents a summary:
 > usageText :: String
 > usageText = " [-p preltypes.hs] file.phs [>file.hs]"
 
-> type FileName = String
-
 \end{verbatim}
 \subsection{Parser report}
 \begin{verbatim}
@@ -133,7 +126,7 @@ The program doesn't handle mutual recursive datatypes.
 \begin{verbatim}
 
 > typeReport' :: LErr (TBasis,PrgTEqns) -> LErr [[Eqn]]
-> typeReport' ((tb,(ds,qss)),err) = (map (map getEqnType) qss , err)
+> typeReport' ((_,(_,qss)),err) = (map (map getEqnType) qss , err)
 >   where getEqnType (Polytypic n t _ _)      = ExplType [n] t
 >         getEqnType (VarBind n (Just t) _ _) = ExplType [n] t
 >         getEqnType (VarBind n _ _ _) = error ("getEqnType: untyped eqn: "++n)
@@ -179,7 +172,6 @@ These are still preliminary versions.
 >           . labelProgram 
 >           . dependencyProgram 
 >           . parseProgram
-#endif
 
 \end{verbatim}
 \section{Type inference}
@@ -191,6 +183,8 @@ These are still preliminary versions.
 >    ("Types:\n":map showpair (assocsEnv tenv) ) ++ [errtext] )
 >   where showpair (name,t) = ' ':name ++ " :: " ++ pshow t
 >         errtext = handleError id (fMap (\_->"") err)
+
+#endif
 
 > showEqns :: Pretty a => [a] -> String
 > showEqns = concat . map pshow

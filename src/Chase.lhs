@@ -5,6 +5,7 @@ files to try and a list of files that have been found.
 980501: yet to be written
 
 > module Chase(chaseImports)  where
+> chaseImports :: a
 > chaseImports = chaseImports
 
 #if 0

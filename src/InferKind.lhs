@@ -5,14 +5,14 @@
 
 > import Grammar(Kind,Type(..),Eqn,Eqn'(..),VarID,ConID,QType,
 >                (-=>),qualify,getNameOfDataDef)
-> import TypeGraph(HpKind,HpNode(..),fetchNode,mkVar,mkCon,mkFun,
+> import TypeGraph(HpKind,HpNode(..),fetchNode,mkVar,mkFun,
 >                  kindOutOfHeap)
 > import TypeBasis(KindBasis,TBasis,lookupKind,inventTypes,
 >                  extendKindEnv,ramKindToRom,getKindEnv,
 >                  extendTypeTBasis,extendKindTBasis)
 > import StateFix-- (ST [,runST [,RunST]]) in hugs, ghc, hbc
-> import Env(newEnv,lookupEnv,extendsEnv)
-> import PrettyPrinter(Pretty(),pshow)
+> import Env(newEnv)
+> import PrettyPrinter(pshow)
 > import UnifyTypes(unify)
 > import MonadLibrary(STErr,mliftErr,convertSTErr,ErrorMonad(failEM),
 >                     Error(..),LErr, foreach,(<@))

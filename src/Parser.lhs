@@ -22,7 +22,7 @@ white-space. (Because this allows the incorrect `elem `.)
 >                     mapl,ErrorMonad(failEM),mZero,(+++))
 > import ParseLibrary(Parser,item,lit,sat,digit,opt,optional,
 >                     some_offside,mustbe,symbol,sepby,string,
->                     chainl,chainr,spaces,number,
+>                     chainl,chainr,
 >                     many,some,strip, parse)
 > import Grammar(Expr'(..),Eqn'(..),Type(..),Qualified(..),Literal(..),
 >                Expr,Eqn,Func,QType,Qualifier,VarID,ConID,
@@ -45,26 +45,35 @@ The module parser accepts but ignores the module head, exports and imports.
 > pModule :: Parser [Eqn]
 > pModule = pModule'
 
+> pModule' :: Parser [Eqn]
 > pModule' = (pModuleHead `opt` ("Main",["main"])) >> 
 >            pImpDecls >> 
 >            pEqns
 
+> pModuleHead :: Parser (ConID, [ConID])
 > pModuleHead =  (symbol "module" >> pConID)
 >             <*> pExports << mustbe "where"
 
+> pExports :: Parser [ConID]
 > pExports = pParenTuple pExport `opt` []
+> pExport :: Parser ConID
 > pExport =  pImport
 >        +++ (symbol "module" >> pConID)
 
+> pImpDecls :: Parser [(ConID,[ConID])] 
 > pImpDecls = some_offside pImpDecl `opt` []
+> pImpDecl :: Parser (ConID,[ConID])
 > pImpDecl =   (symbol "import" >> may (symbol "qualified") >> pConID)  
 >         <*> (may (symbol "as" >> pConID) >> pImpSpec)
 
+> pImpSpec :: Parser [ConID]
 > pImpSpec = (pImpTuple+++ ((symbol "hiding") >> pImpTuple)
 >            ) `opt` []
 
+> pImpTuple :: Parser [ConID]
 > pImpTuple = pParenTuple pImport
 
+> pImport :: Parser ConID
 > pImport =   pVarID 
 >        +++ (pConID << 
 >                  (pParenthesized 
@@ -74,6 +83,7 @@ The module parser accepts but ignores the module head, exports and imports.
 >                  ) `opt` []
 >            )
 
+> pParenTuple :: Parser a -> Parser [a]
 > pParenTuple p = pParenthesized (pCommaList p `opt` [])
 
 > may :: Parser a -> Parser a
@@ -217,9 +227,11 @@ This implementation is {\em very} inefficient.
 >            where ops n = (pOps!!n) <@ \op-> (:@:) . (:@:) op 
 
  
+> {-
 > isConstructor :: ConID -> Bool
 > isConstructor (x:_) = isUpper x || x == ':'
 > isConstructor []    = error "Parser.isConstructor: impossible: empty constructor"
+> -}
 
 > pfxexpr   = nappexpr+++ appexpr
  
@@ -227,7 +239,9 @@ This implementation is {\em very} inefficient.
  
 > appexpr   = pAtomic `chainl` return (:@:)
 
+> isOpChar :: Char -> Bool
 > isOpChar a    = a `elem` ":!#$%&*+./<=>?@\\^|-" 
+> pOps :: [Parser (Expr' a)]
 > pOps = [ var "$"                                       -- 0 
 >        , var "||"                                      -- 1
 >        , var "&&"                                      -- 2
@@ -259,6 +273,7 @@ This implementation is {\em very} inefficient.
 > infixop'  :: Parser String
 > infixop'  = infixop  <| (`notElem` preludeops)
 			  
+> infixcon'  :: Parser String
 > infixcon' = infixcon <| (`notElem` preludecons)
 
 > -- infix operators, including infix constructors but not `op`s
@@ -287,6 +302,7 @@ The element of the unit type - \verb|()| - is represented by
 \verb|()|.
 \begin{verbatim}
 
+> pExprTuple :: Parser Expr
 > pExprTuple = fMap Var infixop+++ pTuple pExpr mktuple
 >   where
 >     mktuple xs = foldl (:@:) (Con (tupleConstructor n)) xs
@@ -302,6 +318,7 @@ The element of the unit type - \verb|()| - is represented by
 >       +++ pWildCard
 >       +++ pParenthesized pExprTuple
 > 
+> pExprVar, pExprCon :: Parser (Expr' a)
 > pExprVar = fMap Var pVarID
 > pExprCon = fMap Con $
 >                  pConID
@@ -483,8 +500,10 @@ From the Haskell report:
 >   where tupNum "" = 0
 >         tupNum s  = length s + 1
 
+> pTypeList :: Parser Type
 > pTypeList = pType1 <@ ((TCon listConstructor):@@:) 
  
+> pTypeTuple :: Parser Type
 > pTypeTuple = pTuple pType1 f
 >   where
 >     f xs = foldl (:@@:) (TCon (tupleConstructor n)) xs
@@ -518,15 +537,22 @@ Reserved identifiers in Haskell 1.3: {\tt case | class | data |
 Function \texttt{pPack'} does not allow space after leading symbol.
 \begin{verbatim}
 
+> pPack :: String -> Parser a -> String -> Parser a
 > pPack  a p  b  = (symbol a >> p ) << mustbe b
+> pPack' :: String -> Parser a -> String -> Parser a
 > pPack' a p' b  = (string a >> p') << mustbe b
  
+> pDoubleQuoted :: Parser a -> Parser a
 > pDoubleQuoted  p' = pPack' "\"" p' "\"" 
+> pBackQuoted :: Parser a -> Parser a
 > pBackQuoted    p' = pPack' "`"  p' "`"
 
+> pBracketed :: Parser a -> Parser a
 > pBracketed     p = pPack "[" p "]"
+> pParenthesized :: Parser a -> Parser a
 > pParenthesized p = pPack "(" p ")"
 
+> pCommaList :: Parser a -> Parser [a]
 > pCommaList p = p `sepby` symbol ","
 
 \end{verbatim}

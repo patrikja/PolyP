@@ -6,14 +6,14 @@
 > import TypeGraph(HpType,NonGenerics,
 >                  qtypeOutOfHeap,typesOutOfHeap,
 >                  showNodePtr,allGeneric)
-> import MonadLibrary(STErr,mliftErr,ErrorMonad(failEM),(<@),mIf,liftop,
->                     ST,(===),readVar)
-> import PrettyPrinter(Pretty(..),pshow,($$),nest,text,sep,prType)
+> import MonadLibrary(STErr,mliftErr,ErrorMonad(failEM),ST)
+> import PrettyPrinter(Pretty(..),pshow,($$),nest,text,sep)
 > import Grammar(Type(..),Qualified(..))
 
 #ifdef __DEBUG_UNIFY__
 > import MyPrelude(maytrace)
 #else
+> maytrace :: String -> a -> a
 > maytrace _ = id
 #endif
 
@@ -21,30 +21,32 @@
 >               | TBad String t t
 
 > mayreportTError :: NonGenerics s -> HpType s -> TError (HpType s) -> STErr s ()
-> mayreportTError ngs a TOk            = return ()
+> mayreportTError _   _ TOk            = return ()
 > mayreportTError ngs a (TBad msg t u) = 
 >           mliftErr (outofhp (a,t) u) >>= \((tA,tT),tU)->
 >           failEM (show (typeerror msg tA tT tU))
 >    where 
->      outofhp p u =
+>      outofhp p u' =
 >            typesOutOfHeap ngs p        >>= \tp    -> 
->            qtypeOutOfHeap  ngs ([]:=>u) >>= \([]:=>typeU) -> 
+>            qtypeOutOfHeap  ngs ([]:=>u') >>= \([]:=>typeU) -> 
 >            return (tp,typeU)
->      typeerror mess ta t u =
+>      typeerror mess ta t' u' =
 >        (text "Type instantiation error in:")
 >        $$ nest 3 (pretty ta)
 >        $$ text mess
->        $$ nest 3 (pretty t $$ pretty u)
+>        $$ nest 3 (pretty t' $$ pretty u')
 
 > failWith :: String -> HpType s -> HpType s -> STErr s b
 > failWith mess a b = mliftErr (typesOutOfHeap allGeneric (a,b)) >>= \p->
 >                     failEM (show (err p))
->   where err (a,b)= sep [text "can't unify:",
->                         nest 3 (sep [pretty a,text "with",pretty b])] 
+>   where err (a',b')= sep [text "can't unify:",
+>                         nest 3 (sep [pretty a',text "with",pretty b'])] 
 >                    $$ text ("as "++mess)
 
+> {-
 > mayshowargs :: HpType s -> HpType s -> STErr s ()
 > mayshowargs a b = mliftErr (mayshowargs' allGeneric a b)
+> -}
 
 > mayshowargs' :: NonGenerics s -> HpType s -> HpType s -> ST s ()
 > mayshowargs' l a b = typesOutOfHeap l (a,b) >>= mayshowtypes a b
@@ -78,14 +80,18 @@
 > prError ENoMuApp         = "Unify: Mu f can't match a type application"
 > prError (ENoFunctorFor d)= "Unify: No functor defined for datatype constructor "++d
 > prError EFOfnonDT        = "FunctorOf <not datatype>"
+> prError EMissedCase      = "Unify: missed a case"
+> prError EImpossible	   = "Unify: impossible! Internal error."
 
 -- partially applied types are not Regular
 
 > internalError :: String -> a
 > internalError s = error ("Internal PolyP error: " ++ s)
 
+> {-
 > unimpl :: String -> a
 > unimpl s = internalError (s++" is not implemented yet")
+> -}
 
 > impossible :: String -> a
 > impossible s = internalError ("impossible: "++s)
