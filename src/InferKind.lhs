@@ -2,14 +2,14 @@
 \begin{verbatim}
 
 > module InferKind where
-
+> import Functorise(makeFunctor)
 > import Grammar(Kind,Type(..),Eqn,Eqn'(..),VarID,ConID,QType,
 >                (-=>),qualify,getNameOfDataDef)
 > import TypeGraph(HpKind,HpNode(..),fetchNode,mkVar,mkFun,
 >                  kindOutOfHeap)
 > import TypeBasis(KindBasis,TBasis,lookupKind,inventTypes,
 >                  extendKindEnv,ramKindToRom,getKindEnv,
->                  extendTypeTBasis,extendKindTBasis)
+>                  extendTypeTBasis,extendKindTBasis,extendFuncTBasis)
 > import StateFix -- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 > import Env(newEnv)
 > import PrettyPrinter(pshow)
@@ -66,22 +66,14 @@ before \verb|f|.)
 
 
 \section{Datatype declarations}
-For each datatype constructor the types of the data constructors and the kind 
+
+For each datatype constructor the types of the data constructors are
+returned and the kinds are checked. For all regular type constructors
+the corresponding functors are added to the functor environment.
+
+
 
 \begin{verbatim}
-
-> inferDataDef :: KindBasis s -> Eqn -> STErr s [(ConID, QType)]
-> inferDataDef basis (DataDef tyCon vars alts _)
->   = inventKinds vars >>= \kindVars -> 
->     let extbasis = extendKindEnv (zip vars kindVars) basis
->     in foreach alts (checkAltKind extbasis)
->   where
->     checkAltKind extbasis (constr, args) =
->            assureType extbasis tp >>
->            return (constr, qualify tp) 
->        where tp = foldr (-=>) res args
->     res = foldl (:@@:) (TCon tyCon) (map TVar vars)
-> inferDataDef _ _ = error "InferType.inferDataDef: impossible: not a DataDef"
 
 > inferDataDefs :: TBasis -> [Eqn] -> LErr TBasis
 > inferDataDefs startTBasis dataDefs = 
@@ -89,7 +81,9 @@ For each datatype constructor the types of the data constructors and the kind
 >           Err msg -> (startTBasis,Err msg)
 >           Done (tass,kass) -> 
 >            let basis = (extendTypeTBasis tass . 
->                         extendKindTBasis kass) startTBasis
+>                         extendKindTBasis kass .
+>			  extendFuncTBasis fass) startTBasis
+>	         fass = map (\d->(getNameOfDataDef d,makeFunctor d)) dataDefs
 >            in (basis,Done ())
 
 > inferDataDefs' :: TBasis -> [Eqn] -> 
@@ -107,6 +101,19 @@ For each datatype constructor the types of the data constructors and the kind
 >                return (tass,kass)
 >         names = map getNameOfDataDef eqns
 >         basis = (getKindEnv tbasis,newEnv) 
+
+> inferDataDef :: KindBasis s -> Eqn -> STErr s [(ConID, QType)]
+> inferDataDef basis (DataDef tyCon vars alts _)
+>   = inventKinds vars >>= \kindVars -> 
+>     let extbasis = extendKindEnv (zip vars kindVars) basis
+>     in foreach alts (checkAltKind extbasis)
+>   where
+>     checkAltKind extbasis (constr, args) =
+>            assureType extbasis tp >>
+>            return (constr, qualify tp) 
+>        where tp = foldr (-=>) res args
+>     res = foldl (:@@:) (TCon tyCon) (map TVar vars)
+> inferDataDef _ _ = error "InferType.inferDataDef: impossible: not a DataDef"
 
 > inventKinds :: [VarID] -> STErr s [HpKind s]
 > inventKinds = inventTypes

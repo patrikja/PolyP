@@ -2,7 +2,7 @@
 \begin{verbatim}
 
 > module TypeBasis where
-> import Grammar(QType,Kind,VarID)
+> import Grammar(QType,Kind,VarID,ConID,Func)
 > import Folding(dmmapQualified)
 > import MyPrelude(pair)
 > import MonadLibrary((<@),StateM,executeSTM,fetchSTM,mliftSTM,
@@ -20,22 +20,24 @@
 
 \end{verbatim}
 \section{The definition of the basis}
-The basis consists of four subenvironments:
+The basis consists of five subenvironments:
 \begin{itemize}
-\item {\tt TypeEnv} contains the types of variables and constructors.
-\item {\tt KindEnv} contains the kinds of type constructors.
-\item {\tt HpTypeEnv} contains types under construction.
+\item {\tt TypeEnv} contains the types of variables and constructors,
+\item {\tt KindEnv} contains the kinds of type constructors,
+\item {\tt FuncEnv} contains the functors of regular type constructors,
+\item {\tt HpTypeEnv} contains types under construction,
 \item {\tt NonGenerics} is a list of non-generic type variables.
 \end{itemize}
 \begin{verbatim}
 
 > newtype Basis s  = Basis (TBasis,HpTBasis s)
-> type TBasis      = (TypeEnv, KindEnv)
+> type TBasis      = ((TypeEnv, KindEnv), FuncEnv)
 > type HpTBasis s  = (HpTypeEnv s, NonGenerics s)
 
-> type TypeEnv     = Env String QType
-> type KindEnv     = Env String Kind
-> type HpTypeEnv s = Env String (HpQType s)
+> type TypeEnv     = Env VarID QType
+> type KindEnv     = Env ConID Kind
+> type FuncEnv	   = Env ConID Func
+> type HpTypeEnv s = Env VarID (HpQType s)
 
 \end{verbatim}
 There is no need for a {\tt TypeEnv} or {\tt NonGenerics} in the kind
@@ -49,6 +51,16 @@ environment.
 
 \section{Interface}
 \begin{verbatim}
+
+> emptyTBasis :: TBasis
+> emptyTBasis = ((emptyTypeEnv,emptyKindEnv),emptyFuncEnv)
+
+> emptyTypeEnv :: TypeEnv
+> emptyTypeEnv = newEnv
+> emptyKindEnv :: KindEnv
+> emptyKindEnv = newEnv
+> emptyFuncEnv :: FuncEnv
+> emptyFuncEnv = newEnv
 
 > tBasis2Basis :: TBasis -> Basis s
 > tBasis2Basis tbasis = Basis (tbasis,(newEnv,allGeneric))
@@ -126,9 +138,11 @@ variables are non-generic.
 >      lookupKindinrom name rom )
 
 > getTypeEnv :: TBasis -> TypeEnv
-> getTypeEnv = fst               
+> getTypeEnv = fst . fst
 > getKindEnv :: TBasis -> KindEnv
-> getKindEnv = snd               
+> getKindEnv = snd . fst
+> getFuncEnv :: TBasis -> FuncEnv
+> getFuncEnv = snd
 
 > extendTypeEnv bindings (Basis (rom,(typeEnv, ngs)))
 >   = Basis (rom,(extendsEnv bindings typeEnv, ngs))
@@ -137,14 +151,17 @@ variables are non-generic.
 >   = (rom,extendsEnv bindings kindEnv)
 
 > extendTypeTBasis :: [(VarID,QType)] -> TBasis -> TBasis
-> extendTypeTBasis      l (ts,ks) = (extendsEnv l ts     ,ks)
+> extendTypeTBasis      l ((ts,ks),fs) = ((extendsEnv l ts     ,ks),fs)
 > extendTypeAfterTBasis :: [(VarID,QType)] -> TBasis -> TBasis
-> extendTypeAfterTBasis l (ts,ks) = (extendsAfterEnv l ts,ks)
+> extendTypeAfterTBasis l ((ts,ks),fs) = ((extendsAfterEnv l ts,ks),fs)
 
 > extendKindTBasis :: [(VarID,Kind)] -> TBasis -> TBasis
-> extendKindTBasis      l (ts,ks) = (ts,extendsEnv      l ks)
+> extendKindTBasis      l ((ts,ks),fs) = ((ts,extendsEnv      l ks),fs)
 > extendKindAfterTBasis :: [(VarID,Kind)] -> TBasis -> TBasis
-> extendKindAfterTBasis l (ts,ks) = (ts,extendsAfterEnv l ks)
+> extendKindAfterTBasis l ((ts,ks),fs) = ((ts,extendsAfterEnv l ks),fs)
+
+> extendFuncTBasis :: [(VarID,Func)] -> TBasis -> TBasis
+> extendFuncTBasis      l ((ts,ks),fs) = ((ts,ks),extendsEnv      l fs)
 
 > makeNonGeneric extraNgs (Basis (rom,(typeEnv, ngs)))
 >   = Basis (rom,(typeEnv, addtoNGS extraNgs ngs))

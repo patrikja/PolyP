@@ -1,18 +1,19 @@
 \chapter{Type labelling} 
 \begin{verbatim}
 
-> module LabelType where
+> module LabelType(labelProgram) where
 > import List(nub)
 > import Folding(freeVarsPat,mapEqn)
-> import Grammar(VarID, Eqn'(..), Expr'(..), Type(..), Eqn, 
+> import Grammar(Literal(..), VarID, Eqn'(..), Expr'(..), Type(..), Eqn, 
 >                TEqn, PrgEqns, PrgTEqns, QType, Qualified((:=>)),
 >                deQualify,qualify,isPolytypic,getNameOfVarBind)
 > import InferKind(inferDataDefs)
-> import InferType(inferLiteral,patBindToVarBind,checkTypedInstance,tevalAndSubst)
+> import InferType(checkTypedInstance,tevalAndSubst)
 > import MonadLibrary(STErr, (<@),(<@-), mliftErr, unDone, LErr, mapLErr,
 >                     convertSTErr, Error(..), mapl, foreach)
 > import MyPrelude(pair,mapSnd,splitUp,fMap,  maytrace)
 > import StartTBasis(startTBasis)
+> import StartTBasis(charType,intType,floatType,boolType,strType)
 > import StateFix -- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 > import TypeBasis(Basis,TBasis,
 >                  tBasis2Basis,extendTypeAfterTBasis,
@@ -21,7 +22,8 @@
 >                  lookupType,makeNonGeneric)
 > import TypeGraph(HpQType,HpType, HpTExpr, HpTEqn, 
 >                  mkVar, mkFun, (+#+), mkQFun,
->                  eqnIntoHeap, blockOutOfHeap,allGeneric)
+>                  eqnIntoHeap, blockOutOfHeap,allGeneric,
+>		   qtypeIntoHeap)
 > import UnifyTypes(unify, checkInstance)
 > import Monad(foldM)
 
@@ -187,11 +189,12 @@ for type checking equations should be used.
 Infer the type of the expression, and check that it is more general
 than the supplied type. Label with the (less general) explicit type.
 
+%***BUG: The contexts are not compared => bad contexts are allowed.
 \begin{verbatim}
 
 > basis |-> (Typed expr hpType)
 >   = basis |-> expr        >>= \(expr',tExpr) -> 
->     checkTypedInstance allGeneric hpType tExpr >>
+>     checkTypedInstance basis allGeneric hpType tExpr >>
 >     return hpType <@ 
 >     mkTyped expr' 
 >   -- where ngs = getNonGenerics basis
@@ -399,7 +402,7 @@ in the list.
 
 >       lift (instantiate allGeneric hpty') >>= \hpty@(((_,hpf:_):_):=>_)-> 
 >       lift (mapl (instantiate allGeneric) funs') >>= \funs->
->       lift (mapl (tevalAndSubst hpty) 
+>       lift (mapl (tevalAndSubst basis hpty) 
 >                  (maytrace "teval\n" funs)) >>= \taui ->
 
 \end{verbatim}
@@ -418,7 +421,47 @@ calculated types.
 > labelPoly _     _ = error "LabelType.labelPoly: not a polytypic definition"
 
 \end{verbatim}
- 
+
+\section{Literals}
+Just selects the type of the literal. 
+\begin{verbatim}
+
+> inferLiteral :: Basis s -> Literal -> STErr s (HpQType s)
+> inferLiteral _ (IntLit _)  = mliftErr (qtypeIntoHeap intType)
+> inferLiteral _ (FloatLit _)= mliftErr (qtypeIntoHeap floatType)
+> inferLiteral _ (BoolLit _) = mliftErr (qtypeIntoHeap boolType)
+> inferLiteral _ (CharLit _) = mliftErr (qtypeIntoHeap charType)
+> inferLiteral _ (StrLit _)  = mliftErr (qtypeIntoHeap strType)
+
+\end{verbatim}
+
+
+%**
+Maybe this definition should be in a static analysis phase.
+
+Function \texttt{patBindToVarBind} transforms a pattern binding to a
+lambda expression so that the type checker does not need to know about
+pattern bindings. To restore the original shape of the expression a
+function (inv) from expressions to equations is returned.
+
+\begin{verbatim}
+
+> patBindToVarBind :: Eqn' t -> (Expr' t,Expr' t -> Eqn' t)
+> patBindToVarBind (VarBind v t pats rhs) = (expr',inv t)
+>   where expr'= maybe id (flip Typed) t (foldr Lambda rhs pats)
+>         inv' 0 e = ([],e)
+>         inv' n (Lambda p e) = (p:ps,e')
+>              where (ps,e') = inv' (n-1) e
+>         inv' _ _ = error "InferType.patBindToVarBind: impossible: wrong no of Lambdas"
+>         inv Nothing = uncurry (VarBind v Nothing) . (inv' (length pats))
+>         inv (Just _)= invfun
+>         invfun (Typed e ty) =
+>                       (uncurry (VarBind v (Just ty)) (inv' (length pats) e))
+>         invfun _ = error ("patBindToVarBind: untyped Typed expression found:"++v)
+> patBindToVarBind _ = error "InferType.patBindToVarBind: impossible: not a VarBind"
+
+\end{verbatim}
+
 A shorthand notation:
 \begin{verbatim}
 

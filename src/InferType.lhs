@@ -1,21 +1,19 @@
 \chapter{Type inference}
 \begin{verbatim}
 
-> module InferType(tevalAndSubst,qTypeEval,
->		   inferLiteral,patBindToVarBind,checkTypedInstance) where
+> module InferType(tevalAndSubst,qTypeEval,checkTypedInstance) where
 > import UnifyTypes(checkInstance)
 > import TypeGraph(HpType,NodePtr,HpNode(..),HpQType,NonGenerics,
 >                  mkFOfd,(==>),checkCon,
 >                  qtypeIntoHeap,qtypeOutOfHeap,allGeneric,
 >                  spineWalkHpType,getChild)
 > import TypeBasis(Basis,instantiate)
-> import StartTBasis(charType,intType,floatType,boolType,strType)
 > import Env(Env,newEnv,lookupEnv,extendsEnv)
 > import MyPrelude(fMap)
 > import MonadLibrary(STErr,mliftErr,unDone,(@@),
 >                     mapl,(<@),(<@-),accumseq,accumseq_)
 > import StateFix -- (ST [,runST [,RunST]]) in hugs, ghc, hbc
-> import Grammar(Literal(..),Eqn'(..),Expr'(..),
+> import Grammar(Eqn'(..),Expr'(..),
 >		 Qualified(..),Qualifier,QType,
 >                VarID,Type(TVar))
 > import ParseLibrary(parse)
@@ -24,39 +22,34 @@
 > import Monad(foldM)
 
 \end{verbatim}
+\section{Contents}
+The functions \texttt{tevalAndSubst}, \texttt{qTypeEval} and
+  \texttt{checkTypedInstance} are all implemented in terms of
+  \texttt{hpQTypeEval}.
 
-%*** This assumption is not checked
+%*** This should be generalised.
 The functor variable in the polytypic case is assumed to be the first
 in the context list.
 
-The functions tevalAndSubst, qTypeEval and checkTypedInstance are all
-  implemented in terms of hpQTypeEval.
-
 \begin{verbatim}
 
-> tevalAndSubst :: HpQType s -> HpQType s -> -- type, functor
+> tevalAndSubst :: Basis s -> 
+>                  HpQType s -> HpQType s -> -- type, functor
 >                  ST s (HpQType s)          -- evaluated type
-> tevalAndSubst hpty' (_:=>hpfi) = 
->   instantiate allGeneric hpty' >>= \hpty@((_,pf:_):_:=>_) ->
->   pf ==> hpfi                  >> -- substitution by destructive update
->   hpQTypeEval hpty             >> -- type evaluation  
->   return hpty
+> tevalAndSubst basis hpty' (_:=>hpfi) = 
+>   instantiate allGeneric hpty' >>= \hpty->
+>   let pf = pickFunctorVariable hpty
+>   in 
+>     pf ==> hpfi                  >> -- substitution by destructive update
+>     hpQTypeEval hpty             >> -- type evaluation  
+>     return hpty
+
+> pickFunctorVariable :: HpQType s -> HpType s
+> pickFunctorVariable (("Poly",[pf]):_:=>_) = pf
+> pickFunctorVariable _ = error $ "InferType.pickFunctorVariable:" ++
+>              " The functor variable was not first in the context."
 
 \end{verbatim}
-
-The type evaluation should also evaluate the context as sketched
-below.  The idea is that 
-\begin{verbatim}
-hpQTypeEval ({f|->g+h} Poly f => f a b -> b) = 
-hpQTypeEval (Poly (g+h) => (g+h) a b -> b) = 
-(Poly g,Poly h) => Either (g a b) (h a b) -> b
-
-hpQTypeEval ({f|->Par} Poly f => f a b -> b) = 
-hpQTypeEval (Poly Par => (Par) a b -> b) = 
-() => a -> b
-\end{verbatim}
-The context transformation/simplification is implemented by funEval.
-
 \begin{verbatim}
 
 > qTypeEval :: QType -> QType
@@ -71,6 +64,11 @@ typeEval t = __RUNST__ m
             hpTypeEval hpt >>
             typeOutOfHeap [] hpt
                
+> checkTypedInstance :: Basis s -> NonGenerics s -> 
+>                       HpQType s -> HpQType s -> STErr s ()
+> checkTypedInstance basis ngs small big 
+>   = mliftErr (hpQTypeEval small) >>= \small' ->
+>     checkInstance ngs small' big
 
 > hpQTypeEval :: HpQType s -> ST s (HpQType s)
 > hpQTypeEval (l :=> t) = (fMap concat (mapl tevalC l)) >>= \l' ->
@@ -85,15 +83,24 @@ typeEval t = __RUNST__ m
 
 \end{verbatim}
 
+
+The type evaluation trasforms the context as sketched below:
+
+\begin{verbatim}
+hpQTypeEval ({f|->g+h} Poly f => f a b -> b) = 
+hpQTypeEval (Poly (g+h) => (g+h) a b -> b) = 
+(Poly g,Poly h) => Either (g a b) (h a b) -> b
+
+hpQTypeEval ({f|->Par} Poly f => f a b -> b) = 
+hpQTypeEval (Poly Par => (Par) a b -> b) = 
+() => a -> b
+\end{verbatim}
+The context transformation/simplification is implemented by funEval.
+
 \begin{verbatim}
 
 > funEval :: HpType s -> ST s [HpType s] -- functors
 > funEval = funEval' @@ spineWalkHpType 
-
-> checkTypedInstance :: NonGenerics s -> HpQType s -> HpQType s -> STErr s ()
-> checkTypedInstance ngs small big 
->   = mliftErr (hpQTypeEval small) >>= \small' ->
->     checkInstance ngs small' big
 
 \end{verbatim}
 
@@ -293,45 +300,6 @@ Problem: The program loops if not all synonyms are present.
 >     accumseq (zipWith (==>) vars args) <@- rhs
 
 \end{verbatim}
-
-%**
-Maybe this definition should be in a static analysis phase.
-
-Function \texttt{patBindToVarBind} transforms a pattern binding to a
-lambda expression so that the type checker does not need to know about
-pattern bindings. To restore the original shape of the expression a
-function (inv) from expressions to equations is returned.
-
-\begin{verbatim}
-
-> patBindToVarBind :: Eqn' t -> (Expr' t,Expr' t -> Eqn' t)
-> patBindToVarBind (VarBind v t pats rhs) = (expr',inv t)
->   where expr'= maybe id (flip Typed) t (foldr Lambda rhs pats)
->         inv' 0 e = ([],e)
->         inv' n (Lambda p e) = (p:ps,e')
->              where (ps,e') = inv' (n-1) e
->         inv' _ _ = error "InferType.patBindToVarBind: impossible: wrong no of Lambdas"
->         inv Nothing = uncurry (VarBind v Nothing) . (inv' (length pats))
->         inv (Just _)= invfun
->         invfun (Typed e ty) =
->                       (uncurry (VarBind v (Just ty)) (inv' (length pats) e))
->         invfun _ = error ("patBindToVarBind: untyped Typed expression found:"++v)
-> patBindToVarBind _ = error "InferType.patBindToVarBind: impossible: not a VarBind"
-
-\end{verbatim}
-\section{Literals}
-Just selects the type of the literal. 
-\begin{verbatim}
-
-> inferLiteral :: Basis s -> Literal -> STErr s (HpQType s)
-> inferLiteral _ (IntLit _)  = mliftErr (qtypeIntoHeap intType)
-> inferLiteral _ (FloatLit _)= mliftErr (qtypeIntoHeap floatType)
-> inferLiteral _ (BoolLit _) = mliftErr (qtypeIntoHeap boolType)
-> inferLiteral _ (CharLit _) = mliftErr (qtypeIntoHeap charType)
-> inferLiteral _ (StrLit _)  = mliftErr (qtypeIntoHeap strType)
-
-\end{verbatim}
-
 \section{Groups}
 To infer the types of a list of blocks of (mutually recursive)
 equations we start with a type environment with primitive functions

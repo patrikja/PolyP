@@ -13,8 +13,7 @@
 >                (-=>),QType,Kind,qualify,deQualify,isDataDef,
 >                tupleConstructor,listConstructor,functionConstructor)
 > import MonadLibrary(unDone,(<@),(<@-),unLErr)
-> import Env(newEnv,extendsEnv)
-> import TypeBasis(TBasis)
+> import TypeBasis(TBasis,extendTypeTBasis,extendKindTBasis,emptyTBasis)
 > import InferKind(inferDataDefs)
 > import NonStdTrace(unsafePerformIO)
 > import Flags(Flags(..),flags)
@@ -102,8 +101,9 @@ Gofer's {\tt cc.prelude}.
 
 > startTBasis :: TBasis
 > startTBasis = unLErr $ inferDataDefs 
->                          (extendsEnv typeass newEnv,
->                           extendsEnv kindass newEnv ) 
+>                          (extendTypeTBasis typeass . 
+>			    extendKindTBasis kindass $
+>                           emptyTBasis)
 >                          dataDefs
 >   where 
 >     s2s     = starKind -=> starKind

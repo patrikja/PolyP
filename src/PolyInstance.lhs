@@ -32,8 +32,10 @@ command line via flags and parameters to instantiateProgram.
 >                PrgTEqns, changeNameOfBind,
 >                tupleConstructor,(-=>),qualify)
 > import Folding(cataType,stripTEqn,mmapTEqn,mapEqn)
-> import Functorize(inn_def,out_def,either_def,fcname_def,
->                   Struct,makeFunctorStruct,Req,eqReq,codeFunctors)
+> import Functorise(Struct,makeFunctorStruct)
+> import FunctorNames(codeFunctors)
+> import BuiltinInstances(inn_def,out_def,either_def,fcname_def,
+>                   Req,eqReq)
 > import TypeGraph(simplifyContext)
 > import InferType(qTypeEval)
 > import MonadLibrary(State, executeST,(@@),handleError,
@@ -41,7 +43,7 @@ command line via flags and parameters to instantiateProgram.
 > import MyPrelude(maytrace,mapSnd,combineUniqueBy,fMap,maydebug)
 > import PrettyPrinter(pshow)
 > import StartTBasis(preludeFuns,preludedatadefs)
-> import TypeBasis(TBasis,TypeEnv)
+> import TypeBasis(TBasis,TypeEnv,getTypeEnv)
 > import Flags(Flags(..),flags)
 
 \end{verbatim} 
@@ -59,12 +61,12 @@ Implementation:
 \begin{verbatim}
 
 > instantiateProgram (tbasis,(datadefs,eqnss)) = 
->     datadefs ++ polyInstPrg datadefs eqnss (fst tbasis) 
+>     datadefs ++ polyInstPrg datadefs eqnss (getTypeEnv tbasis) 
 
 > polyInstPrg datadefs prg typeenv = 
 >     map (simplifyTEqn funcenv . stripTEqn) teqns
 >   where funcenv    = mapEnv makeFunctorStruct datadefenv
->         teqns      = polyInst funcenv defenv typeenv (startreqs typeenv)
+>         teqns      = polyInst funcenv defenv typeenv (startRequests typeenv)
 >         defenv     = eqnsToDefenv (concat prg)
 >         datadefenv = eqnsToDefenv (preludedatadefs++datadefs)
 
@@ -72,8 +74,8 @@ Implementation:
 The main request should have the correct type of main. 
 \begin{verbatim}
 
-> startreqs :: TypeEnv -> [Req]
-> startreqs typeenv = if null (requests flags)
+> startRequests :: TypeEnv -> [Req]
+> startRequests typeenv = if null (requests flags)
 >                     then [mainreq typeenv]
 >                     else map (parseReq typeenv) (requests flags)
 
@@ -172,9 +174,9 @@ The mmap should update the environment.
 >   where
 >     f :: VarID -> QType -> OutEnvM Req VarID
 >     f n t = 
->       lookupOut n >>= maybe (return n) (makeReq n t)
->     makeReq :: VarID -> QType -> QType -> OutEnvM Req VarID
->     makeReq n t tdef = 
+>       lookupOut n >>= maybe (return n) (makeReqO n t)
+>     makeReqO :: VarID -> QType -> QType -> OutEnvM Req VarID
+>     makeReqO n t tdef = 
 >        output req >> return newname
 >          where req      = (n,t)
 >                newname  = n++extra
@@ -763,7 +765,7 @@ getFunctor :: FuncEnv -> VarID -> QType -> QType -> Func
 evaluateTopFun :: FuncEnv -> Type -> Type
   functorOf
 type FuncEnv = Env ConID (Struct,Func)
-  Env.Env Grammar.ConID Functorize.Struct Grammar.Func
+  Env.Env Grammar.ConID BuiltinInstances.Struct Grammar.Func
 functorOf :: FuncEnv -> VarID -> Func
 
 getFunctors :: QType -> QType -> [Func] -- used by traverseEqn
@@ -787,7 +789,7 @@ mmapTExpr :: (Functor m, Monad m) =>
              (String -> a -> m String) -> Expr' a -> m (Expr' a)
 -}
 
-{- In Functorize.lhs
+{- In BuiltinInstances.lhs
 codeFunctors :: [Func] -> String
   codeFunctor
 codeFunctor :: Func -> String
