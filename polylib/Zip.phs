@@ -1,4 +1,4 @@
-module Zip(pzip,fzip,pzipWith,pzipWith',fzipWith,fzipWith,(@@),resultM) where
+module Zip(pzip,fzip,pzipWith,pzipWith',fzipWith,fzipWith) where
 import Base(pmap,fmap2,(-+-),(-*-))
 import Propagate(fprop,sumprop,prodprop,propagate,mapMaybe)
 punzip :: Regular d => d (a,b) -> (d a,d b)
@@ -7,7 +7,7 @@ punzip x = (pmap fst x, pmap snd x)
 funzip :: Bifunctor f => f (a,c) (b,d) -> (f a b,f c d)
 funzip x = (fmap2 fst fst x, fmap2 snd snd x)
 pzip :: Regular d => (d a,d b) -> Maybe (d (a,b))
-pzip  = (innM @@ (fprop.fmap2 resultM pzip) @@ fzip ) . (out -*- out)
+pzip  = (innM @@ (fprop.fmap2 returnM pzip) @@ fzip ) . (out -*- out)
 
 pzipWith' :: Regular d => (FunctorOf d c e -> e) -> 
                           ((d a,d b)->e) -> 
@@ -24,28 +24,28 @@ polytypic fzip  :: (f a b,f c d) -> Maybe (f (a,c) (b,d))
   = case f of   
       g + h     ->  (sumprop   . (fzip -+- fzip)) @@ sumzip
       g * h     ->  (prodprop  . (fzip -*- fzip)) @@ prodzip
-      Empty     ->  const (resultM ())
-      Par       ->  resultM
-      Rec       ->  resultM
+      Empty     ->  const (returnM ())
+      Par       ->  returnM
+      Rec       ->  returnM
       d @ g     ->  (propagate . (pmap fzip)    ) @@ pzip
       Const t   ->  constzip
 sumzip :: (Either a b,Either c d) -> Maybe (Either (a,c) (b,d))
 sumzip p = case p of
-             (Left s ,Left t )    -> resultM (Left (s,t))
-             (Right s,Right t)    -> resultM (Right (s,t))
+             (Left s ,Left t )    -> returnM (Left (s,t))
+             (Right s,Right t)    -> returnM (Right (s,t))
              _                    -> zeroM
 prodzip :: ((a,b),(c,d)) -> Maybe ((a,c),(b,d))
-prodzip ((a,b),(c,d))  =  resultM ((a,c),(b,d))
+prodzip ((a,b),(c,d))  =  returnM ((a,c),(b,d))
 constzip :: Eq t => (t,t) -> Maybe t
-constzip (x,y) = if x==y then resultM x else zeroM
+constzip (x,y) = if x==y then returnM x else zeroM
 zeroM :: Maybe a
 zeroM = Nothing
 
-resultM  :: a -> Maybe a
-resultM x  =  Just x
+returnM  :: a -> Maybe a
+returnM x  =  Just x
 
 innM :: Regular d => FunctorOf d a (d a) -> Maybe (d a)
-innM  =  resultM . inn
+innM  =  returnM . inn
 
 bindM    :: Maybe a -> (a -> Maybe b) -> Maybe b
 bindM x f  =  maybe Nothing f x
