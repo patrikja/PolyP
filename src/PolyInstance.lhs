@@ -125,6 +125,15 @@ The request is parsed into the following type:
 
 \end{verbatim}
 
+%***
+
+Function \texttt{transformReq} should also check that all requests are
+for "non-polytypic" values. If the program is "main = out" then the
+default request can not be carried out as there is a variable in the
+\texttt{Regular} context. (out :: Regular d => d a -> FunctorOf d a (d
+a)) This check is sort of part of the type checking but can not be
+carried out until when the reqests are at hand. (Here.)
+
 \begin{verbatim}
 
 > transformReq :: FuncEnv -> TypeEnv -> ReqType -> [Req]
@@ -409,7 +418,7 @@ fconstructorName
 >   where m = traverseTEqn (tracing subst) newq 
 >         newq = changeNameOfBind (++extra) q 
 >         extra = codeFunctorsErr errmsg functors
->         errmsg   = "PolyInstance.traverse: Instantiation problem for "++ pshow q++":\n"
+>         errmsg   = "PolyInstance.traverse: Instantiation problem for"++ pshow q++"\n"
 >         functors = getFunctors tdef tinst
 >         tracing :: Subst -> Subst
 >         tracing s = maytrace ("{- Subst:"++showsEnv s "" ++"-}\n") s

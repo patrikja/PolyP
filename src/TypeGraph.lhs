@@ -500,6 +500,8 @@ elsewhere.
 > isConstantQualifier (_,ts) = mapl flattenHpType ts <@ (null . concat)
 
 \end{verbatim}
+*** This simplification should of course use a set of instance declarations from Haskell, and not this ad-hoc rule.
+
 A qualifier is constant if the list of all variables in it is empty.
 
 

@@ -14,6 +14,7 @@ rename it and put it on your path.)
 
 To run a test suite do
   make check
+(If it prints nothing, everything is fine.)
 
 Please send an email to 
   patrikj@cs.chalmers.se 

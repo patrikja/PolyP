@@ -9,35 +9,37 @@ Patrik Jansson and Johan Jeuring
      * the source files for a compiler written in Haskell that compiles
        PolyP-code to Haskell.
      * a [4]library of polytypic functions written in PolyP
-     * some [5]examples. (For more info see the [6]examples/README file.)
+     * some [5]examples. (For more info see the [6]examples/README file
+       and the draft [7]reference manual.)
        
-   The compiler is written in [7]Haskell 98 (+ the ST-monad) and is known
+   The compiler is written in [8]Haskell 98 (+ the ST-monad) and is known
    to work with
-     * [8]Chalmers Haskell compiler hbc 0.9999.4,
-     * [9]Hugs 98 and
-     * [10]Glasgow Haskell compiler 2.10 and 4.02.
+     * [9]Glasgow Haskell compiler 2.10, 4.02, 4.04.
+     * [10]Chalmers Haskell compiler hbc 0.9999.4, 0.9999.5a, 0.9999.5b
+       and
+     * [11]Hugs 98.
        
 Download
 
-   Download the [11]source code, unpack with
+   Download the [12]source code, unpack with
    
      gunzip polyp.tar.gz
      tar xf polyp.tar
      
-   and follow the [12]installation instructions. Please send a mail to
-   [13]patrikj@cs.chalmers.se if you download it, or have comments or
+   and follow the [13]installation instructions. Please send a mail to
+   [14]patrikj@cs.chalmers.se if you download it, or have comments or
    bugs to report.
    
 Polytypism
 
    For information about polytypic programming in general read
-   [14]http://www.cs.chalmers.se/~patrikj/poly/.
+   [15]http://www.cs.chalmers.se/~patrikj/poly/.
      _________________________________________________________________
    
-   Last modified: Thu Jul 15 14:48:08 MET DST 1999 by
+   Last modified: Mon Aug 9 18:22:41 MET DST 1999 by
    
    
-    [15]Patrik Jansson / [16]patrikj@cs.chalmers.se
+    [16]Patrik Jansson / [17]patrikj@cs.chalmers.se
 
 References
 
@@ -47,13 +49,14 @@ References
    4. http://www.cs.chalmers.se/~patrikj/poly/polyp/polylib/
    5. http://www.cs.chalmers.se/~patrikj/poly/polyp/examples/
    6. http://www.cs.chalmers.se/~patrikj/poly/polyp/examples/README
-   7. http://haskell.org/
-   8. http://www.cs.chalmers.se/~augustss/hbc/hbc.html
-   9. http://haskell.org/hugs/
-  10. http://research.microsoft.com/users/t-simonm/ghc/
-  11. http://www.cs.chalmers.se/~patrikj/poly/polyp.tar.gz
-  12. http://www.cs.chalmers.se/~patrikj/poly/polyp/INSTALL
-  13. mailto:patrikj@cs.chalmers.se
-  14. http://www.cs.chalmers.se/~patrikj/poly/
-  15. http://www.cs.chalmers.se/~patrikj/
-  16. mailto:patrikj@cs.chalmers.se
+   7. http://www.cs.chalmers.se/~patrikj/poly/polyp/docs/reference.html
+   8. http://haskell.org/
+   9. http://research.microsoft.com/users/t-simonm/ghc/
+  10. http://www.cs.chalmers.se/~augustss/hbc/hbc.html
+  11. http://haskell.org/hugs/
+  12. http://www.cs.chalmers.se/~patrikj/poly/polyp.tar.gz
+  13. http://www.cs.chalmers.se/~patrikj/poly/polyp/INSTALL
+  14. mailto:patrikj@cs.chalmers.se
+  15. http://www.cs.chalmers.se/~patrikj/poly/
+  16. http://www.cs.chalmers.se/~patrikj/
+  17. mailto:patrikj@cs.chalmers.se
