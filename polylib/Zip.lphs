@@ -78,10 +78,10 @@ Note: |fzipWith| has a different kind of typing compared to |pzipWith|.
 > prodzip :: ((a,b),(c,d)) -> Maybe ((a,c),(b,d))
 > prodzip ((a,b),(c,d))  =  returnM ((a,c),(b,d))
 
-Using this definition of |constzip| in the |Const t| case formally
+Using this definition of |constzip| in the |Const t| case, formally
 requires an |Eq t| constraint, which is inexpressible in PolyP (in
-this position).  It works due to an undocumented feature (bug?) in
-PolyP.
+this position).  However the implementation of \polyp{} allows this
+for convenience, even though it is not really type safe.
 
 > constzip :: Eq t => (t,t) -> Maybe t
 > constzip (x,y) = if x==y then returnM x else zeroM
