@@ -1,0 +1,70 @@
+#!/usr/bin/perl
+# import chasing for PolyP
+
+# Bugs: 
+#  import declaration must not be more than one line
+#  they must start at column zero (after the $lineprefix)
+#  unknown imports can end up mixed with infix declarations
+
+$filenamesuffix = ".phs"; $lineprefix="";
+# $filenamesuffix = ".hs";  $lineprefix="";
+# $filenamesuffix = ".lhs"; $lineprefix="> ";
+
+$true = 1; $false = 0;
+chase($ARGV[0],"fh00",1,$true); # borja med kommandoradsargumentets filnamn
+chase($ARGV[0],"fh00",2,$false); 
+
+sub chase {
+    my($filename,$handle,$phase,$print_module_line) = @_ ;
+    my($fresh);
+    open($handle,$filename) || die "Can't open file $filename";
+    $stored{$filename} = $phase; # kom ihag att vi varit har (undvik loop)
+
+    while (<$handle>) {               # for varje rad i filen
+	if( /^${lineprefix}import\s*(qualified)? (\w+)/ )      # om den borjar med ordet "import"
+	{
+	    $filename= $2 . $filenamesuffix;# Nasta ord + .phs ger filnamn
+	    if( $stored{$filename} ne $phase) # Om namnet ej besokts i denna fas
+	    {
+		if( -f $filename ) # om det finns en sadan fil
+		{
+		    $fresh = $handle;
+		    # get a fresh file handle name (see man perlfunc | grep fh00)
+		    print "\n"; #empty line hack for literate scripts (.lhs)
+		    &chase($filename,++$fresh,$phase,$false); # print_module_line=false
+		}
+		else
+		{   #Varna och skriv ut aktuell rad vi forsta genomlopningen
+		    if( $phase eq 1 )
+		    {
+			print STDERR "-- Warning: file `$filename' not found\n" ;
+			print $_ ;
+		    }
+		}
+	    }
+	}
+	elsif (/^${lineprefix}module/)
+            {
+		if ( $print_module_line && ($phase eq 1))
+		{ # 
+		    print $_ ; # skriv ut raden
+		}
+	    }
+        elsif ( ($phase eq 2) xor (/^${lineprefix}infix[lr \t]/) )
+        { # 
+	  print $_ ; # skriv ut raden
+	}
+    } # end while <$handle>
+    close($handle);
+}
+
+
+# while($_ = $ARGV[0]) {
+#     shift(@ARGV);
+#     if ( /^-i$/ ) {
+# 	$Import_dirs = ''; # import path cleared!
+#     } elsif ( /^-i(.*)/ ) {
+# 	$Import_dirs = "$1:$Import_dirs";
+#     }
+# }
+
