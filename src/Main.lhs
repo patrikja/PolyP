@@ -78,7 +78,7 @@ In verbose mode every stage of the program generation presents s summary:
 
 > report'' :: PrgText -> IO ()
 > report'' p = r1 >> r2 >> r3 >> putStrLn "-}" >> r4 >> putStrLn ""
->   where r4 = putStr (sp ++ handleError (\_->"") id err)
+>   where r4 = putStr (sp ++ handleError id (map (\_->"") err))
 >         (sp,err) = mapLErr showEqns ip
 >         ip = mapLErr instantiateProgram lp
 >         r3 = typeReport lp
@@ -158,9 +158,9 @@ These are still preliminary versions.
 > type PrgText = String
 
 > parseProgram :: PrgText -> [Eqn]
-> parseProgram = handleError id err . parse pModule
+> parseProgram = handleError err . parse pModule
 >   where
->     err = error . ("Parser: "++)
+>     err = error . ("Main.parseProgram: "++)
 
 #ifdef __DEBUG__
 > prettify :: PrgText -> PrgText
@@ -189,7 +189,7 @@ These are still preliminary versions.
 >    ("Kinds:\n":map showpair (assocsEnv kenv) ) ++
 >    ("Types:\n":map showpair (assocsEnv tenv) ) ++ [errtext] )
 >   where showpair (name,t) = ' ':name ++ " :: " ++ show (pretty t)
->         errtext = handleError (\_->"") id err
+>         errtext = handleError id (map (\_->"") err)
 
 > showEqns :: Pretty a => [a] -> String
 > showEqns = concat . map (show.pretty)

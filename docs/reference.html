@@ -38,8 +38,8 @@ It type checks the input file <code>P.Phs</code> and generates the
 instances of all polytypic functions that are used in the code
 reachable from <code>main</code>.
 
-The output is Haskell code and can be loaded in hugs or a Haskell
-compiler.
+The output is Haskell code and can be loaded in hugs or compiled with
+a Haskell compiler.
 
 Sometimes the generated code is rejected as a Haskell program due to
 the lack of explicit type declarations of top level overloaded
@@ -71,13 +71,22 @@ before the error in the type report and look up the name following
 this one in the dependency report. This definition is probably the
 culprit.
 
+<p>
+
 The flag <code>-p</code> is used when you want to use Haskell
 functions that are not in the built in part of the Haskell prelude.
 
-By listing these functions, with types, in a file
-<code>ExplTypes.hs</code> and by calling PolyP with <code>polyp -p
+If you list the types of these functions in a file
+<code>ExplTypes.hs</code> and call PolyP with <code>polyp -p
 ExplTypes.hs PolyPCode.Phs</code> you can use the listed functions in
 the definitions in <code>PolyPCode.Phs</code>.
+
+Note that the file <code>ExplTypes.hs</code> must contain only
+explicit type declarations, and that these are only read by PolyP, not
+included in the output.
+
+The definitions of these functions should be placed in a separate file
+and prepended to the PolyP output or loaded in hugs in some other way.
 
 <!-- New section -->
 

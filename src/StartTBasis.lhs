@@ -6,27 +6,28 @@
 >                    eitherType,fcnameType,boolType,strType,
 >                    sumtypename,leftname,rightname,
 >                    preludedatadefs,sumdatadef) where
-> import Parser(pType0,pType1,pExplicitTypes)
+> import Parser(pType0,pType1,pTypeFile)
 > import ParseLibrary(parse)
-> import MyPrelude(mapSnd,trace)
-> import Grammar(Eqn'(..),Qualified(..),Type(..),VarID,(-=>),QType,
->                deQualify,
+> import MyPrelude(mapSnd,splitUp,trace)
+> import Grammar(Eqn,Eqn'(..),Qualified(..),Type(..),VarID,(-=>),QType,
+>                deQualify,isDataDef,
 >                tupleConstructor,listConstructor,functionConstructor)
-> import MonadLibrary(Error,unDone,(<@))
+> import MonadLibrary(Error,unDone,(<@),unLErr)
 > import Env(newEnv,extendsEnv)
 > import TypeBasis(TBasis)
+> import InferKind(inferDataDefs)
 > import NonStdTrace(unsafePerformIO)
 > import System(getEnv,getArgs)
 
 \end{verbatim}
-We will need three versions of the prelude:
+We could need three versions of the prelude:
 \begin{itemize}
 \item One as PolyP code. (For readability.)
 \item One with commands to build the internal (this is what we have).
 \item One precalculated internal. (Calcultated from from second and
   pasted into the file for efficiency.)
 \end{itemize}
-For the PolyP version - see \verb|../comments.txt|.
+For the PolyP version - see \verb|../lib/PolyPrel.hs|.
 
 \begin{verbatim}
 
@@ -44,21 +45,24 @@ to initialize the type information. Only data type declarations and
 explicit type declarations are recorded - the rest is ignored.
 
 First try: only explicit type declarations are accepted.
-
-The next step is to allow datatype declarations also - using
-\texttt{InferKind.inferDataDefs} to extend the environment.
-(\texttt{inferDataDefs :: TBasis -> [Eqn] -> LErr TBasis})
-
-[dataDefs, binds] = splitUp [isDataDef] eqns
+Second try: added data-declarations also.
 
 \begin{verbatim}
 
 > preludeAssocs :: [(String,QType)]
-> preludeAssocs = unDone . parse pExplicitTypes . unsafePerformIO $ prelfileIO
+> preludeAssocs = concatMap convExplType explTypes
+
+> preludeEqns, dataDefs, explTypes :: [Eqn]
+> [dataDefs, explTypes] = splitUp [isDataDef] preludeEqns
+
+> preludeEqns = unDone . parse pTypeFile . unsafePerformIO $ prelfileIO
+
+> convExplType :: Eqn -> [(VarID,QType)]
+> convExplType (ExplType ns t) = ns <@ (\n->(n,t))
+> convExplType _ = error "StartTBasis.convExplType: impossible: not ExplType"
 
 > getEnvDef :: String -> String -> IO String
 > getEnvDef e d = getEnv e `catch` \ _ -> return d
-
 
 > preludeFileName :: String
 
@@ -87,18 +91,12 @@ The next step is to allow datatype declarations also - using
 >    | fl == includeFlag    = name:preludeFileNames rest
 > preludeFileNames (_:rest) = preludeFileNames rest
 
-
 > haskellass :: [(String,QType)]
 > haskellass = haskellConstructorAssoc ++ preludeAssocs
 
 > haskellConstructorAssoc :: [(String,QType)]
 > haskellConstructorAssoc = map (mapSnd (unDone . parse pType0))
 >              [(listConstructor,"[a]"),(":","a->[a]->[a]"),
->               (leftname ,"a->"++sumtypename++" a b"),
->               (rightname,"b->"++sumtypename++" a b"),
->               ("True","Bool"),("False","Bool"),
->               ("Nothing","Maybe a"),("Just","a->Maybe a"),
->               ("LT","Ordering"),("EQ","Ordering"),("GT","Ordering"),
 >               (tupleConstructor 0,"()"),
 >               (tupleConstructor 2,"a->b->(a,b)"),
 >               (tupleConstructor 3,"a->b->c->(a,b,c)")
@@ -110,12 +108,13 @@ Gofer's {\tt cc.prelude}.
 \begin{verbatim}
 
 > startTBasis :: TBasis
-> startTBasis = (extendsEnv typeass newEnv,
->                extendsEnv kindass newEnv )
+> startTBasis = unLErr $ inferDataDefs 
+>                          (extendsEnv typeass newEnv,
+>                           extendsEnv kindass newEnv ) 
+>                          dataDefs
 >   where 
->     a2a2a  = pT "a->a->a"
->     s2s = star -=> star
->     s2s2s = star -=> s2s
+>     s2s     = star -=> star
+>     s2s2s   = star -=> s2s
 >     kindass = kindhaskellass ++ kindpolypass
 >
 >     kindhaskellass = 
@@ -125,11 +124,9 @@ Gofer's {\tt cc.prelude}.
 >                (tupleConstructor 2,  s2s2s),
 >                (tupleConstructor 3,  star -=> s2s2s)] 
 >            ++ map (\x->(x,star)) 
->                ["Bool","Char","Double","Float","Int","Integer",
+>                ["Char","Double","Float","Int","Integer",
 >                 "IOError","Void","Ordering"]
->            ++ [("Maybe",s2s),
->                ("IO",s2s),
->                (sumtypename,s2s2s)]
+>            ++ [("IO",s2s)]
 >
 
 >     kindpolypass = [("Mu", s2s2s -=> s2s),("FunctorOf", s2s -=> s2s2s)]
@@ -174,3 +171,4 @@ Gofer's {\tt cc.prelude}.
 There is no type synonym handling in the main part of PolyP, but the
 type synonym \texttt{String} is translated to \texttt{[Char]} by the
 parser.
+

@@ -5,7 +5,8 @@
 >                     State     ,updateST ,fetchST ,executeST ,
 >                     StateM(..),updateSTM,fetchSTM,executeSTM,mliftSTM,
 >                     (<@),(<@-),(<*>),(<:*>),(<<),(@@),(<|),mIf,applyM2,
->                     Error(..),unDone,LErr,mapLErr,showLErr,handleError,
+>                     Error(..),unDone,
+>                     LErr,unLErr,mapLErr,showLErr,handleError,
 >                     STErr,mliftErr,convertSTErr,ErrorMonad(failEM),
 >                     OutputT,output,runOutput,mliftOut,
 >                     mapl,foreach,liftop,map0,map1,map2,mfoldl,mfoldr) where
@@ -98,15 +99,29 @@ instance Functor (ST a) where
 > instance ErrorMonad Error where
 >   failEM = Err
 
+> unDone :: Error a -> a
 > unDone (Done x) = x
 > unDone (Err s) = error s
 
 > type LErr a = (a,Error ())
-> showLErr (x,err) = show x ++ handleError (\_->"") id err
+
+> showLErr :: Show a => LErr a -> String
+> showLErr (x,err) = show x ++ handleError id (map (\_->"") err)
+
+> mapLErr :: (a->b) -> LErr a -> LErr b
 > mapLErr = mapFst
-> handleError f e = h
->   where h (Done x)   = f x
->         h (Err mess) = e mess
+
+> unLErr :: LErr a -> a
+> unLErr = handleLErr (error.("MonadLibrary.handleLErr:"++))
+
+> handleLErr :: (String -> a) -> LErr a -> a
+> handleLErr def (x,Done ()) = x
+> handleLErr def (x,Err msg) = def msg
+
+> handleError :: (String -> a) -> Error a -> a
+> handleError d = h
+>   where h (Done x)   = x
+>         h (Err mess) = d mess
 
 > instance ErrorMonad [] where
 >   failEM msg = []

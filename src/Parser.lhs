@@ -14,7 +14,7 @@ white-space. (Because this allows the incorrect `elem `.)
 
 \begin{verbatim}
 
-> module Parser(parse,pModule,pType0,pType1,pExplicitTypes) where
+> module Parser(parse,pModule,pType0,pType1,pTypeFile) where
 
 > import Char(isUpper,isLower,isAlphanum,isDigit)
 > import MyPrelude(mapSnd)
@@ -515,21 +515,20 @@ Function \texttt{pPack'} does not allow space after leading symbol.
 
 \end{verbatim}
 
-\subsection{Searching for explicit types}
+\subsection{Searching for explicit types and \texttt{data} declarations}
 
 \begin{verbatim}
 
-> pMaybeExplType :: Parser [(VarID,QType)]
-> pMaybeExplType = (pExplType <@ convExplType) ++ pAnyLine
+> pMaybeExplType :: Parser Eqn
+> pMaybeExplType = pDataDef ++ pExplType ++ pAnyLine
 
-> pAnyLine :: Parser [a] 
-> pAnyLine = strip (some (sat (/='\n')) >> sat (=='\n')) <@- []
+*** fishy parser! Should accept anything not inluding type or data.
 
-> pExplicitTypes :: Parser [(VarID,QType)]
-> pExplicitTypes = some_offside pMaybeExplType <@ concat
+> pAnyLine :: Parser Eqn
+> pAnyLine = strip (some (sat (/='\n')) >> sat (=='\n')) 
+>              <@- ExplType [] (error "Parser.pAnyLine: internal error")
 
-> convExplType :: Eqn -> [(VarID,QType)]
-> convExplType (ExplType ns t) = ns <@ (\n->(n,t))
-> convExplType _               = error "Parser.convExplType: not ExplType"
+> pTypeFile :: Parser [Eqn]
+> pTypeFile = some_offside pMaybeExplType
 
 \end{verbatim}

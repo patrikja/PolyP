@@ -31,6 +31,8 @@ InferKind.o : InferKind.lhs
 InferKind.o : ./Grammar.hi
 InferKind.o : ./TypeGraph.hi
 InferKind.o : ./TypeBasis.hi
+InferKind.o : ./StateFix.hi
+InferKind.o : ./Env.hi
 InferKind.o : ./PrettyPrinter.hi
 InferKind.o : ./UnifyTypes.hi
 InferKind.o : ./MonadLibrary.hi
@@ -53,6 +55,7 @@ LabelType.o : LabelType.lhs
 LabelType.o : ./Env.hi
 LabelType.o : ./Folding.hi
 LabelType.o : ./Grammar.hi
+LabelType.o : ./InferKind.hi
 LabelType.o : ./InferType.hi
 LabelType.o : ./MonadLibrary.hi
 LabelType.o : ./MyPrelude.hi
@@ -111,6 +114,8 @@ StartTBasis.o : ./Grammar.hi
 StartTBasis.o : ./MonadLibrary.hi
 StartTBasis.o : ./Env.hi
 StartTBasis.o : ./TypeBasis.hi
+StartTBasis.o : ./InferKind.hi
+StartTBasis.o : ./NonStdTrace.hi
 StateFix.o : StateFix.lhs
 TypeBasis.o : TypeBasis.lhs
 TypeBasis.o : ./Grammar.hi
