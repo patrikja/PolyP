@@ -88,8 +88,8 @@ Second try: added data-declarations also.
 >                     putErrStr readFailed >> (return d)
 >   where readOk     = "{- Interface file '" ++ n ++ "' read OK. -}\n"
 >         readFailed = "{- ERROR: Interface file '" ++ altFile2 ++ "' not found. -}\n"
->         altFile    = polypDir flags ++ "/lib/" ++ n
->         altFile2   = polypDir flags ++ "/polylib/" ++ n
+>         altFile    = polypDir flags ++ "lib/" ++ n
+>         altFile2   = polypDir flags ++ "polylib/" ++ n
 
 > haskellass :: [(String,QType)]
 > haskellass = haskellConstructorAssoc ++ preludeAssocs

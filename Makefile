@@ -1,5 +1,5 @@
 # The Makefile is for the following PolyP-version
-export polyp_version = 1.6
+export polyp_version = 2.$(shell date +%y%m%d)
 
 default: ghc
 

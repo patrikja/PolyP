@@ -37,7 +37,7 @@ check:: $(targets:.hs=.check) $(wildcard ../polylib/*.phs)
 
 check:: veryclean
 
-HUGSFLAGS = -98
+HUGSFLAGS = -98 +o
 
 include ../test/polyp.mk
 
