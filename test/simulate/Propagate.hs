@@ -7,7 +7,7 @@ propagate  =  cata (mapMaybe inn . fprop)
 
 
 fprop :: Bifunctor f => f (Maybe a) (Maybe b) -> Maybe (f a b)
-fprop x = onlyUsefulForTypeChecking "fprop"
+fprop x = onlyUsefulForTypeChecking "fprop" x
 
 sumprop  :: Either (Maybe a) (Maybe b) -> Maybe (Either a b)
 sumprop  =  mapMaybe Left `either` mapMaybe Right

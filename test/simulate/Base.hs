@@ -2,7 +2,7 @@ module Base(fmap2,pmap,cata,ana,hylo,para,(-*-),(-+-),module PolyPTypes) where
 import PolyPTypes
 
 fmap2 :: Bifunctor f => (a->c) -> (b->d) -> f a b -> f c d
-fmap2 p r x = error "fmap2: only useful for type checking"
+fmap2 p r x = error "fmap2: only useful for type checking" p r x 
 
 pmap :: Regular d => (a -> b) -> d a -> d b
 pmap f   = inn . fmap2 f  (pmap f)   . out

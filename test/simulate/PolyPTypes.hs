@@ -20,6 +20,9 @@ instance Regular Maybe
 
 class Bifunctor f where 
   makeBifunctorhavetherightkinddummy :: f a b
+  makeBifunctorhavetherightkinddummy = undefined
+
 instance Regular d => Bifunctor (FunctorOf d)
 
+onlyUsefulForTypeChecking :: String -> a
 onlyUsefulForTypeChecking name = error (name ++ ": Only useful for typechecking.")

@@ -9,7 +9,7 @@ peq = pequal (==)
 
 fequal :: Bifunctor f => (a->b->Bool) -> (c->d->Bool) -> 
                          f a c -> f b d -> Bool
-fequal p r x y = onlyUsefulForTypeChecking "fequal"
+fequal p r x y = onlyUsefulForTypeChecking "fequal" p r x y 
 
 sumequal :: (a->b->Bool) -> (c->d->Bool) -> 
             Either a c -> Either b d -> Bool
