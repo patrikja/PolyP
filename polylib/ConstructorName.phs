@@ -14,6 +14,16 @@ fconstructorNames :: Bifunctor f => f a b -> [String]
 fconstructorNames x =
   map fconstructorName (fconstructors `asTypeOf` [x])
 
+constructorNamesAndArities :: Regular d => d a -> [(String,Int)]
+constructorNamesAndArities = fconstructorNamesAndArities . out
+
+fconstructorNamesAndArities :: Bifunctor f => f a b -> [(String,Int)]
+fconstructorNamesAndArities x = 
+  map (mapFst fconstructorName) (fconstructorsAndArities `asTypeOf` [(x,undefined)])
+
+mapFst :: (a->b) -> (a,c) -> (b,c)
+mapFst f p = (f (fst p), snd p)
+
 constructors  :: Regular d => [d a]
 constructors  =  map inn fconstructors
 
@@ -21,6 +31,17 @@ polytypic fconstructors :: [f a b] =
   case f of 
     g + h -> map Left fconstructors ++ map Right fconstructors
     g     -> [undefined]
+
+polytypic fconstructorsAndArities :: [(f a b,Int)] =
+  case f of 
+    g + h -> map (mapFst Left) fconstructorsAndArities ++ map (mapFst Right) fconstructorsAndArities
+    g     -> (\x -> [(x,fconstructorArity x)]) undefined
+
+polytypic fconstructorArity :: f a b -> Int =
+  case f of
+    g * h -> \p->fconstructorArity (fst p) + fconstructorArity (snd p)
+    Empty -> const 0
+    f     -> const 1
 
 constructor2Int :: Regular d => d a -> Int
 constructor2Int = fconstructor2Int . out
