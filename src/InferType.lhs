@@ -149,6 +149,7 @@ in a table: \texttt{funEvalEnv}.
 > funEvalEnv funcenv = extendsEnv 
 >   [("+",[funEval funcenv, funEval funcenv])
 >   ,("*",[funEval funcenv, funEval funcenv])
+>   ,(">",[funEval funcenv, funEval funcenv])
 >   ,("@",[dataEval funcenv,funEval funcenv])
 >   ,("Par",[])
 >   ,("Rec",[])
@@ -309,6 +310,7 @@ applying the following rewrite rules: \\
 \begin{tabular}{lll}
   (f + g) a b     & $\rightarrow$ & Either (f a b) (g a b) \\
   (f * g) a b     & $\rightarrow$ & (f a b,g a b) \\
+  (f > g) a b     & $\rightarrow$ & f a b -> g a b\\
   (d @ g) a b     & $\rightarrow$ & d (g a b)     \\
   Par a b         & $\rightarrow$ & a             \\
   Rec a b         & $\rightarrow$ & b             \\
@@ -320,6 +322,7 @@ applying the following rewrite rules: \\
 > typeSynEnv :: Env VarID (Int,QType)
 > typeSynEnv = extendsEnv [typeSyn "+" "fgab" "Either (f a b) (g a b)",
 >                          typeSyn "*" "fgab" "(f a b, g a b)",
+>                          typeSyn ">" "fgab" "f a b -> g a b",
 >                          typeSyn "@" "dgab" "d (g a b)",
 >                          typeSyn "Par" "ab" "a",
 >                          typeSyn "Rec" "ab" "b",

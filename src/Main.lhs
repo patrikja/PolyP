@@ -3,18 +3,19 @@
 
 > module Main(main) where
 > import DependencyAnalysis(dependencyProgram)
-> import Grammar(Eqn'(..),Eqn,PrgEqns,PrgTEqns,getNameOfEqn)
+> import Grammar(Eqn'(..),Eqn,PrgEqns,PrgTEqns,getHeadOfEqn)
 > import List(intersperse)
 > import LabelType(labelProgram)
 > import MonadLibrary(handleError, LErr, showLErr, mapLErr)
 > import MyPrelude(putErrStr,putErrStrLn,fatalError,fMap,stopNow,flushErr)
 > import Parser(parse,pModule)
 > import PolyInstance(instantiateProgram)
-> import PrettyPrinter(Pretty(..),($$),text,pshow)
+> import PrettyPrinter(Pretty(..),($$),(<>),text,pshow,Doc)
+> import Env(assocsEnv)
 > import StateFix -- [(runST [,RunST])] in hugs, ghc, hbc
 > import System(getProgName)
 > import qualified IO(stderr)
-> import TypeBasis(TBasis)
+> import TypeBasis(TBasis,getFuncEnv)
 > import Flags(Flags(..),flags)
 
 \end{verbatim}
@@ -111,11 +112,11 @@ In verbose mode every stage of the program generation presents a summary:
 \begin{verbatim}
 
 > parserReport' :: [Eqn] -> [String]
-> parserReport' = map getNameOfEqn
+> parserReport' = map getHeadOfEqn
 
 > parserReport :: [Eqn] -> IO ()
-> parserReport = putErrStrLn . ("Parsed functions:\n"++) . 
->                concat . intersperse "," . parserReport' 
+> parserReport = putErrStrLn . ("Parsed entities:\n"++) . 
+>                concat . intersperse ", " . parserReport' 
 
 \end{verbatim}
 
@@ -126,10 +127,10 @@ The program doesn't handle mutual recursive datatypes.
 > dependencyReport' :: PrgEqns -> [[String]]
 > dependencyReport' (datas,eqnss) = map (:[]) (getnames datas) ++ 
 >                                   map getnames eqnss
->   where getnames = map getNameOfEqn
+>   where getnames = map getHeadOfEqn
 
 > dependencyReport :: PrgEqns -> IO ()
-> dependencyReport = putErrStrLn . ("Dependency ordered functions:\n("++)  
+> dependencyReport = putErrStrLn . ("Dependency ordered entities:\n("++)  
 >                  . concat . (++[")"]) . intersperse "),(" 
 >                  . map (concat . intersperse "," ) 
 >                  . dependencyReport'
@@ -138,19 +139,25 @@ The program doesn't handle mutual recursive datatypes.
 \subsection{Type report}
 \begin{verbatim}
 
-> typeReport' :: LErr (TBasis,PrgTEqns) -> LErr [[Eqn]]
-> typeReport' ((_,(_,qss)),err) = (map (map getEqnType) qss , err)
->   where getEqnType (Polytypic n t _ _)      = ExplType [n] t
+> typeReport' :: LErr (TBasis,PrgTEqns) -> LErr Doc
+> typeReport' ((tb,(ds,qss)),err) = 
+>    (reportFuncEnv tb  $$ reportEqs qss, err)
+>   where reportFuncEnv = stack . map reportFunc . assocsEnv . getFuncEnv
+>         reportFunc (d,(_,f)) = text ("FunctorOf "++d++" = ") <> pretty f
+>         --reportDatas = text . concat . intersperse "," . map getHeadOfEqn  
+>         reportEqs = stack . map (stack' . map (pretty . getEqnType))
+>         getEqnType (Polytypic n t _ _)      = ExplType [n] t
 >         getEqnType (VarBind n (Just t) _ _) = ExplType [n] t
 >         getEqnType (VarBind n _ _ _) = error ("getEqnType: untyped eqn: "++n)
 >	  getEqnType _ = error "Main.typeReport': impossible: not a binding"
+>         stack  [] = text ""
+>         stack  ds = foldr1 ($$) ds
+>         stack' [] = text "Error: typeReport: Empty binding group."
+>         stack' ds = foldr1 ($$) ds                               
 
 > typeReport :: LErr (TBasis,PrgTEqns) -> IO ()
-> typeReport = putErrStrLn . ("Typed functions:\n"++) . showLErr . 
->              mapLErr (stack . map (stack . map pretty)) . 
+> typeReport = putErrStrLn . ("After typing:\n"++) . showLErr . 
 >              typeReport'
->   where stack [] = text "Empty type group - probably an error."
->         stack ds = foldr1 ($$) ds
 
 \end{verbatim} 
 This printing could be made lazier, leading to better error
@@ -226,7 +233,7 @@ Two possible approaches:
 
 main = seq IO.stderr report 
 
-The "seq stderr" is a try to work around a ghc-bug:
+The "seq stderr" was a try to work around a ghc-bug:
   "The problem is caused by overzealous locking in our I/O library"
 (GHC 4.06 Mini-FAQ, http://haskell.org/ghc/faq_406.html)
 

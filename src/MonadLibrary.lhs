@@ -278,7 +278,8 @@ instance Functor (ST a) where
 > liftSTtoSTErr :: ST s a -> STErr s a
 > liftSTtoSTErr = STErr . fMap Done
 > 
-> mzeroSTErr = STErr (return (Err "mzero:"))
+> mzeroSTErr :: STErr s a
+> mzeroSTErr =  STErr (return (Err "mzero:"))
 >
 > instance MONADZERONAME (STErr s) where
 #ifdef __Haskell98__

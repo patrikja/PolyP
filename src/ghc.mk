@@ -8,8 +8,8 @@ prog = ../bin/ghcpolyp
 #hs_flags += -syslib hbc
 #hs_flags += -auto -prof
 #hs_flags += -Wall
-# To get to the ST-monad
-hs_flags += -fglasgow-exts
+# To get to the ST-monad and possibly trace
+hs_flags += -fglasgow-exts -package lang
 
 mkdependHS = mkdependHS
 mkdependHS_flags = -x IOExts -x ST

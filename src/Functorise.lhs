@@ -37,7 +37,7 @@ in inn, out, or forbidden below.
 
 > makeFunctorStruct' :: Eqn -> Error (Struct,Func)
 > makeFunctorStruct' (DataDef def args alts _) | arity == 1
->   = convAlts def alts <@ pair ((def,arity),map (mapSnd length) alts)
+>   = convAlts def alts <@ pair ((def,arity), map (mapSnd length) alts)
 >					       | otherwise
 >   = failEM (def++" is not Regular as only 1-parameter datatypes are Regular")
 >   where arity = length args
@@ -51,6 +51,11 @@ in inn, out, or forbidden below.
 > convProd _   [] = return (TCon "Empty")
 > convProd def ts = foreach ts (convType def) <@ foldr1 prodFunctor
 
+Function |convFunc| must be called with length ts == 2.
+
+> convFun ::  ConID -> [Type] -> Error Func
+> convFun def ts = foreach ts (convType def) <@ funFunctor
+
 > convType :: ConID -> Type -> Error Func
 > convType _   (TVar _)          = return parFunctor -- indexed if multiple params
 > convType _   t 
@@ -58,8 +63,9 @@ in inn, out, or forbidden below.
 > convType def (TCon con :@@: TVar _)
 >   | con == def		 = return recFunctor
 > convType def t 
->   | isTupleCon tup             = convProd def ts
->      where (TCon tup:ts) = spineWalkType t
+>   | isTupleCon c               = convProd def ts
+>   | isFunType c ts             = convFun  def ts
+>      where (TCon c:ts) = spineWalkType t
 > convType def (TCon con :@@: t) = convType def t <@ applyFunctor con
 >   
 > convType def _ = failEM ("Can't calculate FunctorOf "++ def ++" as the type is not regular enough.")
@@ -79,6 +85,20 @@ in inn, out, or forbidden below.
 
 > prodFunctor :: Func -> Func -> Func
 > prodFunctor f g = TCon "*" :@@: f :@@: g
+
+-- funFunctor :: Func -> Func -> Func
+
+> funFunctor :: [Func] -> Func
+> funFunctor [f,g] = TCon ">" :@@: f :@@: g
+> funFunctor fs    = error ("Functorise.funFunctor: impossible: " ++
+>                           show (length fs) ++
+>                           " functors found instead of 2")
+
+> isFunCon :: ConID -> Bool
+> isFunCon = ("->"==)
+
+> isFunType :: ConID -> [Type] -> Bool
+> isFunType c ts = isFunCon c && length ts == 2
 
 > isConstantType :: Type -> Bool
 > isConstantType = null . typeVars

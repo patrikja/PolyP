@@ -141,7 +141,7 @@ output Haskell code violates the monomorphism restriction.
 >                                          . pretty
 >                                          ) args))
 
-> prAlt :: Pretty t => Char -> (ConID,[t]) -> Doc
+> prAlt :: (Typelike t, Pretty t) => Char -> (ConID,[t]) -> Doc
 > prAlt sepchar (constr, types)
 >   =  text (sepchar : " ")
 >   <> if isOperatorName constr 
@@ -149,7 +149,7 @@ output Haskell code violates the monomorphism restriction.
 >      else text constr
 >        <> if null types                                         
 >   	    then text ""                                          
->   	    else ppPackedList " " (map ppParentheses types) "" " "
+>   	    else ppPackedList " " (map prT types) "" " "
 
 \end{verbatim}
 \section{Expressions}
@@ -334,6 +334,7 @@ and thus do not need to be parenthesized when used as type arguments.
 
 > isOperatorName :: String -> Bool
 > isOperatorName ('(':_) = False 
+> isOperatorName ('[':_) = False 
 > isOperatorName (c  :_) = not (isAlpha c) 
 > isOperatorName ""      = error "PrettyPrinter.isOperatorName: empty name"
 

@@ -43,6 +43,7 @@ instead of {\tt F[]} to make it a legal Haskell identifier(-suffix).
 >     s (TCon "FunctorOf")= map0 ('f':)
 >     s (TCon "+")     = map0 ('S':)
 >     s (TCon "*")     = map0 ('P':)
+>     s (TCon ">")     = map0 ('F':)
 >     s (TCon "@")     = map0 ('A':)
 >     s (TCon d)       = map0 ((codeTCon d)++)
 >     s t@(TVar _)     = failEM ("FunctorNames.codeFunctor: uninstantiated functor variable " ++
@@ -72,12 +73,14 @@ instead of {\tt F[]} to make it a legal Haskell identifier(-suffix).
 >     p ('c':xs)  = mapSnd (TCon "Const" :@@:) (decodeType xs)
 >     p ('S':xs)  = mapSnd plus (popp xs)
 >     p ('P':xs)  = mapSnd prod (popp xs)
+>     p ('F':xs)  = mapSnd fun  (popp xs)
 >     p ('A':xs)  = mapSnd appl (popp xs)
 >     p ( c :xs) | isDigit c = mapSnd TCon (decodeTCon (c:xs))
 >                | otherwise = error "FunctorNames.decodeFunctor: bad functor encoding"
 >     p ""        = error "FunctorNames.decodeFunctor: functor encoding ended prematurely"
 >     plus (t,t') = TCon "+" :@@: t :@@: t'
 >     prod (t,t') = TCon "*" :@@: t :@@: t'
+>     fun  (t,t') = TCon ">" :@@: t :@@: t'
 >     appl (t,t') = TCon "@" :@@: t :@@: t'
 >     pthenp = p >*> p
 

@@ -27,7 +27,7 @@ command line via flags and parameters to instantiateProgram.
 
 > module PolyInstance(instantiateProgram) where
 > import Env(Env,mapEnv,lookasideST,lookupEnv,extendsEnv,
->            rangeEnv,newEnv,showsEnv)
+>            rangeEnv,newEnv,showsEnv,rangeEnv)
 > import Grammar(Eqn'(..),Expr'(..),Type(..),Qualified(..),
 >                Eqn,TEqn,Expr,Func,QType,VarID,ConID,
 >                PrgTEqns, changeNameOfBind,
@@ -544,7 +544,8 @@ is the functor instance corresponding to the named functor.
 
 > functorOf :: FuncEnv -> VarID -> Func
 > functorOf fenv d = maybe err snd (lookupEnv d fenv)
->   where err = error ("PolyInstance.functorOf: unknown datatype: "++d)
+>   where err = error ("PolyInstance.functorOf: datatype "++d++
+>                      " not found in "++ show (rangeEnv fenv))
 
 \end{verbatim}
 Usage chain: (functorOf needs the datatype environment)

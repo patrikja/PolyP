@@ -198,14 +198,16 @@ all arguments.
 > changeNameOfBind f (VarBind n t ps e) = VarBind (f n) t ps e
 > changeNameOfBind f (Polytypic n t fun cs) = Polytypic (f n) t fun cs
 > changeNameOfBind _ _ = error "Grammar.changeNameOfBind: neither VarBind nor Polytypic"
-> getNameOfEqn :: Eqn -> String
-> getNameOfEqn (VarBind name _ _ _)   = name
-> getNameOfEqn (Polytypic name _ _ _) = name
-> getNameOfEqn (DataDef name _ _ _)   = name
-> getNameOfEqn (ExplType names _)     = "{-Typed: "++head names++
+
+
+> getHeadOfEqn :: Eqn -> String
+> getHeadOfEqn (VarBind   name _ _ _) = name
+> getHeadOfEqn (Polytypic name _ _ _) = "polytypic "++name
+> getHeadOfEqn (DataDef   name _ _ _) = "data "++name
+> getHeadOfEqn (ExplType  names _)    = "{-Typed: "++head names++
 >                                       if length names>1 then "..." else ""++
 >                                       "-}"
-> getNameOfEqn _                      = "{-Other-}"
+> getHeadOfEqn _                      = "{-Other-}"
 
 
 > getNameOfBind :: Eqn' t -> String

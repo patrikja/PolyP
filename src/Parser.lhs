@@ -180,7 +180,7 @@ Currently this is done for Lambda expressions only.
 >               return (c:a:b:[]))
 
 > infixfunccon :: Parser Func
-> infixfunccon  = strip (sat (`elem` "+*@") <@ (TCon.(:[])))
+> infixfunccon  = strip (sat (`elem` "+*@>") <@ (TCon.(:[])))
 
 > infixcon :: Parser ConID
 > infixcon = strip (lit ':' <:*> many (sat isOpChar)) 
