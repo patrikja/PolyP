@@ -40,7 +40,8 @@ polytypic fzip :: (f a b,f c d) -> Maybe (f (a,c) (b,d))
       Par       ->  resultM
       Rec       ->  resultM
       d @ g     ->  (propagate . (pmap fzip)    ) @@ pzip
-      Const t   ->  constzip
+      Const Int ->  constzipInt -- etc.
+--      Const t   ->  constzip
 
 
 sumzip :: (Either a b,Either c d)-> Maybe (Either (a,c) (b,d))
@@ -59,7 +60,6 @@ constzip (x,y) = if x==y then resultM x else zeroM
 -- this is the intended meaning: one for each instance of Eq
 --constzipInt :: (Int,Int) -> Maybe Int
 --constzipInt (x,y) = if x==y then resultM x else zeroM
-
 
 {-
   Maybe monad functions
