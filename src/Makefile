@@ -40,23 +40,30 @@ hbcsrc: $(lhs_files:%=../hbcsrc/%)
 	$(CPP) $(CPPFLAGS) -D__HBC__ $< -o $@  
 
 # make ghc/hbc in this directory uses cpp as a filter
-export hs_flags += -cpp
+hs_flags += -cpp '$(CPPFLAGS)'
+# Add on user supplied flags
+hs_flags += $(HCFLAGS)
+export hs_flags
 
 ghc:
 	$(MAKE) -f ghc.mk osuf=g_o hisuf=g_hi
 # let ghc use .g_o and .g_hi instead of .o and .hi
 #   => both ghc and hbc can compile in the same directory
+#gmake ghc hc=$HOME/pub/www/ghc-3.01/bin/ghc "HCFLAGS=-D__DEBUG__ -prof -auto" prog=p
+#
 
 hbc:
 # the -o prevents remaking of hbcdepends.mk
-	$(MAKE) -f hbc.mk -o hbcdepends.mk  \
-                   hs_link_flags=$(HOME)/haskell/hbcfix/fix.o
-# last line is a hack to overcome an hbc-installation problem at
+	$(MAKE) -f hbc.mk -o hbcdepends.mk 
+#                  hs_link_flags=$(HOME)/haskell/hbcfix/fix.o
+# add last line to overcome an hbc-installation problem at
 #     Linux croak.cs.yale.edu 2.0.31 #1 Sun Nov 9 21:45:23 EST 1997 i686 unknown
 
 hugs:
 	@echo "Ignore any warnings about closed pipes."
-	hugs -F'$(CPP) $(CPPFLAGS) -D__HUGS__' Main.lhs
+	echo $(CPP) '$(CPPFLAGS)' -D__HUGS__ $$\* >cpp
+	chmod +x cpp
+	hugs -Fcpp Main.lhs
 
 clean::	ghcclean hbcclean
 	rm -f *~

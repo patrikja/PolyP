@@ -1,0 +1,61 @@
+
+                [1]PolyP - a [2]polytypic programming language
+                                       
+Patrik Jansson and Johan Jeuring
+
+  PolyP [3]version 1.2
+  
+   This distribution contains
+     * the source files for a compiler written in Haskell that compiles
+       PolyP-code to Haskell.
+     * a [4]library of polytypic functions written in PolyP
+     * some [5]examples. (For more info see the [6]README file.)
+       
+   The compiler is written in [7]Haskell 1.4 (+ the ST-monad) and is
+   known to work with
+     * [8]Chalmers Haskell compiler hbc 0.9999.4,
+     * [9]Hugs 1.4 January 1998 and
+     * [10]Glasgow Haskell compiler 2.10.
+       
+Download
+
+   Download the [11]source code, unpack with
+   
+     gunzip polyp.tar.gz
+     tar xf polyp.tar
+     
+   and follow the [12]installation instructions. Please send a mail to
+   [13]patrikj@cs.chalmers.se if you download it, or have comments or
+   bugs to report.
+   
+Polytypism
+
+   For information about polytypic programming in general check the
+   web-pages [14]http://www.cs.chalmers.se/~patrikj/lic/ and
+   [15]http://www.cs.chalmers.se/~patrikj/poly/
+     _________________________________________________________________
+   
+   Last modified: Thu Aug 20 16:29:48 MET DST 1998 by
+   
+   
+    [16]Patrik Jansson / [17]patrikj@cs.chalmers.se
+
+References
+
+   1. http://www.cs.chalmers.se/~patrikj/poly/polyp.tar.gz
+   2. http://www.cs.chalmers.se/~patrikj/poly/
+   3. http://www.cs.chalmers.se/~patrikj/poly/polyp/VERSION
+   4. http://www.cs.chalmers.se/~patrikj/poly/polyp/polylib/
+   5. http://www.cs.chalmers.se/~patrikj/poly/polyp/examples/
+   6. http://www.cs.chalmers.se/~patrikj/poly/polyp/examples/README
+   7. http://haskell.org/
+   8. http://www.cs.chalmers.se/~augustss/hbc/hbc.html
+   9. http://haskell.org/hugs/
+  10. http://www.dcs.gla.ac.uk/fp/software/ghc/
+  11. http://www.cs.chalmers.se/~patrikj/poly/polyp.tar.gz
+  12. http://www.cs.chalmers.se/~patrikj/poly/polyp/INSTALL
+  13. mailto:patrikj@cs.chalmers.se
+  14. http://www.cs.chalmers.se/~patrikj/lic/
+  15. http://www.cs.chalmers.se/~patrikj/poly/
+  16. http://www.cs.chalmers.se/~patrikj/
+  17. mailto:patrikj@cs.chalmers.se

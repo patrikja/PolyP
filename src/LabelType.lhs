@@ -315,7 +315,7 @@ recursive, n is mostly 1.)
 >                     <@ unzip >>= \(veqns',ts') ->
 >      foreach peqns (labelPoly extbasis) >>= \peqns' ->
 >      let vals' = zipWith (\(n,_) t -> (n,t)) vals ts'
->      in return (maytrace "labelBlock' finished" $
+>      in return (maytrace "labelBlock' finished\n" $
 >                 vals',(peqns',veqns')) 
 
 \end{verbatim}
@@ -334,7 +334,7 @@ To label a block of equations with types we
 >   = lift (prepBasis basis pq)        >>= \(polybasis,vals)->
 >     rep n (labelit polybasis pq) (vals,undefined) >>= \(vals',pq') ->
 >     let finalbasis = extendTypeEnv vals' polybasis
->     in return (maytrace "labelBlock finished" $
+>     in return (maytrace "labelBlock finished\n" $
 >                conc pq',finalbasis)
 >  where conc (pqs,vqs) = vqs ++ pqs
 >        pq@(peqns,veqns) = splitEqns eqns
@@ -367,7 +367,7 @@ alternatives one by one.
 
 > labelPoly :: Basis s -> HpTEqn s -> STErr s (HpTEqn s)
 > labelPoly basis (Polytypic n hpty' f cases) =
->    let (funs',es) = unzip cases  
+>    let (funs',es) = maytrace "labelPoly starts\n" $ unzip cases
 >    in mapl (basis |->) es  <@ unzip >>= \(es',ti)->
 
 \end{verbatim}
@@ -387,16 +387,16 @@ in the list.
 >       lift (instantiate [] hpty') >>= \hpty@(((_,hpf:_):_):=>_)-> 
 >       lift (mapl (instantiate []) funs') >>= \funs->
 >       lift (mapl (tevalAndSubst hpty) 
->                  (maytrace "teval" funs)) >>= \taui ->
+>                  (maytrace "teval\n" funs)) >>= \taui ->
 
 \end{verbatim}
 Finally we check that the inferred types are more general than the
 calculated types.
 \begin{verbatim}
 
->       mapl (moreGeneral (maytrace "moreGeneral" ngs)
+>       mapl (moreGeneral (maytrace "moreGeneral\n" ngs)
 >                            ) (zip ti taui) >>
->       return (maytrace "labelPoly finished" $
+>       return (maytrace "labelPoly finished\n" $
 >          Polytypic n hpty (qualify hpf) (zip funs es'))
 >  where
 >    ngs = getNonGenerics basis

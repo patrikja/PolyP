@@ -532,6 +532,6 @@ Function \texttt{pPack'} does not allow space after leading symbol.
 >              <@- ExplType [] (error "Parser.pAnyLine: internal error")
 
 > pTypeFile :: Parser [Eqn]
-> pTypeFile = some_offside pMaybeExplType
+> pTypeFile = some_offside pMaybeExplType `opt` []
 
 \end{verbatim}

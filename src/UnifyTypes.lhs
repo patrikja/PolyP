@@ -41,7 +41,6 @@ non-generic. This means that this list is automatically kept up to
 date without being explicitly used in \verb|unify|. (A useful `side
 effect'!)
 
-(The error messages are currently not very enlightning.)
 \begin{verbatim}
 
 > unify a b = maytrace "<" 
@@ -136,15 +135,16 @@ The algorithm implements the following (successful) cases:
 
 > isInstance :: NonGenerics s -> HpType s -> HpType s -> 
 >                ST s (TError (HpType s))
-> isInstance ngs a' b' 
->   = fetchNode a' >>= \(a, nodeA) -> 
+> isInstance ngs a' b' =
+>     {- mayshowargs' ngs a' b' >> -} 
+>     fetchNode a' >>= \(a, nodeA) -> 
 >     fetchNode b' >>= \(b, nodeB) -> 
 >     if a === b
 >     then ok
 >     else case (nodeA, nodeB) of
 >            (_, HpVar v) ->
 >                 if isGen v
->                 then  b `instantiateWith` a
+>                 then  b `mayinstantiateWith` a
 >                 else
 >                   mIf (isMonoType a)
 >                      (b `instantiateWith` a)
@@ -161,7 +161,11 @@ The algorithm implements the following (successful) cases:
 >            (HpCon conA, HpCon conB) | conA==conB -> ok
 >            _ -> 
 >              err mismatch a b
->   where t1 `instantiateWith` t2 =  (t1 ==> t2) <@ const TOk
+>   where t1 `mayinstantiateWith` t2 =  
+>           mIf (t1 `occursInType` t2)
+>               (err "Cyclic types not allowed" t1 t2)
+>               (t1 `instantiateWith` t2)
+>         t1 `instantiateWith` t2 = (t1 ==> t2) >> ok
 >         isGen v = not (any (===v) ngs)
 >         ok = return TOk
 >         err msg t1 t2 = return (TBad msg t1 t2)

@@ -2,7 +2,7 @@
 \begin{verbatim}
 
 > module TypeGraph where
-> import MyPrelude(variablename,pair,mapSnd,splitUp)
+> import MyPrelude(variablename,pair,mapSnd,splitUp,maytrace)
 > import Grammar
 > import PrettyPrinter(Pretty(..),text)
 > import MonadLibrary(State,StateM,(<@),liftop,(<@-),
@@ -128,6 +128,11 @@ check (just compare the pointers). (We could use this opportunity to
 short-out multiple indirections but preliminary tests suggests that
 the reduced number of indirections does not compensate for the extra
 complexity.)
+
+If the indirections form a loop other than the ``knot'' representing a
+type variable, \texttt{fetchNode} will loop. The variant can be used
+to detect this.
+
 \begin{verbatim}
 
 > fetchNode ptr 
@@ -138,6 +143,12 @@ complexity.)
 >   = readVar ptr >>= \node -> case node of
 >       HpVar inst | not (inst === ptr) -> follow inst
 >       _                               -> return ptr
+
+ follow ptr = follow' ptr 0
+ follow' ptr n
+   = readVar ptr >>= \node -> case maytrace (show n) $ node of
+       HpVar inst | not (inst === ptr) -> follow' inst (n+1)
+       _                               -> return ptr
 
 > checkCon pc = fetchNode pc >>= \(_,n) -> case n of
 >                  (HpCon c) -> return (Just c)

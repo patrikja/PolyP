@@ -95,7 +95,7 @@ In verbose mode every stage of the program generation presents s summary:
 > usage name = error ("Usage: "++name++usageText) 
 
 > usageText :: String
-> usageText = " file.phs [>file.hs]"
+> usageText = " [-p preltypes.hs] file.phs [>file.hs]"
 
 > type FileName = String
 

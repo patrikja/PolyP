@@ -9,7 +9,7 @@ POLYPPRELUDE
   The default (POLYPDIR/lib/PolyPrel.hs) or a value supplied at build
   time [1] is compiled into the code.
 
-  [1:] gmake ghc POLYPPRELUDE=path_to_my_prelude
+  [1:] gmake ghc POLYPPRELUDE="path_to_my_prelude"
 
 Flags:
 

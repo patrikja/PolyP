@@ -19,6 +19,7 @@ Folding.o : ./PrettyPrinter.hi
 Functorize.o : Functorize.lhs
 Functorize.o : ./Env.hi
 Functorize.o : ./Grammar.hi
+Functorize.o : ./Folding.hi
 Functorize.o : ./MyPrelude.hi
 Functorize.o : ./StartTBasis.hi
 Functorize.o : ./PrettyPrinter.hi

@@ -8,11 +8,11 @@
 >                    preludedatadefs,sumdatadef) where
 > import Parser(pType0,pType1,pTypeFile)
 > import ParseLibrary(parse)
-> import MyPrelude(mapSnd,splitUp,trace)
+> import MyPrelude(mapSnd,splitUp,maytrace)
 > import Grammar(Eqn,Eqn'(..),Qualified(..),Type(..),VarID,(-=>),QType,
 >                deQualify,isDataDef,
 >                tupleConstructor,listConstructor,functionConstructor)
-> import MonadLibrary(Error,unDone,(<@),unLErr)
+> import MonadLibrary(Error,unDone,(<@),(<@-),unLErr)
 > import Env(newEnv,extendsEnv)
 > import TypeBasis(TBasis)
 > import InferKind(inferDataDefs)
@@ -80,7 +80,11 @@ Second try: added data-declarations also.
 
 
 > readFileDef :: String -> FilePath -> IO String
-> readFileDef d n = readFile n `catch` \_ -> return d
+> readFileDef d n = (readFile n >>= \s -> 
+>                    putStr readOk <@- s) `catch` \_ -> 
+>                   putStr readFailed >> (return d)
+>   where readOk     = "{- Prelude file '" ++ n ++ "' read OK. -}\n"
+>         readFailed = "{- Prelude file '" ++ n ++ "' not found. -}\n"
 
 > includeFlag :: String
 > includeFlag = "-p"

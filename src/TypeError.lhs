@@ -1,7 +1,7 @@
 \chapter{Type errors}
 \begin{verbatim}
 
-> module TypeError(mayreportTError, TError(..),mayshowargs, failWith,
+> module TypeError(mayreportTError, TError(..),mayshowargs', failWith,
 >                  ErrMsg(..), internalError, impossible) where
 > import TypeGraph(HpType,NonGenerics,
 >                  qtypeOutOfHeap,typesOutOfHeap,
@@ -44,7 +44,10 @@
 >                    $$ text ("as "++mess)
 
 > mayshowargs :: HpType s -> HpType s -> STErr s ()
-> mayshowargs a b = mliftErr (typesOutOfHeap [] (a,b) >>= mayshowtypes a b)
+> mayshowargs a b = mliftErr (mayshowargs' [] a b)
+
+> mayshowargs' :: NonGenerics s -> HpType s -> HpType s -> ST s ()
+> mayshowargs' l a b = typesOutOfHeap l (a,b) >>= mayshowtypes a b
 
 > mayshowtypes :: HpType s -> HpType s -> (Type,Type) -> ST s ()
 > mayshowtypes a b (t,t') = showNodePtr a >>= \sa ->
