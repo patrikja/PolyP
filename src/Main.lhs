@@ -63,10 +63,15 @@ In verbose mode every stage of the program generation presents s summary:
 
 > handleArgs :: [String] -> IO String
 > handleArgs [] = putStr "Filename: " >> getLine
-> handleArgs (('-':c:str):rest) | c `elem` "?h" = showUsage
-> handleArgs (fl:fileName:rest) | fl == includeFlag = print fileName >> handleArgs rest
+> handleArgs (('-':c:str):rest) 
+>   | c `elem` "?h" = showUsage
+> handleArgs (fl:fileName:rest) 
+>   | fl == includeFlag = checkExists fileName >> handleArgs rest
 > handleArgs (file:rest)= return file
 
+> checkExists :: String -> IO ()
+> checkExists fN = (readFile fN >> return ()) `catch` \_ -> 
+>                  putStr ("-- Main: Failed to open file `"++fN++"'.\n")
 
 > report' :: PrgName -> IO ()
 > report' n = readFile n >>= report''

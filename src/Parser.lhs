@@ -392,6 +392,9 @@ means that if we can transform the abstract syntax of types to that of
 a context, we can start parsing a type and --- if it is followed by an
 arrow --- transform it to a context and parse the rest.
 
+*** Regular d should be translated to Poly (FunctorOf d)
+*** Bifunctor f should be translated to Poly f
+
 \begin{verbatim}
 
 > type2context :: Type -> Parser [Qualifier Type]
