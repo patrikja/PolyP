@@ -11,6 +11,23 @@
 This text is a reference manual for PolyP.
 (Patrik Jansson, 1998)
 
+<h2>Flag summary</h2>
+Usage:
+<blockquote>
+  <code>polyp [--version] [-v] [-p Preludefile.hs] [polypcode.phs]</code>
+</blockquote>
+<dl compact>
+  <dt><code>--version</code>
+  <dd>Prints the PolyP compiler version and exits
+  <dt><code>-v</code>
+  <dd>Verbatim - print information about the compiler phases while compiling
+  <dt><code>-p <em>file</em></code>
+  <dd>Read explicit type information from <em>file</em> before starting.
+</dl>
+
+If polyp is compiled with hbc, prepend a dash ('<code>-</code>') to
+the command line. (Or compile with polyp with <code>make hbc "hbc=hbc
+-noflags"</code>.)
 
 <h2>Compiler phases</h2>
 
@@ -152,7 +169,7 @@ think about:
 
 <hr>
 <!-- hhmts start -->
-Last modified: Wed May 19 14:55:53 MET DST 1999
+Last modified: Wed Jul 14 11:02:15 MET DST 1999
 <!-- hhmts end -->
 by
 <address>

@@ -94,6 +94,7 @@
 >             | EMissedCase    
 >             | EImpossible    
 >             | ENoFunctorFor String
+>             | ENoFunctorEnv String
 >	      | EFOfnonDT String
 >	      | ECyclicType 
 >	      | EDifferentConstructors
@@ -107,6 +108,7 @@
 > prError EUnifyKind       = "Unify: kind error"
 > prError ENoMuApp         = "Unify: Mu f can't match a type application"
 > prError (ENoFunctorFor d)= "Unify: No functor defined for datatype constructor "++d
+> prError (ENoFunctorEnv d)= "Unify: functorOf "++d++" can't be calculated. (Functorenv not implemented.)"
 > prError (EFOfnonDT msg)  = "punifyFOf: "++ msg
 > prError EMissedCase      = "Unify: missed a case"
 > prError EImpossible	   = "Unify: impossible! Internal error."

@@ -1,4 +1,4 @@
-polyp is compiled with 
+The polyp executable is built with 
 
  make X
 
@@ -6,13 +6,13 @@ where X is ghc, hbc or hugs depending on what you want to compile it
 with. The compiled code runs faster with ghc, but the compilation
 takes longer. 
 
-This leaves the executable in the file bin/Xpolyp.
+This leaves the executable in the file bin/Xpolyp. (It is up to you to
+rename it and put it on your path.)
 
 [The makefiles are written for GNU make, sometimes called gmake.]
 
 To run a test suite do
   make check
-
 
 Please send an email to 
   patrikj@cs.chalmers.se 

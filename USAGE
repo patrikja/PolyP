@@ -1,4 +1,5 @@
 ----------------USAGE----------------
+[A more in-depth description is in docs/reference.html.]
 
 Basically the command polyp generates Haskell code from PolyP input.
 

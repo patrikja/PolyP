@@ -39,14 +39,7 @@ Functorise.o : Functorise.lhs
 Functorise.o : ./Grammar.hi
 Functorise.o : ./MyPrelude.hi
 Functorise.o : ./Folding.hi
-Functorize.o : Functorize.lhs
-Functorize.o : ./Env.hi
-Functorize.o : ./Grammar.hi
-Functorize.o : ./Folding.hi
-Functorize.o : ./MonadLibrary.hi
-Functorize.o : ./MyPrelude.hi
-Functorize.o : ./StartTBasis.hi
-Functorize.o : ./PrettyPrinter.hi
+Functorise.o : ./MonadLibrary.hi
 Grammar.o : Grammar.lhs
 Grammar.o : ./MyPrelude.hi
 GraphLibrary.o : GraphLibrary.lhs
@@ -54,6 +47,7 @@ GraphLibrary.o : ./MyPrelude.hi
 GraphLibrary.o : ./StateFix.hi
 InferKind.o : InferKind.lhs
 InferKind.o : ./Functorise.hi
+InferKind.o : ./MyPrelude.hi
 InferKind.o : ./Grammar.hi
 InferKind.o : ./TypeGraph.hi
 InferKind.o : ./TypeBasis.hi
@@ -122,6 +116,7 @@ PolyInstance.o : ./Functorise.hi
 PolyInstance.o : ./FunctorNames.hi
 PolyInstance.o : ./BuiltinInstances.hi
 PolyInstance.o : ./TypeGraph.hi
+PolyInstance.o : ./TypeBasis.hi
 PolyInstance.o : ./InferType.hi
 PolyInstance.o : ./MonadLibrary.hi
 PolyInstance.o : ./MyPrelude.hi
@@ -149,6 +144,7 @@ StateFix.o : StateFix.lhs
 TypeBasis.o : TypeBasis.lhs
 TypeBasis.o : ./Grammar.hi
 TypeBasis.o : ./Folding.hi
+TypeBasis.o : ./Functorise.hi
 TypeBasis.o : ./MyPrelude.hi
 TypeBasis.o : ./MonadLibrary.hi
 TypeBasis.o : ./Env.hi

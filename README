@@ -30,15 +30,14 @@ Download
    
 Polytypism
 
-   For information about polytypic programming in general check the
-   web-pages [14]http://www.cs.chalmers.se/~patrikj/lic/ and
-   [15]http://www.cs.chalmers.se/~patrikj/poly/
+   For information about polytypic programming in general read
+   [14]http://www.cs.chalmers.se/~patrikj/poly/.
      _________________________________________________________________
    
-   Last modified: Wed May 19 14:54:46 MET DST 1999 by
+   Last modified: Wed Jul 14 11:49:51 MET DST 1999 by
    
    
-    [16]Patrik Jansson / [17]patrikj@cs.chalmers.se
+    [15]Patrik Jansson / [16]patrikj@cs.chalmers.se
 
 References
 
@@ -55,7 +54,6 @@ References
   11. http://www.cs.chalmers.se/~patrikj/poly/polyp.tar.gz
   12. http://www.cs.chalmers.se/~patrikj/poly/polyp/INSTALL
   13. mailto:patrikj@cs.chalmers.se
-  14. http://www.cs.chalmers.se/~patrikj/lic/
-  15. http://www.cs.chalmers.se/~patrikj/poly/
-  16. http://www.cs.chalmers.se/~patrikj/
-  17. mailto:patrikj@cs.chalmers.se
+  14. http://www.cs.chalmers.se/~patrikj/poly/
+  15. http://www.cs.chalmers.se/~patrikj/
+  16. mailto:patrikj@cs.chalmers.se

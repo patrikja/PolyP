@@ -90,7 +90,9 @@ In verbose mode every stage of the program generation presents a summary:
 > showVersion = putStrLn versionText
 
 > versionText :: String
-> versionText = "PolyP version " ++ __POLYP_VERSION__
+> versionText = "PolyP version " ++ __POLYP_VERSION__ ++ 
+>		" (built "++ __DATE__ ++
+>                  " with " ++ __POLYP_COMPILER__ ++ ")"
 
 > showUsage :: IO a
 > showUsage = getProgName >>= usage

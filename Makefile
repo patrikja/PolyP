@@ -23,7 +23,7 @@ export PolyP = polyp
 hugs ghc hbc:
 # Make the source
 	-mkdir $@src
-	$(MAKE) -C src $@src 
+	$(MAKE) -C src $@src "hc=$($@)" 
 # compile[1] the source
 	$(MAKE) -C $@src "hc=$($@)"
 	@echo Read the files src/$@.USAGE and USAGE for details on how to run PolyP

@@ -11,6 +11,7 @@ PolyP := $(firstword $(wildcard ../bin/*polyp) polyp)
 #PolyP = polyp
 PERL = perl
 CHASE = $(PERL) ../bin/chase -i ../polylib
+hugs = runhugs
 
 DIFF = diff
 ## For older hugs systems (pre 1998)

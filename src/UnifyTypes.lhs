@@ -331,9 +331,12 @@ datatype constructor.
 
 > -- **** punifyfuns should be a parameter
 > punifyFOf' :: HpTy s -> HpType s -> HpType s -> STErr s (Either (HpType s) (ErrMsg (HpType s)))
-> punifyFOf' (C d)   a b = case lookupEnv d punifyfuns of 
->                            Nothing   -> failHere a b (ENoFunctorFor d) <@ Right
->                            Just fOfd -> (lifE $ typeIntoHeap fOfd)     <@ Left
+> punifyFOf' (C d)   a b = failHere a b (ENoFunctorEnv d) <@ Right
+
+			   case lookupEnv d punifyfuns of 
+                            Nothing   -> failHere a b (ENoFunctorFor d) <@ Right
+                            Just fOfd -> (lifE $ typeIntoHeap fOfd)     <@ Left
+
 > punifyFOf' (Mu f') a b = return f' <@ Left
 > punifyFOf' (FOf _) a b = failHere a b (EFOfnonDT "FunctorOf (FunctorOf _) not allowed") <@ Right
 > punifyFOf' (A _ _) a b = failHere a b (EFOfnonDT "FunctorOf (type application) not allowed") <@ Right
@@ -347,9 +350,9 @@ datatype constructor.
 
 (internalError "Unify.ok: This value should not have been used.")
 
-> punifyfuns :: Env String Func
-> punifyfuns = extendsEnv l newEnv
->      where l = error "UnifyTypes.punify: Needs functor environment (to be implemented)"
+ punifyfuns :: Env String Func
+ punifyfuns = extendsEnv l newEnv
+      where l = error "UnifyTypes.punify: Needs functor environment (to be implemented)"
 
 \end{verbatim}
 \subsection{Future improvements to the unification algorithm}

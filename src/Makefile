@@ -14,7 +14,7 @@ POLYPPRELUDE = $(POLYPDIR)lib/PolyPrel.hs
 CPP = gcc -E -C -P -traditional -x c-header
 #CPP = cpp -P -C -traditional
 
-CPPFLAGS += -D__POLYP_VERSION__=\"$(polyp_version)\"
+CPPFLAGS += -D__POLYP_VERSION__=\"$(polyp_version)\" -D__POLYP_COMPILER__=\"$(hc)\"
 # differences between Haskell versions
 ifeq ($(HASKELLVERSION),98)
 CPPFLAGS += -D__Haskell98__ -D__FMAPNAME__=fmap
