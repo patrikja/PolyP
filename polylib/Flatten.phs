@@ -1,20 +1,20 @@
 ---------------------------------------------------------------
 -- Flatten
---   980409 Patrik Jansson
+--   990527 Patrik Jansson
 ---------------------------------------------------------------
 module Flatten(flatten,fflatten,fl_par,fl_rec,fl_all) where
-import Base(cata,pmap,fmap2)
+import Base(pmap,fmap2)
 
 flatten :: Regular d => d a -> [a]
-flatten  =  cata fflatten
+flatten  =  fflatten . fmap2 singleton flatten . out
+-- flatten  =  cata (fflatten . fmap2 singleton id)
 
--- Bifunctor f => ...
-polytypic fflatten :: f a [a] -> [a]
+polytypic fflatten :: f [a] [a] -> [a]
   = case f of
       g + h     ->  fflatten `either` fflatten
       g * h     ->  \(x,y) -> fflatten x ++ fflatten y
       Empty     ->  nil
-      Par       ->  singleton
+      Par       ->  id
       Rec       ->  id
       d @ g     ->  concat . flatten . pmap fflatten 
       Const t   ->  nil
@@ -22,9 +22,9 @@ polytypic fflatten :: f a [a] -> [a]
 fl_par :: Bifunctor f => f a b -> [a]
 fl_rec :: Bifunctor f => f a b -> [b]
 fl_all :: Bifunctor f => f a a -> [a]
-fl_par =          fflatten . fmap2 id  nil
-fl_rec = concat . fflatten . fmap2 nil (singleton.singleton)
-fl_all =          fflatten . fmap2 id  singleton
+fl_par = fflatten . fmap2 singleton nil
+fl_rec = fflatten . fmap2 nil       singleton
+fl_all = fflatten . fmap2 singleton singleton
 
 ---------------------------------------------------------------
 -- Help functions for lists

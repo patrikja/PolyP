@@ -1,9 +1,8 @@
 ---------------------------------------------------------------
 -- Equivalence
---   980409 Patrik Jansson 
+--   990527 Patrik Jansson 
 ---------------------------------------------------------------
 module Equal(pequal,fequal,peq) where
-import Base -- for inn, out
 
 pequal :: Regular d => (a->b->Bool) -> d a -> d b -> Bool
 pequal eq x y = fequal eq (pequal eq) (out x) (out y)

@@ -1,8 +1,9 @@
 ---------------------------------------------------------------
 -- ThreadFuns
---   980409 Patrik Jansson  
+--   990527 Patrik Jansson  
 ---------------------------------------------------------------
 module ThreadFuns(propagate,cross) where
+import Thread(thread)
 
 cross :: Regular d => d [a] -> [d a]
 cross = thread 
