@@ -18,12 +18,12 @@
 > pand    :: Regular d => d Bool -> Bool
 > por     :: Regular d => d Bool -> Bool
 
-> psum    = crush (+)  0
-> prod    = crush (*)  1
-> comp    = crush (.)  id
-> conc    = crush (++) []
-> pand    = crush (&&) True
-> por     = crush (||) False
+> psum    =  crush (+)  0
+> prod    =  crush (*)  1
+> comp    =  crush (.)  id
+> conc    =  crush (++) []
+> pand    =  crush (&&) True
+> por     =  crush (||) False
 
 > size    :: Regular d => d a -> Int
 > flatten :: Regular d => d a -> [a]
@@ -31,17 +31,17 @@
 > pany    :: Regular d => (a -> Bool) -> d a -> Bool
 > pelem   :: (Regular d,Eq a) => a -> d a -> Bool
 
-> size    = psum . pmap (\_->1)
-> flatten = conc . pmap (\x->[x])
-> pall p  = pand . pmap p
-> pany p  = por  . pmap p
-> pelem x = pany (\y->x==y)
+> size    =  psum . pmap (\_->1)
+> flatten =  conc . pmap (\x->[x])
+> pall p  =  pand . pmap p
+> pany p  =  por  . pmap p
+> pelem x =  pany (\y->x==y)
 
 A linear variant of |flatten| can be defined by using an accumulating
 parameter:
 
 > flatten':: Regular d => d a -> [a] -> [a]
-> flatten'= comp . pmap (:)
+> flatten'=  comp . pmap (:)
 
 %align
 %}
