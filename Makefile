@@ -10,11 +10,11 @@ help:
 	@echo "    runs some regression tests."
 
 # Choose the desired version of Haskell ...
-HASKELLVERSION = 98
+export HASKELLVERSION = 98
 # ... and of the compiler
-ghc  = ghc
-hbc  = hbc
-hugs = runhugs
+export ghc  = ghc
+export hbc  = hbc
+export hugs = runhugs
 
 # For a quick test of PolyP - use hugs to avoid compilation
 

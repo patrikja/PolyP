@@ -15,7 +15,7 @@ CPP = gcc -E -C -P -traditional -x c-header
 #CPP = cpp -P -C -traditional
 
 # differences between Haskell versions
-ifeq (${HASKELLVERSION},98)
+ifeq ($(HASKELLVERSION), 98)
 CPPFLAGS += -D__Haskell98__ -D__FMAPNAME__=fmap
 else
 CPPFLAGS += -D__FMAPNAME__=map
