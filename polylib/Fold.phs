@@ -3,11 +3,11 @@ module Fold (pfoldr,ffoldr,pfoldl,ffoldl) where
 
 import Base (cata)
 
-pfoldr :: Regular d => (a -> b -> b) -> d a -> b -> b
-pfoldr f = cata (ffoldr f)
+pfoldr :: Regular d => (a -> b -> b) -> b -> d a -> b
+pfoldr f = flip $ cata (ffoldr f)
 
-pfoldl :: Regular d => (a -> b -> b) -> d a -> b -> b
-pfoldl f = cata (ffoldl f)
+pfoldl :: Regular d => (b -> a -> b) -> b -> d a -> b
+pfoldl f = flip $ cata (ffoldl $ flip f)
 
 polytypic ffoldr :: (a -> b -> b) -> f a (b -> b) -> b -> b
     = \f -> case f of
@@ -17,7 +17,7 @@ polytypic ffoldr :: (a -> b -> b) -> f a (b -> b) -> b -> b
 		Par	-> \(ParF a) -> f a
 		Rec	-> \(RecF b) -> b
 		Const t	-> \_ -> id
-		d @ g	-> \(CompF x) -> pfoldr (ffoldr f) x
+		d @ g	-> \(CompF x) e -> pfoldr (ffoldr f) e x
 
 polytypic ffoldl :: (a -> b -> b) -> f a (b -> b) -> b -> b
     = \f -> case f of
@@ -27,5 +27,5 @@ polytypic ffoldl :: (a -> b -> b) -> f a (b -> b) -> b -> b
 		Par	-> \(ParF a) -> f a
 		Rec	-> \(RecF b) -> b
 		Const t	-> \_ -> id
-		d @ g	-> \(CompF x) -> pfoldl (ffoldl f) x
+		d @ g	-> \(CompF x) e -> pfoldl (flip $ ffoldl f) e x
 
