@@ -5,20 +5,41 @@
 
 > import NonStdTrace(trace)
 > import List(nubBy)
+> import qualified IO(hFlush,hPutStr,stdout,stderr)
 
 \end{verbatim}
+\section{Error messages}
+
+\begin{verbatim}
+
+> putErrStr   :: String -> IO ()
+> putErrStrLn :: String -> IO ()
+#ifdef __DEBUG__
+> putErrStr   = IO.hPutStr   IO.stderr 
+> putErrStrLn = IO.hPutStrLn IO.stderr 
+#else
+> putErrStr   s = return ()
+> putErrStrLn s = return ()
+#endif
+
+> putStrNow :: String -> IO ()
+> putStrNow s = putStr s >> IO.hFlush IO.stdout
+
+
+\end{verbatim}
+
 \section{Compatibility issues}
 
 In Haskell 98 what was earlier \texttt{map} has been split into two 
 values: one class member \texttt{fmap} and one list map \texttt{map}.
-To achieve backward compatibility we define \texttt{fmap} even for 
+To achieve backward compatibility we define \texttt{fMap} even for 
 earlier Haskell versions.
 
-#ifndef __Haskell98__
-
-> fmap :: Functor f => (a->b) -> f a -> f b
-> fmap = map
-
+> fMap :: Functor f => (a->b) -> f a -> f b
+#ifdef __Haskell98__
+> fMap = fmap
+#else
+> fMap = map
 #endif
 
 \section{Some list utilities}

@@ -8,7 +8,7 @@
 >                  mkFun,mkCon,mkVar,mkFOfd,mkQFun,
 >                  (==>),fetchNode,checkCon,
 >                  qtypeIntoHeap,qtypeOutOfHeap,allGeneric,
->                  spineWalkHpType,getChild, (##))
+>                  spineWalkHpType,getChild, (+#+))
 > import TypeBasis(Basis,TBasis,
 >                  tBasis2Basis,extendTypeTBasis,extendTypeAfterTBasis,
 >                  getNonGenerics,makeNonGeneric,lookupType,ramTypeToRom,
@@ -16,9 +16,9 @@
 >                  extendKindEnv,extendKindTBasis,inventTypes)
 > import StartTBasis(startTBasis,charType,intType,floatType,boolType,strType)
 > import Env(Env,newEnv,lookupEnv,extendsEnv)
-> import MyPrelude(pair,splitUp)
+> import MyPrelude(pair,splitUp,fMap)
 > import MonadLibrary(STErr,mliftErr,convertSTErr,Error(..),unDone,(@@),
->                     foreach,mapl,(<@),(<@-),LErr,map2)
+>                     foreach,mapl,(<@),(<@-),LErr,map2,accumseq,accumseq_)
 > import StateFix-- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 > import Grammar -- (Qualified,Type(..),PrgEqns)
 > import Folding(freeVarsPat,cataType)
@@ -144,7 +144,7 @@ alternatives in the abstract syntax of expressions.
 >     mliftErr mkVar           >>= \tApp -> 
 >     mliftErr (mkFun tX tApp) >>= \tF'  -> 
 >     unify tF tF'             >> 
->     mliftErr (ps ## qs)      >>= \pqs ->
+>     mliftErr (ps +#+ qs)      >>= \pqs ->
 >     return (pqs :=> tApp)
 
 > basis |- (Lambda pat expr)
@@ -159,7 +159,7 @@ alternatives in the abstract syntax of expressions.
 >   = basis |- expr            >>= \(ps:=>tExpr) -> 
 >     mliftErr mkVar           >>= \tA -> 
 >     foreach alts (infAlt (tExpr,tA)) >>= \qss ->
->     mliftErr (foldM (##) [] (ps:qss))  >>= \pqs->
+>     mliftErr (foldM (+#+) [] (ps:qss))  >>= \pqs->
 >     return (pqs :=> tA)
 >  where -- infAlt :: (HpType s,HpType s) -> (Expr,Expr) -> 
 >        --           STErr s [Qualifier (HpType s)]
@@ -168,7 +168,7 @@ alternatives in the abstract syntax of expressions.
 >           basis' |- rhs      >>= \(rs:=>tRhs) -> 
 >           unify l tLhs       >> 
 >           unify tRhs r       >>
->           mliftErr (qs ## rs)
+>           mliftErr (qs +#+ rs)
 
 > basis |- (Letrec eqnss expr)
 >   = inferBlocks basis eqnss >>= \basis' -> 
@@ -382,12 +382,12 @@ typeEval t = runST m
                
 
 > hpQTypeEval :: HpQType s -> ST s (HpQType s)
-> hpQTypeEval (l :=> t) = (map concat (mapl tevalC l)) >>= \l' ->
+> hpQTypeEval (l :=> t) = (fMap concat (mapl tevalC l)) >>= \l' ->
 >                         hpTypeEval t >> -- side effect on t
 >                         return (l':=>t)
 
 > tevalC :: Qualifier (HpType s) -> ST s [Qualifier (HpType s)]
-> tevalC ("Poly", fun : _ ) = map (map poly) (funEval fun)
+> tevalC ("Poly", fun : _ ) = fMap (map poly) (funEval fun)
 >    where poly :: HpType s -> Qualifier (HpType s)
 >          poly f = ("Poly", [f])
 > tevalC c                  = return [ c ]
@@ -431,7 +431,7 @@ in a table:
 >   ,("Rec",[])
 >   ,("Empty",[])
 >   ,("Const",[consttypeEval])
->   ,("FunctorOf",[map (:[]) . mkFOfd])
+>   ,("FunctorOf",[fMap (:[]) . mkFOfd])
 >   ] newEnv
 
 \end{verbatim}
@@ -468,7 +468,7 @@ f@(HpVar v) -> -- a functor variable
 > funEvalArgs :: String -> [HpType s] -> [HpType s -> ST s [HpType s]] -> ST s [HpType s]
 > funEvalArgs c args argfuns 
 >   | numfuns == numargs 
->      = map concat (accumulate (zipWith ($) argfuns args))
+>      = fMap concat (accumseq (zipWith ($) argfuns args))
 >   | otherwise
 >      = error ("InferType.funEval': Bifunctor constructor "++ c ++
 >               "expects "++show numfuns ++" arguments, found instead "++
@@ -489,7 +489,7 @@ otherwise
 
 > dataEval :: HpType s -> ST s [HpType s]
 > dataEval d = checkCon d >>= 
->              maybe (map (:[]) (mkFOfd d))
+>              maybe (fMap (:[]) (mkFOfd d))
 >                    (return . const [])
 
 > consttypeEval :: HpType s -> ST s [HpType s]
@@ -531,7 +531,7 @@ The evaluation is done by side-effecting the pointer structure.
 > hpTypeEval :: NodePtr s -> ST s ()
 > hpTypeEval' :: [(NodePtr s,HpNode s)] -> ST s [NodePtr s]
 
-> hpTypeEval = (sequence . map hpTypeEval) @@ hpTypeEval' @@ spineWalkHpType 
+> hpTypeEval = (accumseq_ . fMap hpTypeEval) @@ hpTypeEval' @@ spineWalkHpType 
 
 > hpTypeEval' [] = error "InferType.hpTypeEval': impossible: nothing to apply"
 > hpTypeEval' pargs = case f of
@@ -590,7 +590,7 @@ Problem: The program loops if not all synonyms are present.
 
 > applySynonym syn args = 
 >     qtypeIntoHeap syn <@ splitTypeSyn  >>= \(vars,rhs)->
->     sequence (zipWith (==>) vars args) <@- rhs
+>     accumseq (zipWith (==>) vars args) <@- rhs
 
 \end{verbatim}
 

@@ -5,9 +5,10 @@ comments are now obsolete.
 
 > module ParseLibrary where
 > --      (optional, digit, ...)
-> import MonadLibrary((<@),(<@-),(<<),(<:*>),(<*>),liftop,
+> import MonadLibrary((<@),(<@-),(<<),(<:*>),(<*>),(<|),liftop,mguard,(+++),
 >                     StateM(..),fetchSTM,updateSTM,
 >                     Error(..),ErrorMonad(..))
+> import MyPrelude(fMap)
 > import Char(isSpace,isAlpha,isDigit)
 
 > infixl 1 `chainr`, `chainl`
@@ -62,7 +63,7 @@ A parser that consumes single characters satisfying a given predicate.
 \begin{verbatim}
 
 > sat :: (Char -> Bool) -> Parser Char
-> sat p  = item >>= \v-> if p v then return v else zero
+> sat p  = item <| p
 
 > digit :: Parser Char
 > digit = sat isDigit
@@ -142,7 +143,7 @@ or a nested comment.
 > spaces :: Parser ()
 > spaces = fetch_off >>= \(l,c) -> 
 >          set_off (l,0) >> 
->          many (sat isSpace ++ comment ++ ncomment) >>
+>          many (sat isSpace +++ comment +++ ncomment) >>
 >          set_off (l,c) >>
 >          return ()
 >     where comment  = string "--" >>  
@@ -193,7 +194,7 @@ Using strip we define a number of useful parsers:
 > word = strip (some (sat isAlpha))
 >
 > number :: Parser Int
-> number = strip (map str2int (some (sat isDigit)))
+> number = strip (fMap str2int (some (sat isDigit)))
 >          where f x y = 10*x + (fromEnum y - fromEnum '0')
 >                str2int = foldl f 0
 
@@ -214,7 +215,7 @@ offside position to its original setting.
 >    (set_off (l,c+1) >> (p `sepby` offside_op c)) << set_off (ol,oc)          
 
 > offside_op oc = fetch_pos       >>= \(l,c) -> 
->                 guard (oc == c) >> 
+>                 mguard (oc == c) >> 
 >                 set_off (l,c+1)
 
 \end{verbatim}
@@ -229,7 +230,7 @@ mustbe combinator does.
 >                         ++ ") Syntax error (expected \"" ++ xs ++ "\")"))
 
 > mustbe   :: String -> Parser String
-> mustbe xs = cut (symbol xs ++ err xs)
+> mustbe xs = cut (symbol xs +++ err xs)
 
 \end{verbatim}
 \section{Applying parsers}

@@ -6,5 +6,5 @@
 hc = runhugs
 
 default:
-	echo $(hc) -h200000 `pwd`/Main.lhs $$\* >../bin/hugspolyp 
+	echo $(hc) -98 -h200000 `pwd`/Main.lhs $$\* >../bin/hugspolyp 
 	chmod +x ../bin/hugspolyp

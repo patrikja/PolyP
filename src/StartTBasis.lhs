@@ -8,7 +8,7 @@
 >                    preludedatadefs,sumdatadef) where
 > import Parser(pType0,pType1,pTypeFile)
 > import ParseLibrary(parse)
-> import MyPrelude(mapSnd,splitUp,maytrace,variablename)
+> import MyPrelude(mapSnd,splitUp,maytrace,variablename,putErrStr)
 > import Grammar(Eqn,Eqn'(..),Qualified(..),Type(..),VarID,
 >                (-=>),QType,Kind,qualify,deQualify,isDataDef,
 >                tupleConstructor,listConstructor,functionConstructor)
@@ -81,10 +81,10 @@ Second try: added data-declarations also.
 
 > readFileDef :: String -> FilePath -> IO String
 > readFileDef d n = (readFile n >>= \s -> 
->                    putStr readOk <@- s) `catch` \_ -> 
->                   putStr readFailed >> (return d)
+>                    putErrStr readOk <@- s) `catch` \_ -> 
+>                   putErrStr readFailed >> (return d)
 >   where readOk     = "{- Prelude file '" ++ n ++ "' read OK. -}\n"
->         readFailed = "{- Prelude file '" ++ n ++ "' not found. -}\n"
+>         readFailed = "{- ERROR: Prelude file '" ++ n ++ "' not found. -}\n"
 
 > includeFlag :: String
 > includeFlag = "-p"
@@ -98,6 +98,7 @@ Second try: added data-declarations also.
 > haskellass :: [(String,QType)]
 > haskellass = haskellConstructorAssoc ++ preludeAssocs
 
+> maxTupleSize :: Int
 > maxTupleSize = 7
 
 > haskellConstructorAssoc :: [(String,QType)]

@@ -7,7 +7,7 @@
 > import MyPrelude(pair)
 > import MonadLibrary((<@),StateM,executeSTM,fetchSTM,mliftSTM,
 >                     STErr,mliftErr,ErrorMonad(failEM),foreach,
->                     ST,(===))
+>                     ST,(===),(+++))
 > import Env(Env,Cache,newEnv,lookupEqEnv,lookupEnv,
 >            extendsEnv,assocsEnv,remember,extendsAfterEnv)
 > import TypeGraph(HpType,HpKind,HpQType,NonGenerics,NodePtr,
@@ -92,7 +92,7 @@ must also be changed.)
 > lookupType name (Basis (rom,ram)) =
 >   maybe (failEM ("lookupType: can't find type of [" ++ name ++ "]"))
 >         mliftErr 
->     (lookinram name ram  ++
+>     (lookinram name ram  +++
 >      lookinrom name (getTypeEnv rom) )
 
 > lookinram ::String -> HpTBasis s -> Maybe (ST s (HpQType s))
@@ -118,7 +118,7 @@ variables are non-generic.
 > lookupKind name (rom,ram) =
 >   maybe (failEM ("lookupKind: can't find kind of [" ++ name ++ "]"))
 >         mliftErr
->     (lookupKindinram name ram <@ return ++
+>     (lookupKindinram name ram <@ return +++
 >      lookupKindinrom name rom )
 
 > getTypeEnv :: TBasis -> TypeEnv

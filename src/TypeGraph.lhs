@@ -9,11 +9,12 @@
 >                     fetchST,executeST,mliftSTM,executeSTM,updateSTM,
 >                     mfoldl,mfoldr,map2,mapl,mIf,
 >                     ST,MutVar,newVar,writeVar,readVar, (===))
+> import MyPrelude(fMap)
 > import Env(Env,Cache,lookupEqEnv,rememberST,newEnv,lookaside,remember)
 > import Folding(mmapEqn,mmapQualified,dmmapQualified,mcataType)
 > import StateFix-- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 
-> infixr 6 ##
+> infixr 6 +#+
 
 \end{verbatim}
 \section{The types of types}
@@ -79,7 +80,7 @@ We need a version of \verb|lookaside| that uses pointer equality,
 > kindIntoHeap  :: Kind  -> ST s (HpKind s)
 > eqnIntoHeap   :: Eqn   -> ST a (HpTEqn a)
 
-> (##) :: [Qualifier (HpType s)] -> [Qualifier (HpType s)] -> 
+> (+#+) :: [Qualifier (HpType s)] -> [Qualifier (HpType s)] -> 
 >    ST s [Qualifier (HpType s)]
 > mkQFun :: HpQType s -> HpQType s -> ST s (HpQType s)
 
@@ -186,7 +187,7 @@ the type.
 \begin{verbatim}
 
 > flattenHpType :: HpType s -> ST s [HpType s]
-> flattenHpType = fmap appnil . cataHpType var (\c l -> l) (.)
+> flattenHpType = fMap appnil . cataHpType var (\c l -> l) (.)
 >  where var v = return (v:) 
 >        appnil f = f []
 
@@ -286,7 +287,11 @@ types we need a supply of suitable variablenames. For each variable
 encountered we need either its already defined name or a fresh name.
 \begin{verbatim}
 
-#ifdef __HBC__
+#if defined (__HBC__) || defined(__Haskell98__)
+
+This inability to define type synonyms of higher kind is against the
+Haskell 98 report.
+
 > type HpType2Int s a =         State (Cache (HpType s) Int)  a
 > type VarSupply  s a = StateM (State (Cache (HpType s) Int)) Int a
 #else
@@ -379,7 +384,7 @@ normally very few variables are non-generic at the same time.
 > addtoNGS a (NGS b) = NGS (a++b)
 
 > isGeneric :: HpType s -> NonGenerics s -> ST s Bool
-> isGeneric tyVar (NGS ngs) = fmap not (occursInTypeList tyVar ngs) 
+> isGeneric tyVar (NGS ngs) = fMap not (occursInTypeList tyVar ngs) 
 
 > isGenericApproximation :: HpType s -> NonGenerics s -> Bool
 > isGenericApproximation tyVar (NGS ngs) = null (filter (tyVar===) ngs)
@@ -434,7 +439,7 @@ pointer structure looks like.
 > showNodePtr :: NodePtr s -> ST s String
 > showNodePtr p = readVar p >>= \n-> case n of
 >              HpVar v | v === p -> return "Var"
->                      | True    -> fmap ('-':) (showNodePtr v)
+>                      | True    -> fMap ('-':) (showNodePtr v)
 >              HpCon c -> return ('C':c)
 >              HpApp p1 p2 -> liftop (++) (showNodePtr p1) (showNodePtr p2 <@ ('@':))
 
@@ -451,11 +456,11 @@ be eliminated.
 \begin{verbatim}
 
 > mkQFun (ps:=>tA) (qs:=>tB) =
->   ps ## qs    >>= \pqs->
+>   ps +#+ qs    >>= \pqs->
 >   mkFun tA tB >>= \tA2B->
 >   return (pqs:=>tA2B)
 
-> ps ## qs = simplifyHpQualifiers (ps ++ qs)
+> ps +#+ qs = simplifyHpQualifiers (ps ++ qs)
 
 \end{verbatim}
 %
@@ -486,7 +491,7 @@ elsewhere.
 
 > simplifyHpQualifiers :: [Qualifier (HpType s)] -> 
 >                    ST s [Qualifier (HpType s)]
-> simplifyHpQualifiers ps = fmap concat (mapl simpQual others) <@ (polys ++)
+> simplifyHpQualifiers ps = fMap concat (mapl simpQual others) <@ (polys ++)
 >   where [polys,others] = splitUp [isPoly] ps
 
 > isPoly :: Qualifier a -> Bool

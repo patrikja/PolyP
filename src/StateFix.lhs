@@ -77,11 +77,13 @@ equality.
 
 #endif /* __HBC__ */
 
+#ifndef __Haskell98__
 #ifdef __GLASGOW_HASKELL__ || __OLD_HUGS__
 > instance Functor (ST s) where
 >   map f m = m >>= \ x -> return (f x)
 
-#endif /* not conforming to new ghc/hugs shared ST-library */
+#endif /* older ghc/hugs not conforming to new ghc/hugs shared ST-library */
+#endif
 
 \end{verbatim}
 \section{Mutable arrays}

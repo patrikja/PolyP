@@ -9,7 +9,7 @@
 >                  
 > import TypeError
 > import MonadLibrary(STErr,mliftErr,ErrorMonad(failEM),
->                     (<@),mIf,liftop,applyM2,
+>                     (<@),mIf,liftop,applyM,applyM2,
 >                     ST,(===),readVar)
 > import Env(newEnv,lookupEnv,extendsEnv)
 > import Grammar(Type(..),Qualified(..),qualify,deQualify)

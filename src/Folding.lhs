@@ -3,7 +3,7 @@
 
 > module Folding where
 > import Grammar -- (Eqn'(..),Expr'(..),VarID)
-> import MyPrelude(pair,mapFst,mapSnd,without,flatMap)
+> import MyPrelude(pair,mapFst,mapSnd,without,flatMap,fMap)
 > import MonadLibrary(mapl,foreach,(<*>),(<@),liftop,map0,map1,map2)
 > import PrettyPrinter(Pretty(pretty))
 
@@ -181,7 +181,7 @@ A normal map over (typed) expressions.
 >    where typed f e = Typed e . f 
 >          polytypic f n t fun cs =
 >             Polytypic n (f t) (f fun) (map (mapFst f) cs)
->          varBind f v t ps e = VarBind v (fmap f t) ps e
+>          varBind f v t ps e = VarBind v (fMap f t) ps e
 >          explType f vs t = ExplType vs (f t)
 
 \end{verbatim}
@@ -192,11 +192,11 @@ The function {\tt dmmapQualified} works through two layers of monads.
 >                                          Qualified t -> m (Qualified u)
 > mmapQualified f (qs:=>t) =
 >   map2 (:=>) (mapl mmapQ qs) (f t)
->  where mmapQ (c,ts) = fmap (pair c) (mapl f ts)
+>  where mmapQ (c,ts) = fMap (pair c) (mapl f ts)
 
 > dmmapQualified :: (Functor m, Monad m, Functor n, Monad n) =>
 >                   (a -> m (n b)) -> Qualified a -> m (n (Qualified b))
-> dmmapQualified f = fmap (mmapQualified id) . mmapQualified f
+> dmmapQualified f = fMap (mmapQualified id) . mmapQualified f
 
 \end{verbatim}
 

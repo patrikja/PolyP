@@ -16,10 +16,10 @@ white-space. (Because this allows the incorrect `elem `.)
 
 > module Parser(parse,pModule,pType0,pType1,pTypeFile) where
 
-> import Char(isUpper,isLower,isAlphanum,isDigit)
-> import MyPrelude(mapSnd)
+> import Char(isUpper,isLower,isAlpha,isDigit)
+> import MyPrelude(mapSnd,fMap)
 > import MonadLibrary((<:*>),(<*>),(<@),(<@-),(<<),(<|),liftop,
->                     mapl,ErrorMonad(failEM))
+>                     mapl,ErrorMonad(failEM),mzero,(+++))
 > import ParseLibrary(Parser,item,lit,sat,digit,opt,optional,
 >                     some_offside,mustbe,symbol,sepby,string,
 >                     chainl,chainr,spaces,number,
@@ -51,22 +51,22 @@ The module parser accepts but ignores the module head, exports and imports.
 
 > pExports = pParenTuple pExport `opt` []
 > pExport =  pImport
->         ++ (symbol "module" >> pConID)
+>        +++ (symbol "module" >> pConID)
 
 > pImpDecls = some_offside pImpDecl `opt` []
 > pImpDecl =   (symbol "import" >> may (symbol "qualified") >> pConID)  
 >         <*> (may (symbol "as" >> pConID) >> pImpSpec)
 
-> pImpSpec = (pImpTuple ++ ((symbol "hiding") >> pImpTuple)
+> pImpSpec = (pImpTuple+++ ((symbol "hiding") >> pImpTuple)
 >            ) `opt` []
 
 > pImpTuple = pParenTuple pImport
 
 > pImport =   pVarID 
->         ++ (pConID << 
+>        +++ (pConID << 
 >                  (pParenthesized 
 >                     (   symbol ".." <@- []
->                      ++ pCommaList (pConID++pVarID)
+>                     +++ pCommaList (pConID+++pVarID)
 >                     )
 >                  ) `opt` []
 >            )
@@ -86,7 +86,7 @@ Definitions have no {\tt where} part.
 > pEqns = some_offside pEqn
 
 > pEqn :: Parser Eqn
-> pEqn = pDataDef ++ pPolytypic ++ pVarBind ++ pExplType
+> pEqn = pDataDef+++ pPolytypic+++ pVarBind+++ pExplType
  
 > pVarBind :: Parser Eqn
 > pVarBind = (pLeft << mustbe "=") >>= \(name,pats)->
@@ -98,7 +98,7 @@ Definitions have no {\tt where} part.
 >         in case f of
 >              Con n -> return (n,ps) 
 >              Var n -> return (n,ps)
->              _     -> zero 
+>              _     -> mzero 
 
 \end{verbatim}
 Only variables and constructors are allowed as the head of a left hand
@@ -122,12 +122,12 @@ side.
 > pDeriving 
 >   = symbol "deriving" >> 
 >     (   pConID <@ (:[]) 
->      ++ pParenthesized (pCommaList pConID `opt` []))
+>     +++ pParenthesized (pCommaList pConID `opt` []))
 
 
 > pExplType :: Parser Eqn
 > pExplType = liftop ExplType 
->                    (pCommaList (pVarID ++ pParenthesized infixop))
+>                    (pCommaList (pVarID+++ pParenthesized infixop))
 >                    (symbol "::" >> pType0)
 
 > pPolytypic :: Parser Eqn
@@ -164,8 +164,8 @@ Currently this is done for Lambda expressions only.
 
 > constrdef :: Parser [Type]
 > constrdef =  pTypeVar <@ (:[]) 
->           ++ ((pConID <@ TCon) <:*> (many pType3))
->           ++ (pType3       >>= \a -> 
+>          +++ ((pConID <@ TCon) <:*> (many pType3))
+>          +++ (pType3       >>= \a -> 
 >               infixfunccon >>= \c -> 
 >               pType3       >>= \b -> 
 >               return (c:a:b:[]))
@@ -218,9 +218,9 @@ This implementation is {\em very} inefficient.
 > isConstructor (x:_) = isUpper x || x == ':'
 > isConstructor []    = error "Parser.isConstructor: impossible: empty constructor"
 
-> pfxexpr   = nappexpr ++ appexpr
+> pfxexpr   = nappexpr+++ appexpr
  
-> nappexpr  = symbol "-" >> map ((Var "negate") :@:) appexpr 
+> nappexpr  = symbol "-" >> fMap ((Var "negate") :@:) appexpr 
  
 > appexpr   = pAtomic `chainl` return (:@:)
 
@@ -228,27 +228,27 @@ This implementation is {\em very} inefficient.
 > pOps = [ var "$"                                       -- 0 
 >        , var "||"                                      -- 1
 >        , var "&&"                                      -- 2
->        , pBackQuoted ((var "elem") ++ (var "notElem")) -- 3
->        ++ (var "==")
->        ++ (var "/=")
->        ++ (var "<" )
->        ++ (var "<=")
->        ++ (var ">")
->        ++ (var ">=")
+>        , pBackQuoted ((var "elem")+++ (var "notElem")) -- 3
+>       +++ (var "==")
+>       +++ (var "/=")
+>       +++ (var "<" )
+>       +++ (var "<=")
+>       +++ (var ">")
+>       +++ (var ">=")
 >        , (var "++")                                    -- 4
->        ++ (con ":")                                    
->        ++ (var "\\\\")                                 
+>       +++ (con ":")                                    
+>       +++ (var "\\\\")                                 
 >        , (var "+")                                     -- 5
->        ++ (var "-")
+>       +++ (var "-")
 >        , (var "/")                                     -- 6
->        ++ (var "*")
->        ++ pBackQuoted ((var "div") ++ 
->                    (var "rem") ++ (var "mod"))
+>       +++ (var "*")
+>       +++ pBackQuoted ((var "div")+++ 
+>                    (var "rem")+++ (var "mod"))
 >        , var "^"                                       -- 7
 >        , var "."                                       -- 8
 >        , var "!!"                                      -- 9
->        ++ (pBackQuoted pVarID <@ Var)
->        ++ (infixcon' <@ Con ++ infixop' <@ Var)
+>       +++ (pBackQuoted pVarID <@ Var)
+>       +++ (infixcon' <@ Con+++ infixop' <@ Var)
 >        ]
 >  where con s = symbol s <@ Con
 >        var s = symbol s <@ Var
@@ -284,25 +284,25 @@ The element of the unit type - \verb|()| - is represented by
 \verb|()|.
 \begin{verbatim}
 
-> pExprTuple = map Var infixop ++ pTuple pExpr mktuple
+> pExprTuple = fMap Var infixop+++ pTuple pExpr mktuple
 >   where
 >     mktuple xs = foldl (:@:) (Con (tupleConstructor n)) xs
 >       where n = length xs
 
 > pAtomic = pCase
->        ++ pIf
->        ++ pLetrec
->        ++ pExprVar
->        ++ pExprCon
->        ++ pLambda
->        ++ pLiteral
->        ++ pWildCard
->        ++ pParenthesized pExprTuple
+>       +++ pIf
+>       +++ pLetrec
+>       +++ pExprVar
+>       +++ pExprCon
+>       +++ pLambda
+>       +++ pLiteral
+>       +++ pWildCard
+>       +++ pParenthesized pExprTuple
 > 
-> pExprVar = map Var pVarID
-> pExprCon = map Con $
+> pExprVar = fMap Var pVarID
+> pExprCon = fMap Con $
 >                  pConID
->               ++ pTupleCon   -- () (,) (,,) ...
+>              +++ pTupleCon   -- () (,) (,,) ...
 
 \end{verbatim}
 Lambda expressions are currently only allowing one argument. The
@@ -359,10 +359,10 @@ In \verb|(1)| \verb|pExpr| is too general.
 \begin{verbatim}
 
 > pLiteral :: Parser Expr
-> pLiteral  = ( ( pNumber ++
->                 (pCharLit <@ CharLit) ++   
->                 (pBoolLit <@ BoolLit) ++ 
->                 (pStrLit  <@ StrLit ) ) <@ Literal ) ++
+> pLiteral  = ( ( pNumber+++
+>                 (pCharLit <@ CharLit)+++   
+>                 (pBoolLit <@ BoolLit)+++ 
+>                 (pStrLit  <@ StrLit ) ) <@ Literal )+++
 >             pListLit 
 
 
@@ -389,11 +389,11 @@ In \verb|(1)| \verb|pExpr| is too general.
 > pCharLit = (lit '\'' >> pChar) << mustbe "'"
 
 > pBoolLit :: Parser Bool
-> pBoolLit = (symbol "True" <@- True) ++ (symbol "False" <@- False)
+> pBoolLit = (symbol "True" <@- True)+++ (symbol "False" <@- False)
 
 > pChar  :: Parser Char
 > pChar =   (lit '\\' >> lit '\'') -- an escaped '
->         ++ item
+>        +++ item
 
 \end{verbatim}
 
@@ -445,14 +445,14 @@ liftop (:=>) pContext pType1
  
 > pType3 :: Parser Type
 > pType3 = pTypeVar
->       ++ pTypeCon
->       ++ pBracketed pTypeList
->       ++ pParenthesized pTypeTuple
+>      +++ pTypeCon
+>      +++ pBracketed pTypeList
+>      +++ pParenthesized pTypeTuple
  
 ***Hack addition to allow _parsing_ of existential types. (No type checking.)
 
 > pTypeVar :: Parser Type
-> pTypeVar = map TVar (pVarID ++ sat (=='?') <:*> pVarID)
+> pTypeVar = fMap TVar (pVarID+++ sat (=='?') <:*> pVarID)
 
 From the Haskell report:
   gtycon -> qtycon
@@ -462,11 +462,11 @@ From the Haskell report:
           | (,{,}) (tupling constructors)
 
 > pTypeCon :: Parser Type
-> pTypeCon = map (expandTypeSynonyms . TCon) $
+> pTypeCon = fMap (expandTypeSynonyms . TCon) $
 >              pConID 
->           ++ symbol listConstructor 
->           ++ symbol "(->)" <@- functionConstructor
->           ++ pTupleCon
+>          +++ symbol listConstructor 
+>          +++ symbol "(->)" <@- functionConstructor
+>          +++ pTupleCon
 
 > expandTypeSynonyms :: Type -> Type
 > expandTypeSynonyms (TCon "String") = 
@@ -499,7 +499,7 @@ From the Haskell report:
 >              <| (`notElem` keywords)
  
 > isVarChar :: Char -> Bool
-> isVarChar c = isAlphanum c || c `elem` "_'"
+> isVarChar c = isAlpha c || isDigit c || c `elem` "_'"
  
 > keywords :: [VarID]
 > keywords = [ "case", "of", "let", "in", "if", "then", "else",
@@ -533,7 +533,7 @@ Function \texttt{pPack'} does not allow space after leading symbol.
 \begin{verbatim}
 
 > pMaybeExplType :: Parser Eqn
-> pMaybeExplType = pDataDef ++ pExplType ++ pAnyLine
+> pMaybeExplType = pDataDef+++ pExplType+++ pAnyLine
 
 *** fishy parser! Should accept anything not inluding type or data.
 

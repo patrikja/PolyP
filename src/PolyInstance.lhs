@@ -13,13 +13,12 @@ functions.
 > import Folding(cataType,cataEqn,cataExpr,ExprFuns,EqnFuns,
 >                stripTEqn,mmapTEqn,mapEqn)
 > import Functorize(inn_def,out_def,either_def,fcname_def,
->                   makeFunctorStruct,Struct,Req,eqReq,
->                   codeFunctors)
+>                   Struct,makeFunctorStruct,Req,eqReq,codeFunctors)
 > import TypeGraph(simplifyContext)
 > import InferType(qTypeEval)
 > import MonadLibrary(State, executeST, mapl,(<@),(@@),unDone,
 >                     OutputT,output,runOutput,mliftOut,map0,map1,map2)
-> import MyPrelude(maytrace,pair,mapFst,mapSnd,combineUniqueBy,  debug)
+> import MyPrelude(maytrace,pair,mapFst,mapSnd,combineUniqueBy,fMap,  debug)
 > import PrettyPrinter(Pretty(pretty))
 > import StartTBasis(preludeFuns,preludedatadefs)
 > import TypeBasis(TBasis,TypeEnv)
@@ -467,7 +466,7 @@ is the functor instance corresponding to the named functor.
 > evaluateTopFun funcenv f = f
 
 > evaluateFunInQType :: FuncEnv -> QType -> QType
-> evaluateFunInQType    funcenv =  map (evaluateFunInType funcenv)
+> evaluateFunInQType    funcenv =  fMap (evaluateFunInType funcenv)
 
 > evaluateFunInType :: FuncEnv -> Type -> Type
 > evaluateFunInType    funcenv =  ev
@@ -602,7 +601,7 @@ To apply a substitution we simply fold over the abstract syntax of types:
 > appSubst s = cataType (s, TCon, (:@@:)) 
 
 > substQType :: Subst -> QType -> QType
-> substQType env = map (appSubst s)
+> substQType env = fMap (appSubst s)
 >   where s v = maybe (TVar v) id (lookupEnv v env)
 
 \end{verbatim}

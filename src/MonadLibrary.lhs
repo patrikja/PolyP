@@ -4,24 +4,31 @@
 > module MonadLibrary(module StateFix,
 >                     State     ,updateST ,fetchST ,executeST ,
 >                     StateM(..),updateSTM,fetchSTM,executeSTM,mliftSTM,
->                     (<@),(<@-),(<*>),(<:*>),(<<),(@@),(<|),mIf,applyM2,
+>                     (<@),(<@-),(<*>),(<:*>),(<<),(@@),(<|),(+++),mIf,
+>                     applyM,applyM2,
 >                     Error(..),unDone,
 >                     LErr,unLErr,mapLErr,showLErr,handleError,
 >                     STErr,mliftErr,convertSTErr,ErrorMonad(failEM),
 >                     OutputT,output,runOutput,mliftOut,
->                     mapl,foreach,liftop,map0,map1,map2,mfoldl,mfoldr) where
+>                     mapl,foreach,liftop,map0,map1,map2,mfoldl,mfoldr,
+#ifndef __Haskell98__
+>		      mzero,
+#endif
+>		      accumseq,accumseq_,mguard) where
 > import StateFix
-> import MyPrelude(pair,mapFst)
+> import MyPrelude(pair,mapFst,putErrStrLn,fMap)
 
 #ifdef __Haskell98__
-> import Monad(MonadPlus(..), join)
+> import Monad(MonadPlus(..),join)
 #else
 > import Monad(join)
 #endif
 #ifdef __Haskell98__
 #define FMAPNAME fmap
+#define MONADZERONAME MonadPlus
 #else
 #define FMAPNAME map
+#define MONADZERONAME MonadZero
 #endif
 
 > infixl 9 <@
@@ -29,28 +36,48 @@
 > infixr 9 @@
 > infixr 9 <*>
 > infixl 7 <|
+> infixr 5 +++
 > infixr 1 <<
 
 #ifndef __Haskell98__
+> mzero :: MonadZero m => m a
 > mzero = zero
+> mplus :: MonadPlus m => m a -> m a -> m a
 > mplus = (++)
 #endif
+
+> mguard :: MONADZERONAME m => Bool -> m ()
+> mguard b = if b then return () else mzero
 
 > (+++) :: MonadPlus m => m a -> m a -> m a
 > (+++) = mplus
 
 \end{verbatim}
 \section{Monad based utilities}
+
+Function \texttt{accumseq} is called \texttt{sequence} in Haskell 98
+but earlier \textt{accumulate}.
+
 \begin{verbatim}
 
-> x <@ f  = fmap f x
-> x <@- e = fmap (\_->e) x
+> accumseq :: Monad m => [m a] -> m [a]
+> accumseq = mapM id
+> accumseq_ :: Monad m => [m a] -> m ()
+> accumseq_ = foldr (>>) (return ())
+
+> x <@ f  = fMap f x
+> x <@- e = fMap (\_->e) x
 
 join      :: Monad m => m (m a) -> m a
 join x     = x >>= id
 
-From the prelude:
-applyM  :: Monad m => (a -> m b) -> m a -> m b
+#ifdef __Haskell98__
+Removed from the prelude:
+
+> applyM :: Monad m => (a -> m b) -> m a -> m b
+> applyM = flip (>>=)
+
+#endif
 
 > applyM2 :: Monad m => (a -> b -> m c) -> m a -> m b -> m c
 > applyM2 f ma mb = ma >>= \a -> mb >>= \b -> f a b
@@ -81,11 +108,7 @@ Haskell 1.4. (Though it should be, in my opinion.)
 > mIf :: Monad m => m Bool -> m a -> m a -> m a
 > mIf mb t f = mb >>= \b-> if b then t else f
 
- mguard :: MonadZero m => (a -> Bool) -> a -> m a
- mguard p x | p x = return x
-            | True= zero
-
-> (<|) :: MonadPlus m => m a -> (a -> Bool) -> m a
+> (<|) :: MONADZERONAME m => m a -> (a -> Bool) -> m a
 > m <| p = m >>= \x -> if p x then return x else mzero
 
 \end{verbatim}
@@ -125,7 +148,7 @@ instance Functor (ST a) where
 > type LErr a = (a,Error ())
 
 > showLErr :: Show a => LErr a -> String
-> showLErr (x,err) = show x ++ handleError id (fmap (\_->"") err)
+> showLErr (x,err) = show x ++ handleError id (fMap (\_->"") err)
 
 > mapLErr :: (a->b) -> LErr a -> LErr b
 > mapLErr = mapFst
@@ -154,7 +177,7 @@ instance Functor (ST a) where
 >         liftIOtoIOErr, dropIOErrtoIO, dropError -}
 > 
 > mapIOE :: (a -> b) -> (IOErr a) -> (IOErr b)
-> mapIOE f (IOErr xs) = IOErr (xs <@ fmap f)
+> mapIOE f (IOErr xs) = IOErr (xs <@ fMap f)
 > 
 > instance Functor IOErr where   
 >   FMAPNAME = mapIOE
@@ -182,14 +205,14 @@ instance Functor (ST a) where
 >   failEM = failIOE
 > 
 > liftIOtoIOErr :: IO a -> IOErr a
-> liftIOtoIOErr = IOErr . fmap Done
+> liftIOtoIOErr = IOErr . fMap Done
 > 
 > dropIOErrtoIO :: IOErr a -> IO a
 > dropIOErrtoIO (IOErr m)
 >     = m >>= \x -> 
 >       case x of 
 >         Done a  -> return a
->         Err msg -> putStrLn msg  >>
+>         Err msg -> putErrStrLn msg  >>
 >                    error "drop!" --return undefined
 > 
 > dropError :: IOErr a -> IO b -> (a -> IO b) -> IO b
@@ -197,7 +220,7 @@ instance Functor (ST a) where
 >   = m >>= \x -> 
 >     case x of 
 >       Done a  -> success a
->       Err msg -> putStrLn msg >> failure
+>       Err msg -> putErrStrLn msg >> failure
 
 \end{verbatim}
 \section{STErr monad}
@@ -208,7 +231,7 @@ instance Functor (ST a) where
 >        dropSTErrtoST,dropErrorST,convertSTErr -}
 > 
 > mapSTE :: (a -> b) -> (STErr s a) -> (STErr s b)
-> mapSTE f (STErr xs) = STErr (xs <@ fmap f)
+> mapSTE f (STErr xs) = STErr (xs <@ fMap f)
 > 
 > instance Functor (STErr s) where   
 >   FMAPNAME = mapSTE
@@ -235,7 +258,7 @@ instance Functor (ST a) where
 >   failEM = failSTE
 > 
 > liftSTtoSTErr :: ST s a -> STErr s a
-> liftSTtoSTErr = STErr . fmap Done
+> liftSTtoSTErr = STErr . fMap Done
 > 
 > dropSTErrtoST :: STErr s a -> ST s a
 > dropSTErrtoST (STErr m)
@@ -285,7 +308,7 @@ instance Functor (ST a) where
 > 
 > instance Functor m => Functor (StateM m s) where
 >   FMAPNAME f (STM xs) = 
->     STM (\s -> fmap (\(x,s') -> (f x, s')) 
+>     STM (\s -> fMap (\(x,s') -> (f x, s')) 
 >                     (xs s)                                
 >         )                                 
 > instance Monad m => Monad (StateM m s) where
@@ -295,7 +318,7 @@ instance Functor (ST a) where
 >                                in f' s'
 >                         )  
 >
-> mzeroSTM :: MonadPlus m => StateM m s a
+> mzeroSTM :: MONADZERONAME m => StateM m s a
 > mzeroSTM = STM (\s -> mzero)
 >
 #ifdef __Haskell98__
@@ -327,10 +350,10 @@ instance Functor (ST a) where
 
 > mliftErr = liftSTtoSTErr
 > 
-> mliftSTM m = STM (\s -> map (`pair` s) m)
+> mliftSTM m = STM (\s -> fMap (`pair` s) m)
 
 > mliftOut :: Functor m => m a -> OutputT b m a
-> mliftOut ma = OT (fmap return ma)
+> mliftOut ma = OT (fMap return ma)
 
 \end{verbatim}
 \section{Operations on all monads}
@@ -371,7 +394,7 @@ will be a nice left recursive black hole;-)
 
 > liftop f mp mq=mp >>= \p-> mq >>= \q-> return (f p q)
 > map2 = liftop
-> map1 = fmap
+> map1 = fMap
 > map0 = return
 
 \end{verbatim}
@@ -395,22 +418,22 @@ will be a nice left recursive black hole;-)
 > unOT (OT m) = m
 
 > instance Functor m => Functor (OutputT a m) where
->   FMAPNAME f (OT mx) = OT (fmap (fmap f) mx)
+>   FMAPNAME f (OT mx) = OT (fMap (fMap f) mx)
 
 > instance (Functor m ,Monad m) => Monad (OutputT a m) where
 >   return x     = OT (return (return x))
->   (OT m) >>= f = OT ((fmap join . join . fmap f') m)
->        where f' = swap . fmap (unOT . f)
->              swap (Writer s ma) = fmap (Writer s) ma
+>   (OT m) >>= f = OT ((fMap join . join . fMap f') m)
+>        where f' = swap . fMap (unOT . f)
+>              swap (Writer s ma) = fMap (Writer s) ma
 
 > output :: Monad m => a -> OutputT a m ()
 > output x = OT (return (write x))
 
 > runOutput' :: Functor m => OutputT a m b -> m ([a] -> [a],b)
-> runOutput' (OT m) = fmap (\(Writer s a) -> (s,a)) m
+> runOutput' (OT m) = fMap (\(Writer s a) -> (s,a)) m
 
 > runOutput :: Functor m => [a] -> OutputT a m b -> m ([a],b)
-> runOutput l o = fmap (\(s,x)->(s l,x)) (runOutput' o)
+> runOutput l o = fMap (\(s,x)->(s l,x)) (runOutput' o)
 
 \end{verbatim}
 

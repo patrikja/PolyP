@@ -13,7 +13,7 @@
 > import InferType(inferLiteral,patBindToVarBind,checkTypedInstance,tevalAndSubst)
 > import MonadLibrary(STErr, (<@),(<@-), mliftErr, unDone, LErr, mapLErr,
 >                     convertSTErr, Error(..), mapl, foreach)
-> import MyPrelude(pair,mapFst,mapSnd,splitUp,  maytrace)
+> import MyPrelude(pair,mapFst,mapSnd,splitUp,fMap,  maytrace)
 > import StartTBasis(startTBasis)
 > import StateFix-- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 > import TypeBasis(Basis,TBasis,extendKindEnv,
@@ -22,7 +22,7 @@
 >                  getNonGenerics,getRamTypes,instantiate,inventTypes,
 >                  lookupType,makeNonGeneric,ramKindToRom,ramTypeToRom)
 > import TypeGraph(HpQType,HpType, HpTExpr, HpTEqn, 
->                  mkVar, mkFun, (##), mkQFun,
+>                  mkVar, mkFun, (+#+), mkQFun,
 >                  eqnIntoHeap, blockOutOfHeap,allGeneric)
 > import UnifyTypes(unify, checkInstance)
 > import Monad(foldM)
@@ -131,7 +131,7 @@ inference.
 >     lift mkVar           >>= \tApp -> 
 >     lift (mkFun tX tApp) >>= \tF'  -> 
 >     unify tF tF'         >>
->     lift (ps ## qs)      >>= \pqs ->
+>     lift (ps +#+ qs)      >>= \pqs ->
 >     return (pqs :=> tApp) <@ 
 >     pair (f' :@: x')
 
@@ -152,7 +152,7 @@ inference.
 >     lift mkVar     >>= \tA -> 
 >     foreach alts (inferCaseAlt basis (tExpr,tA)) <@ unzip
 >              >>= \(alts',qss) -> 
->     lift (foldM (##) [] (ps:qss))  >>= \pqs->
+>     lift (foldM (+#+) [] (ps:qss))  >>= \pqs->
 >     return (pqs :=> tA) <@ 
 >     pair (Case expr' alts')
 >  where 
@@ -161,7 +161,7 @@ inference.
 >       basis'' |-> rhs       >>= \(rhs',rs:=>tRhs) -> 
 >       unify l tLhs          >>
 >       unify a tRhs          >>
->       lift (qs ## rs)  <@
+>       lift (qs +#+ rs)  <@
 >       pair (lhs',rhs')
 
 \end{verbatim}
@@ -242,9 +242,9 @@ an identifier in the basis together with the corresponding equation.
 
 > labelTopBlock :: [Eqn] -> TBasis -> Error ([TEqn],[(VarID,QType)])
 #ifdef __HBC__
-> labelTopBlock eqns tbasis = map simplify (runST $ RunST (convertSTErr m))
+> labelTopBlock eqns tbasis = fMap simplify (runST $ RunST (convertSTErr m))
 #else /* not __HBC__ */
-> labelTopBlock eqns tbasis = map simplify (runST         (convertSTErr m))
+> labelTopBlock eqns tbasis = fMap simplify (runST         (convertSTErr m))
 #endif /* __HBC__ */
 >   where basis = tBasis2Basis tbasis
 >         m :: STErr s ([TEqn],[(VarID,QType)])

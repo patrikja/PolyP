@@ -10,6 +10,7 @@
 > import MonadLibrary(Error(..), handleError, unDone, 
 >                     LErr, showLErr, mapLErr, 
 >                     convertSTErr,mliftErr,(<@),(@@))
+> import MyPrelude(putErrStr,putErrStrLn,fMap)
 > import Parser(parse,pModule,pType1)
 > import PolyInstance(instantiateProgram)
 > import PrettyPrinter(Pretty(..),($$),text)
@@ -53,7 +54,7 @@ In verbose mode every stage of the program generation presents s summary:
 \begin{verbatim}
 
 > report :: IO ()
-> report = (putStrLn "{-" >>  -- Resync the emacs haskell mode: -}
+> report = (putErrStrLn "{-" >>  -- Resync the emacs haskell mode: -}
 >           getArgs       >>=  
 >           handleArgs)   >>=  
 >           report' 
@@ -71,14 +72,14 @@ In verbose mode every stage of the program generation presents s summary:
 
 > checkExists :: String -> IO ()
 > checkExists fN = (readFile fN >> return ()) `catch` \_ -> 
->                  putStr ("-- Main: Failed to open file `"++fN++"'.\n")
+>                  putErrStr ("-- Main: Failed to open file `"++fN++"'.\n")
 
 > report' :: PrgName -> IO ()
 > report' n = readFile n >>= report''
 
 > report'' :: PrgText -> IO ()
-> report'' p = r1 >> r2 >> r3 >> putStrLn "-}" >> r4 >> putStrLn ""
->   where r4 = putStr (sp ++ handleError id (map (\_->"") err))
+> report'' p = r1 >> r2 >> r3 >> putErrStrLn "-}" >> r4 >> putErrStrLn ""
+>   where r4 = putStr sp >> putErrStr (handleError id (fMap (\_->"") err))
 >         (sp,err) = mapLErr showEqns ip
 >         ip = mapLErr instantiateProgram lp
 >         r3 = typeReport lp
@@ -107,7 +108,7 @@ In verbose mode every stage of the program generation presents s summary:
 > parserReport' = map getNameOfEqn
 
 > parserReport :: [Eqn] -> IO ()
-> parserReport = putStrLn . ("Parsed functions:\n"++) . 
+> parserReport = putErrStrLn . ("Parsed functions:\n"++) . 
 >                concat . intersperse "," . parserReport' 
 
 \end{verbatim}
@@ -122,7 +123,7 @@ The program doesn't handle mutual recursive datatypes.
 >   where getnames = map getNameOfEqn
 
 > dependencyReport :: PrgEqns -> IO ()
-> dependencyReport = putStrLn . ("Dependency ordered functions:\n("++)  
+> dependencyReport = putErrStrLn . ("Dependency ordered functions:\n("++)  
 >                  . concat . (++[")"]) . intersperse "),(" 
 >                  . map (concat . intersperse "," ) 
 >                  . dependencyReport'
@@ -139,7 +140,7 @@ The program doesn't handle mutual recursive datatypes.
 >	  getEqnType _ = error "Main.typeReport': impossible: not a binding"
 
 > typeReport :: LErr (TBasis,PrgTEqns) -> IO ()
-> typeReport = putStrLn . ("Typed functions:\n"++) . showLErr . 
+> typeReport = putErrStrLn . ("Typed functions:\n"++) . showLErr . 
 >              mapLErr (stack . map (stack . map pretty)) . 
 >              typeReport'
 >   where stack [] = text "Empty type group - probably an error."
@@ -189,7 +190,7 @@ These are still preliminary versions.
 >    ("Kinds:\n":map showpair (assocsEnv kenv) ) ++
 >    ("Types:\n":map showpair (assocsEnv tenv) ) ++ [errtext] )
 >   where showpair (name,t) = ' ':name ++ " :: " ++ show (pretty t)
->         errtext = handleError id (map (\_->"") err)
+>         errtext = handleError id (fMap (\_->"") err)
 
 > showEqns :: Pretty a => [a] -> String
 > showEqns = concat . map (show.pretty)
