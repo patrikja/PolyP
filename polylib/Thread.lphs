@@ -1,4 +1,4 @@
-% Literate PolyP + LaTeX script for use with lhs2TeX -*- Mode: latex; -*-
+%% Literate PolyP + LaTeX script for use with lhs2TeX -*- Mode: latex; -*-
 % ------------------------------------------------------------
 % Threads a monad through a value
 %   970424 Patrik Jansson  

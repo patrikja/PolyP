@@ -14,6 +14,6 @@
     definieras nu i både BaseM och Thread, men första steget är att
     byta namnet, inte exportera den och kolla att PolyP och
     tillämpningarna inte använder den gamla.
-  OK, ändringen genomförd och alla förkomster i PolyP och poly är ändrade.
+  OK, ändringen genomförd och alla förekomster i PolyP och poly är ändrade.
   Jag borde kanske lägga icke-polytypiska hjälpfunktioner i en egen modul.
     
