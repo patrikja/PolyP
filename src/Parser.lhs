@@ -17,7 +17,7 @@ The argument to \texttt{pBackQuoted} should not allow trailing white-space. (Bec
 > import MonadLibrary((<:*>),(<*>),(<@),(<@-),(<<),liftop,
 >                     mapl,ErrorMonad(failEM))
 > import ParseLibrary(Parser,item,lit,sat,digit,opt,optional,
->                     some_offside,mustbe,symbol,sepby,
+>                     some_offside,mustbe,symbol,sepby,string,
 >                     chainl,chainr,spaces,number,
 >                     many,some,strip, parse)
 > import Grammar(Expr'(..),Eqn'(..),Type(..),Qualified(..),Literal(..),
