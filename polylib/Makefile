@@ -11,11 +11,16 @@ split = ../bin/splitHeader
 %.hs : %.phs
 	$(polyp) $(POLYPFLAGS) $< > $@
 
+lphs_files = $(wildcard *.lphs)
 phs_files = $(wildcard *.phs)
 hs_files = $(phs_files:.phs=.hs)
 phi_files = $(phs_files:.phs=.phi)
 
 all : $(hs_files)
+
+# hs_files = $(lphs_files:.lphs=.hs)
+# phi_files = $(lphs_files:.lphs=.phi)
+# all : $(lphs_files:.lphs=.phs)
 
 clean :
 	rm -f $(hs_files) $(phi_files)

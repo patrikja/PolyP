@@ -2,6 +2,8 @@
 % ------------------------------------------------------------
 % Basic polytypic functions
 %   980409 Patrik Jansson
+%   031001 Ulf Norell
+%   040615 Patrik Jansson
 % ------------------------------------------------------------
 
 > module Base(pmap,fmap2,cata,ana,hylo,para,(-*-),(-+-)) where
@@ -12,15 +14,15 @@
 > pmap :: Regular d => (a -> b) -> d a -> d b
 > pmap f   = inn . fmap2 f  (pmap f)   . out
 > 
-> polytypic fmap2 :: (a->c) -> (b->d) -> f a b -> f c d
->   = \p r -> case f of                             
+> polytypic fmap2 :: (a -> c) -> (b -> d) -> f a b -> f c d
+>   = \p r -> case f of
 >               g + h    ->  (fmap2 p r) -+- (fmap2 p r)
 >               g * h    ->  (fmap2 p r) -*- (fmap2 p r)
->               Empty    ->  id :: () -> ()               
->               Par      ->  p                     
->               Rec      ->  r                     
->               d @ g    ->  pmap (fmap2 p r)       
->               Const t  ->  id                    
+>               Empty    ->  \EmptyF -> EmptyF
+>               Par      ->  ParF . p . unParF
+>               Rec      ->  RecF . r . unRecF
+>               d @ g    ->  CompF . pmap (fmap2 p r) . unCompF
+>               Const t  ->  ConstF . unConstF
 
 %align
 %}
@@ -39,25 +41,6 @@
 > para     :: Regular d => (d a -> FunctorOf d a b -> b) -> d a -> b
 > para i x =  i x (fmap2 id (para i) (out x))
 
-% ---------------------------------------------------------------
-\paragraph{Non-polytypic help functions}
-
-> (-*-)    :: (a -> c) -> (b -> d) -> ((a,b) -> (c,d))
-> (-+-)    :: (a -> c) -> (b -> d) -> (Either a b -> Either c d)
-> 
-> f -*- g  =  \(x,y) -> (f x, g y)
-> f -+- g  =  either (Left . f) (Right . g)
-
 %align
 %}
-
-%if variants
-
-The following definition is lazier but is not a functor as it does not
-preserve identities: |(id -*- id) undefined = (undefined,undefined) /=
-undefined = id undefined|.
-
-< f -*- g  = \p -> (f (fst p), g (snd p))
-
-%endif variants
 
