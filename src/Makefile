@@ -1,4 +1,4 @@
-# PolyP 0.5 can be 
+# PolyP can be 
 #  compiled with ghc or hbc
 #  or interpreted by hugs
 
