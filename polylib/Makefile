@@ -1,7 +1,4 @@
 
-%.phs: %.lphs
-	lhs2TeX --code -lcodeOnly=True $< | cut -c3- > $@
-
 polyp = ../bin/ghcpolyp
 chase = ../bin/chase
 split = ../bin/splitHeader
@@ -11,36 +8,46 @@ split = ../bin/splitHeader
 %.hs : %.phs
 	$(polyp) $(POLYPFLAGS) $< > $@
 
-lphs_files = $(wildcard *.lphs)
-phs_files = $(wildcard *.phs)
-hs_files = $(phs_files:.phs=.hs)
-phi_files = $(phs_files:.phs=.phi)
-
-all : $(hs_files)
-
-# hs_files = $(lphs_files:.lphs=.hs)
-# phi_files = $(lphs_files:.lphs=.phi)
-# all : $(lphs_files:.lphs=.phs)
+all: $(hs_files)
 
 clean :
 	rm -f $(hs_files) $(phi_files)
 
-BaseM.hs : Base.hs
-Crush.hs : Base.hs
-CrushFuns.hs : Crush.hs Base.hs
-EqualVariants.hs : Flatten.hs Zip.hs
-Flatten.hs : Base.hs
-Propagate.hs : Base.hs
-Sum.hs : Base.hs
-Thread.hs : Base.hs BaseM.hs
-ThreadFuns.hs : Thread.hs
-Zip.hs : Base.hs Propagate.hs
-ZipVariants.hs : Zip.hs Flatten.hs
-Show.hs : Base.hs ConstructorName.hs
+modules = BaseM Base Compare ConstructorName CrushFuns Crush Equal EqualVariants Flatten Fold Propagate Show Substructures Sum ThreadFuns Thread Zip ZipVariants EP
 
+hsfiles = $(patsubst %,PolyLib/%.hs,$(modules))
+phifiles = $(patsubst %,PolyLib/%.phi,$(modules))
+
+all : $(hsfiles)
+
+clean :
+	rm -f $(hsfiles) $(phifiles)
+
+PolyLib/BaseM.hs         : PolyLib/Base.hs
+PolyLib/CrushFuns.hs     : PolyLib/Crush.hs PolyLib/Base.hs
+PolyLib/Crush.hs         : PolyLib/Base.hs
+PolyLib/EqualVariants.hs : PolyLib/Flatten.hs PolyLib/Zip.hs
+PolyLib/Flatten.hs       : PolyLib/Base.hs
+PolyLib/Fold.hs          : PolyLib/Base.hs
+PolyLib/Propagate.hs     : PolyLib/Base.hs
+PolyLib/Show.hs          : PolyLib/Base.hs PolyLib/ConstructorName.hs
+PolyLib/Substructures.hs : PolyLib/Base.hs PolyLib/Flatten.hs
+PolyLib/Sum.hs           : PolyLib/Base.hs
+PolyLib/ThreadFuns.hs    : PolyLib/Base.hs PolyLib/BaseM.hs PolyLib/Thread.hs
+PolyLib/Zip.hs           : PolyLib/Base.hs PolyLib/Propagate.hs
+PolyLib/ZipVariants.hs   : PolyLib/Zip.hs  PolyLib/Flatten.hs
+
+
+# lphs_files = $(wildcard *.lphs)
+# phs_files = $(wildcard *.phs)
+# hs_files = $(phs_files:.phs=.hs)
+# phi_files = $(phs_files:.phs=.phi)
 #	$(chase) $(CHASEFLAGS) $< > /tmp/$(<:.phs=.full)
 #	$(split) $@ /tmp/$(<:.phs=.body) /tmp/$(<:.phs=.full)
 #	echo import MyPolyPrel >> $@
 #	$(polyp) $(POLYPFLAGS) /tmp/$(<:.phs=.body) >> $@
+
+# %.phs: %.lphs
+# 	lhs2TeX --code -lcodeOnly=True $< | cut -c3- > $@
 
 
