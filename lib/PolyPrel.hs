@@ -1,23 +1,23 @@
 -- Prelude functions
 (!!)    :: [a] -> Int -> a
-($)     :: (a->b)->a->b	       
-(&&)    :: Bool->Bool->Bool      
-(*)     :: Num a => a->a->a      
-(+)     :: Num a => a->a->a      
+($)     :: (a->b)->a->b
+(&&)    :: Bool->Bool->Bool
+(*)     :: Num a => a->a->a
+(+)     :: Num a => a->a->a
 (++)    :: [a]->[a]->[a]
-(-)     :: Num a => a->a->a      
+(-)     :: Num a => a->a->a
 (.)     :: (b->c)->(a->b)->(a->c)
-(/=)    :: Eq a => a->a->Bool    
-(<)     :: Ord a => a->a->Bool   
-(<=)    :: Ord a => a->a->Bool   
-(==)    :: Eq a => a->a->Bool    
-(>)     :: Ord a => a->a->Bool   
-(>=)    :: Ord a => a->a->Bool   
+(/=)    :: Eq a => a->a->Bool
+(<)     :: Ord a => a->a->Bool
+(<=)    :: Ord a => a->a->Bool
+(==)    :: Eq a => a->a->Bool
+(>)     :: Ord a => a->a->Bool
+(>=)    :: Ord a => a->a->Bool
 (>>)    :: Monad m => m a -> m b -> m b
 (>>=)   :: Monad m => m a -> (a -> m b) -> m b
-(||)    :: Bool->Bool->Bool      
+(||)    :: Bool->Bool->Bool
 all     :: (a -> Bool) -> [a] -> Bool
-and     :: [Bool]->Bool          
+and     :: [Bool]->Bool
 any     :: (a -> Bool) -> [a] -> Bool
 applyM  :: Monad m => (a -> m b) -> m a -> m b
 asTypeOf:: a->a->a
@@ -34,12 +34,13 @@ head    :: [a]->a
 id      :: a->a
 isSpace :: Char->Bool
 length  :: [a]->Int
+lookup  :: Eq a => a -> [(a,b)] -> Maybe b
 lines   :: String -> [String]
 map     :: (a->b)->[a]->[b]
 maximum :: Ord a => [a] -> a
 maybe   :: a -> (b -> a) -> Maybe b -> a
 negate  :: Num a => a->a
-not     :: Bool->Bool	       
+not     :: Bool->Bool
 or      :: [Bool]->Bool
 print   :: Show a => a -> IO ()
 putStr  :: String -> IO ()

@@ -37,7 +37,7 @@ command line via flags and parameters to instantiateProgram.
 >                   Struct,makeFunctorStruct,Req,eqReq,codeFunctors)
 > import TypeGraph(simplifyContext)
 > import InferType(qTypeEval)
-> import MonadLibrary(State, executeST, mapl,(<@),(@@),unDone,
+> import MonadLibrary(State, executeST, mapl,(<@),(@@),unDone,handleError,
 >                     OutputT,output,runOutput,mliftOut,map0,map1,map2)
 > import MyPrelude(maytrace,pair,mapFst,mapSnd,combineUniqueBy,fMap,maydebug)
 > import PrettyPrinter(Pretty(),pshow)
@@ -179,10 +179,14 @@ The mmap should update the environment.
 >        output req >> return newname
 >          where req      = (n,t)
 >                newname  = n++extra
->                extra    = codeFunctors functors
+>                extra    = codeFunctorsErr errmsg functors
+>                errmsg   = "PolyInstance.traverseTEqn: Instantiation problem for "++n++":\n"
 >                functors = getFunctors tdef t
 >     lookupOut :: VarID -> OutEnvM a (Maybe QType)
 >     lookupOut = mliftOut . lookasideST
+
+> codeFunctorsErr :: String -> [Func] -> String
+> codeFunctorsErr s fs = handleError (error . (s++)) $ codeFunctors fs
 
 \end{verbatim}
 To traverse the whole program we create a list of requests starting
@@ -288,7 +292,8 @@ Remaining bugs:
 >         tfusk = [("Poly",[TVar "f"])] :=> undefined
 >         struct d = fst (maybe (err d) id (lookupEnv d funcenv))
 >         err d = error ("specPolyInst: functor not found:"++d)
->         extra = codeFunctors functors
+>         extra = codeFunctorsErr errmsg functors
+>         errmsg   = "PolyInstance.specPolyInst: Instantiation problem for "++n++":\n"
 >         fundefs "inn" = inn_def ("inn"++extra)
 >         fundefs "out" = out_def ("out"++extra)
 >         fundefs _     = error "PolyInstance.specPolyInst: impossible: neither inn nor out"
@@ -328,7 +333,8 @@ fconstructorName
 >         tfusk = [("Poly",[TVar "f"])] :=> undefined
 >         struct d = fst (maybe (err d) id (lookupEnv d funcenv))
 >         err d = error ("specPolyInst: functor not found:"++d)
->         extra = codeFunctors functors
+>         extra = codeFunctorsErr errmsg functors
+>         errmsg   = "PolyInstance.specPolyInst: Instantiation problem for "++n++":\n"
 
 \end{verbatim}
 \begin{verbatim}
@@ -386,7 +392,8 @@ uncn :: (a0->a1->...->an) -> (a0,(a1,...,an-1)...) -> an
 >     (mapSnd (:[]) . executeST typeenv . runOutput []) m 
 >   where m = traverseTEqn (tracing subst) newq 
 >         newq = changeNameOfBind (++extra) q 
->         extra = codeFunctors functors
+>         extra = codeFunctorsErr errmsg functors
+>         errmsg   = "PolyInstance.traverse: Instantiation problem for "++ pshow q++":\n"
 >         functors = getFunctors tdef tinst
 >         tracing :: Subst -> Subst
 >         tracing s = maytrace ("{- Subst:"++showsEnv s "" ++"-}\n") s

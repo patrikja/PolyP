@@ -9,7 +9,8 @@
 >                Eqn,Func,QType, ConID,VarID,spineWalkType,
 >                tupleConstructor,listConstructor,isTupleCon)
 > import Folding(cataType)
-> import MyPrelude(mapFst,mapSnd,pair,variablename)
+> import MonadLibrary(Error(..),ErrorMonad(..),map0,map2,accumseq)
+> import MyPrelude(mapFst,mapSnd,pair,variablename,fMap)
 > import StartTBasis(innType,outType,fcnameType,leftname,rightname,eitherType)
 > import PrettyPrinter(Pretty(),pshow)
 
@@ -241,24 +242,25 @@ There is one special case: {\tt FunctorOf []} is coded as {\tt F0}
 instead of {\tt F[]} to make it a legal Haskell identifier(-suffix).
 \begin{verbatim}
 
-> codeFunctors :: [Func] -> String
-> codeFunctors = concatMap (('_':).codeFunctor)
+> codeFunctors :: [Func] -> Error String
+> codeFunctors = fMap concat . accumseq . map (fMap ('_':) . codeFunctor)
 
-> codeFunctor :: Func -> String
-> codeFunctor f = s f ""
+> codeFunctor :: Func -> Error String
+> codeFunctor f = fMap ($ "") (s f)
 >   where 
->     s (TCon "Const" :@@: c)   = ('c':) -- . codeType c
->     s (g :@@: t)     = s g . s t
->     s (TCon "Empty") = ('e':)
->     s (TCon "Par")   = ('p':)    
->     s (TCon "Rec")   = ('r':)    
->     s (TCon "Mu")    = ('m':)
->     s (TCon "FunctorOf")= ('f':)
->     s (TCon "+")     = ('S':)
->     s (TCon "*")     = ('P':)
->     s (TCon "@")     = ('A':)
->     s (TCon d)       = ((codeTyCon d)++)
->     s t@(TVar v)     = error ("Functorize: codeFunctor: uninstantiated functor variable " ++
+>     s :: Func -> Error (String -> String)
+>     s (TCon "Const" :@@: c)   = map0 ('c':) -- . codeType c
+>     s (g :@@: t)     = map2 (.) (s g) (s t)
+>     s (TCon "Empty") = map0 ('e':)
+>     s (TCon "Par")   = map0 ('p':)    
+>     s (TCon "Rec")   = map0 ('r':)    
+>     s (TCon "Mu")    = map0 ('m':)
+>     s (TCon "FunctorOf")= map0 ('f':)
+>     s (TCon "+")     = map0 ('S':)
+>     s (TCon "*")     = map0 ('P':)
+>     s (TCon "@")     = map0 ('A':)
+>     s (TCon d)       = map0 ((codeTyCon d)++)
+>     s t@(TVar v)     = failEM ("Functorize.codeFunctor: uninstantiated functor variable " ++
 >                               pshow t ++ " found as part of " ++ pshow f )
 
 > decodeFunctor :: String -> Func
