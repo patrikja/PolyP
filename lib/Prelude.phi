@@ -36,7 +36,7 @@ filter  :: (a->Bool)->[a]->[a]
 flip    :: (a -> b -> c) -> b -> a -> c
 fmap    :: Functor f => (a -> b) -> f a -> f b
 foldr   :: (a -> b -> b) -> b -> [a] -> b
-fromInt :: Num a => Int -> a
+fromIntegral :: Num a => Int -> a
 fromEnum:: Enum a => a -> Int
 toEnum  :: Enum a => Int -> a
 fst     :: (a,b)->a

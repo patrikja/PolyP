@@ -96,7 +96,7 @@ instead of {\tt F[]} to make it a legal Haskell identifier(-suffix).
 >               | True   = error "FunctorNames.decodeTCon: impossible: negative length"
 >    where (num,text) = span isDigit s
 >          n :: Int
->          n = if length num == 0 || (read num :: Float) > fromInt (maxBound :: Int)
+>          n = if length num == 0 || (read num :: Float) > fromIntegral (maxBound :: Int)
 >              then error ("decodeTCon: Bad number: '"++ num ++"'")
 >              else read num
 
@@ -104,7 +104,7 @@ instead of {\tt F[]} to make it a legal Haskell identifier(-suffix).
 > decodeTVar s = splitAt n text
 >    where (num,text) = span isDigit s
 >          n :: Int
->          n = if length num == 0 || (read num :: Float) > fromInt (maxBound :: Int)
+>          n = if length num == 0 || (read num :: Float) > fromIntegral (maxBound :: Int)
 >              then error ("decodeTVar: Bad number: '"++ num ++"'")
 >              else read num
 

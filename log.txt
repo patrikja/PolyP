@@ -1,9 +1,10 @@
+040615: Replacing fromInt (hugs-ism) with fromIntegral
+
 030521: Fixing double // in file names
 
   Make likes directory names to end with a slash '/' so I use that
   convetion also in StartTBasis.lhs when searching for prelude files
   in alternative locations.
-  
 
 030430: Eliminating tabs from source code
   grep -r "      " . | grep -v Makefile | grep -v \.mk

@@ -8,11 +8,11 @@ polytypic fsum :: Num a => f a a -> a
   = case f of 
       g + h    ->  fsum `foldSum` fsum
       g * h    ->  \(x:*:y) -> fsum x + fsum y
-      Empty    ->  \x -> fromInt 0
+      Empty    ->  \x -> fromIntegral 0
       Par      ->  unParF
       Rec      ->  unRecF
       d @ g    ->  psum . pmap fsum . unCompF
-      Const t  ->  \x -> fromInt 0
+      Const t  ->  \x -> fromIntegral 0
 
 {-
 psum :: Regular d => d Int -> Int
