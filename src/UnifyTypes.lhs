@@ -275,14 +275,14 @@ the children pairwise.
 Now there is the classical mismatch case, and a new error case due to
 kind mismatch as \texttt{Mu f :: *->*} and \texttt{FOf d :: *->*->*}.
 
-> punify2 (a,C cA)  (b,A _ _) = errorHere (EUnifyConstApp cA)
-> punify2 (a,Mu f ) (b,FOf e) = errorHere EUnifyKind
+> punify2 (a,C cA)  (b,A _ _) = failWith (show (EUnifyConstApp cA)) a b
+> punify2 (a,Mu f ) (b,FOf e) = failHere EUnifyKind
 
 Finally we have the four interesting new cases when the functor
 constructors are matched against other types.
 
 > punify2 (a,C cA ) (b,Mu f ) = punifyMu a f
-> punify2 (a,A g x) (b,Mu f ) = errorHere ENoMuApp
+> punify2 (a,A g x) (b,Mu f ) = failHere ENoMuApp
 > punify2 (a,C cA ) (b,FOf d) = punifyFOf d a
 > punify2 (a,A f x) (b,FOf d) = punifyFOf d a
 
@@ -310,13 +310,13 @@ datatype constructor.
 > -- **** punifyfuns should be a parameter
 > punifyFOf' :: HpTy s -> STErr s (HpType s)
 > punifyFOf' (C d) = case lookupEnv d punifyfuns of 
->                      Nothing   -> errorHere (ENoFunctorFor d)
+>                      Nothing   -> failHere (ENoFunctorFor d)
 >                      Just fOfd -> lifE $ typeIntoHeap fOfd
 > punifyFOf' (Mu f') = return f'
-> punifyFOf' _       = errorHere EFOfnonDT 
+> punifyFOf' _       = failHere EFOfnonDT 
 
-> errorHere :: ErrMsg -> a
-> errorHere = error . show
+> failHere :: ErrorMonad m => ErrMsg -> m a
+> failHere = failEM . show
 
 Below bug is (probably) fixed
 {\small Fix the bug due to assymmetry
@@ -331,7 +331,7 @@ unifyFun: Application expected (this should not happen!)
 > ok = return () 
 
 > punifyfuns = extendsEnv l newEnv
->      where l = error "punify: Needs functor environment (to be implemented)"
+>      where l = error "UnifyTypes.punify: Needs functor environment (to be implemented)"
 
 \end{verbatim}
 \subsection{Future improvements to the unification algorithm}
@@ -411,7 +411,7 @@ constructor.
 >    unify2 p a b = case maytrace "u2 " p of
 >      (HpApp f x, t) -> unify3 p a b f x t
 >      (t, HpApp f x) -> unify3 (swap p) b a f x t 
->      _              -> error "UnifyTypes: unify2: impossible: no application"
+>      _              -> error "UnifyTypes.unify2: impossible: no application"
 >    unify3 p a b f x t = 
 >         lifE (maytrace "u3 " (checkCon f)) >>= 
 >         maybe continue (\c-> case c of
@@ -463,7 +463,7 @@ datatype and try to unify this functor with the rhs.
               >>
               lifE (writeVar b (fst p))
 
->        err = error "unifyFun: FunctorOf <not datatype>"
+>        err = error "UnifyTypes.unifyFun: FunctorOf <not datatype>"
 
 >    unifyFun p a b x n = mayshowargs a b >> 
 >                         failEM ("unifyFun: "++baderr)

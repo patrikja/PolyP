@@ -184,7 +184,7 @@ right pointers of the apply nodes.
 
 > getChild :: HpNode s -> NodePtr s
 > getChild (HpApp pf px) = px
-> getChild _ = error "getChild: not an application node"
+> getChild _ = error "TypeGraph.getChild: not an application node"
 
 \end{verbatim}
 \subsection{Type transformers}
@@ -211,7 +211,7 @@ variables. This is assured by first calling \verb|flattenNgs|.
 >    typeOutOfHeap' allngs hpt <@
 >    (unApp.runVarSupply)
 >  where unApp (ta :@@: tb) = (ta,tb)
->        unApp _            = error "TypeGraph: typesOutOfHeap: impossible: no application found"
+>        unApp _            = error "TypeGraph.typesOutOfHeap: impossible: no application found"
 
 \end{verbatim}
 During type inference we will use the heap representation of the types

@@ -199,27 +199,29 @@ all arguments.
 > changeNameOfBind :: (String -> String) -> Eqn' t -> Eqn' t
 > changeNameOfBind f (VarBind n t ps e) = VarBind (f n) t ps e
 > changeNameOfBind f (Polytypic n t fun cs) = Polytypic (f n) t fun cs
-> changeNameOfBind _ _ = error "changeNameOfBind: neither VarBind nor Polytypic"
+> changeNameOfBind _ _ = error "Grammar.changeNameOfBind: neither VarBind nor Polytypic"
 > getNameOfEqn :: Eqn -> String
 > getNameOfEqn (VarBind name _ _ _)   = name
 > getNameOfEqn (Polytypic name _ _ _) = name
 > getNameOfEqn (DataDef name _ _ _)   = name
-> getNameOfEqn (ExplType names _)     = "ExplType"
-> getNameOfEqn _                      = "Other"
+> getNameOfEqn (ExplType names _)     = "{-Typed: "++head names++
+>                                       if length names>1 then "..." else ""++
+>                                       "-}"
+> getNameOfEqn _                      = "{-Other-}"
 
 
 > getNameOfBind :: Eqn' t -> String
 > getNameOfBind (VarBind name _ _ _)     = name
 > getNameOfBind (Polytypic name _ _ _) = name
-> getNameOfBind _ = error "getNameOfBind: wrong argument"
+> getNameOfBind _ = error "Grammar.getNameOfBind: wrong argument"
 
 > getNameOfVarBind :: Eqn' t -> String
 > getNameOfVarBind (VarBind name _ _ _)  = name
-> getNameOfVarBind _ =error "getNameOfVarBind: wrong argument"
+> getNameOfVarBind _ =error "Grammar.getNameOfVarBind: wrong argument"
 
 > getNameOfDataDef :: Eqn' t -> String
 > getNameOfDataDef (DataDef name _ _ _) = name
-> getNameOfDataDef _ =error "getNameOfDataDef: wrong argument"
+> getNameOfDataDef _ =error "Grammar.getNameOfDataDef: wrong argument"
 
 > deQualify (qs:=>t) = t
 > qualify t = []:=>t
@@ -242,7 +244,7 @@ all arguments.
 
 > isTupleCon :: ConID -> Bool
 > isTupleCon (c:cs) = c=='('
-> isTupleCon []     = error "Parser: isTupleCon: impossible: empty constructor"
+> isTupleCon []     = error "Grammar.isTupleCon: impossible: empty constructor"
 
 
 

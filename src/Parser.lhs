@@ -216,7 +216,7 @@ This implementation is {\em very} inefficient.
  
 > isConstructor :: ConID -> Bool
 > isConstructor (x:_) = isUpper x || x == ':'
-> isConstructor []    = error "Parser: isConstructor: impossible: empty constructor"
+> isConstructor []    = error "Parser.isConstructor: impossible: empty constructor"
 
 > pfxexpr   = nappexpr ++ appexpr
  

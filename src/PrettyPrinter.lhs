@@ -70,7 +70,7 @@ import MonadLibrary(Error)
 >                 | otherwise        = text s
 
 
-> prEqn _ = error "prEqn: not implemented"
+> prEqn _ = error "PrettyPrinter.prEqn: not implemented"
 
 \end{verbatim}
 \subsection{Substructures}
@@ -144,7 +144,7 @@ import MonadLibrary(Error)
 >   | otherwise          = sep (prP fun : map (nest 2 . prP) args)
 >   where
 >     n = length args
-> prApp [] = error "PrettyPrinter: prApp: impossible: nothing to apply"
+> prApp [] = error "PrettyPrinter.prApp: impossible: nothing to apply"
 
 > lambdaWalk :: Expr' t -> ([Pat' t],Expr' t)
 > lambdaWalk (Lambda p e) = (p:ps,e')
@@ -239,7 +239,7 @@ import MonadLibrary(Error)
 >     n = length args
 >     prOp (Con op) = text op
 >     prOp (Var op) = text op
->     prOp _        = error "prOp: not an operator"
+>     prOp _        = error "PrettyPrinter.prOp: not an operator"
 
 > prTypeOp :: Type -> [Type] -> Doc
 > prTypeOp fun args 

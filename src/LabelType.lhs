@@ -401,7 +401,7 @@ calculated types.
 >    ngs = getNonGenerics basis
 >    moreGeneral ngs' (t,tau) = checkInstance ngs' tau t
 
-> labelPoly basis _ = error "labelPoly: not a polytypic definition"
+> labelPoly basis _ = error "LabelType.labelPoly: not a polytypic definition"
 
 \end{verbatim}
  

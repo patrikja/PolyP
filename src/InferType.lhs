@@ -263,7 +263,7 @@ right kind.)
 >     typeVar veqn = mkVar <@ (pair (getNameOfVarBind veqn) . qualify)
 >     typePoly (Polytypic v (ps:=>t) f cs) = 
 >                 qtypeIntoHeap (poly f ps :=> t) <@ pair v
->     typePoly _ = error "InferType: inferBlock: impossible: not Polytypic"
+>     typePoly _ = error "InferType.inferBlock: impossible: not Polytypic"
 >     poly :: QType -> [Context]-> [Context]
 >     poly f ps = ("Poly",[deQualify f]):ps
 >     m = mliftErr (foreach veqns typeVar ) >>= \vals ->
@@ -301,13 +301,13 @@ position.
 >         inv' 0 e = ([],e)
 >         inv' n (Lambda p e) = (p:ps,e')
 >              where (ps,e') = inv' (n-1) e
->         inv' n _ = error "InferType: patBindToVarBind: impossible: wrong no of Lambdas"
+>         inv' n _ = error "InferType.patBindToVarBind: impossible: wrong no of Lambdas"
 >         inv Nothing = uncurry (VarBind v Nothing) . (inv' (length pats))
 >         inv (Just _)= invfun
 >         invfun (Typed e ty) =
 >                       (uncurry (VarBind v (Just ty)) (inv' (length pats) e))
 >         invfun _ = error ("patBindToVarBind: untyped Typed expression found:"++v)
-> patBindToVarBind _ = error "InferType: patBindToVarBind: impossible: not a VarBind"
+> patBindToVarBind _ = error "InferType.patBindToVarBind: impossible: not a VarBind"
 
 > checkVal :: Basis s -> (Eqn,HpType s) -> STErr s (HpQType s)
 > checkVal basis (eqn,tLhs) = 
@@ -346,7 +346,7 @@ calculated types.
 >  where
 >    ngs = getNonGenerics basis
 >    moreGeneral ngs' (t,tau) = checkInstance ngs' tau t
-> checkPoly _ _ = error "InferType: checkPoly: impossible: not Polytypic"
+> checkPoly _ _ = error "InferType.checkPoly: impossible: not Polytypic"
 
 \end{verbatim}
 
@@ -446,14 +446,14 @@ f@(HpVar v) -> -- a functor variable
 \begin{verbatim}
 
 > funEval' :: [(NodePtr s,HpNode s)] -> ST s [NodePtr s]
-> funEval' [] = error "InferType: funEval': impossible: nothing to apply"
+> funEval' [] = error "InferType.funEval': impossible: nothing to apply"
 > funEval' ((pf,f):pnargs) = case f of
 >     HpVar _   -> def
 >     HpCon c   -> maybe (errNoBifun c) (funEvalArgs c args) (lookupEnv c funEvalEnv)
->     HpApp _ _ -> error "InferType: funEval': impossible: HpApp found after spine removal"
+>     HpApp _ _ -> error "InferType.funEval': impossible: HpApp found after spine removal"
 >   where args = map (getChild . snd) pnargs
 >         def | null args  = return [pf]
->             | otherwise  = error "InferType: funEval': Expected functor variable, found application."
+>             | otherwise  = error "InferType.funEval': Expected functor variable, found application."
 >         errNoBifun c = error ("InferType: funEval': found "++c++
 >                               ", expected a Bifunctor constructor.")
 
@@ -520,11 +520,11 @@ The evaluation is done by side-effecting the pointer structure.
 
 > typeEval = (sequence . map typeEval) @@ typeEval' @@ spineWalkHpType 
 
-> typeEval' [] = error "InferType: typeEval': impossible: nothing to apply"
+> typeEval' [] = error "InferType.typeEval': impossible: nothing to apply"
 > typeEval' pargs = case f of
 >     HpVar _   -> def
 >     HpCon c   -> maybe def eval (lookupEnv c typeSynEnv)
->     HpApp _ _ -> error "InferType: typeEval': impossible: HpApp found after spine removal"
+>     HpApp _ _ -> error "InferType.typeEval': impossible: HpApp found after spine removal"
 >   where f:args = map snd pargs
 >         nargs = length args
 >         children = map getChild args
@@ -573,7 +573,7 @@ Problem: The program loops if not all synonyms are present.
 >   where ps = map (\c->("",[TVar [c]])) cs
 > splitTypeSyn (ps:=>rhs) = (map f ps,rhs)
 >   where f (_,[pv]) = pv
->         f _ = error "splitTypeSyn: not a type variable"
+>         f _ = error "InferType.splitTypeSyn: not a type variable"
 
 > applySynonym syn args = 
 >     qtypeIntoHeap syn <@ splitTypeSyn  >>= \(vars,rhs)->
@@ -605,7 +605,7 @@ polytypic checking of x :: ty = case f of {fi -> ei}
 >            return (constr, qualify tp) 
 >        where tp = foldr (-=>) res args
 >     res = foldl (:@@:) (TCon tyCon) (map TVar vars)
-> inferDataDef _ _ = error "InferType: inferDataDef: impossible: not a DataDef"
+> inferDataDef _ _ = error "InferType.inferDataDef: impossible: not a DataDef"
 
 > inferDataDefs :: TBasis -> [Eqn] -> 
 >                  Error ([(ConID, QType)],[(ConID, Kind)])

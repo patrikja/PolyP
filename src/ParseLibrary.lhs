@@ -248,6 +248,6 @@ is a convenient place to do the same before the first token.
 >                    [(_,(xs,(l,_,_,_)))] -> Err ("(line " ++ show l ++
 >                                               ") Syntax error (unexpected `"
 >                                               ++ take 20 xs ++ "'...)")
->                    _                    -> error "ParseLibrary: parse: impossible: cut gives list length > 1"
+>                    _                    -> error "ParseLibrary.parse: impossible: cut gives list length > 1"
 
 \end{verbatim}

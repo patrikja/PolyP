@@ -136,7 +136,7 @@ The program doesn't handle mutual recursive datatypes.
 >   where getEqnType (Polytypic n t _ _)      = ExplType [n] t
 >         getEqnType (VarBind n (Just t) _ _) = ExplType [n] t
 >         getEqnType (VarBind n _ _ _) = error ("getEqnType: untyped eqn: "++n)
->	  getEqnType _ = error "Main: typeReport': impossible: not a binding"
+>	  getEqnType _ = error "Main.typeReport': impossible: not a binding"
 
 > typeReport :: LErr (TBasis,PrgTEqns) -> IO ()
 > typeReport = putStrLn . ("Typed functions:\n"++) . showLErr . 

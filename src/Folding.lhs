@@ -59,9 +59,9 @@ the same for types.
 >     f (DataDef a b c d  ) = dataDef a b c d
 >     f (Polytypic a b c d) = polyTypic a b c (map (mapSnd fet) d)
 >     f (ExplType vs ty)    = explType vs ty
->     f (TypeSyn  _ _ _)    = error "Folding: cataEqn: TypeSyn not allowed"
->     f (Class    _ _ _)    = error "Folding: cataEqn: Class not allowed"
->     f (Instance _ _ _)    = error "Folding: cataEqn: Instance not allowed"
+>     f (TypeSyn  _ _ _)    = error "Folding.cataEqn: TypeSyn not allowed"
+>     f (Class    _ _ _)    = error "Folding.cataEqn: Class not allowed"
+>     f (Instance _ _ _)    = error "Folding.cataEqn: Instance not allowed"
 >     fet = cataExpr t               
 
 > type TypeFuns a b = (VarID -> b , ConID -> b , a -> a -> b) 
@@ -240,7 +240,7 @@ variables are typed.  Should be rewritten to update the state \'a la
 >   where 
 >     mt (Typed (Var v) t) = f v t <@ ((`Typed` t).Var)
 >     mt (Typed e       t) = mt e   <@ (`Typed` t)
->     mt (Var v) = error "mmapTExpr: untyped variable encountered"
+>     mt (Var v) = error "Folding.mmapTExpr: untyped variable encountered"
 >     mt e = m e -- now e can't be Typed
 
 >     m (Con c)       = map0 (Con c)
@@ -251,9 +251,9 @@ variables are typed.  Should be rewritten to update the state \'a la
 >     m (Case e cs)   = map2 Case (mt e) (mapl (uncurry (map2 pair)) 
 >                                              (map mt2 cs)          )
 >     m (Letrec qss e)= map2 Letrec (mapl (mapl mq) qss) (mt e)
->     m (Typed e t)   = error ("mmapTExpr: unexpected Typed expression: "++
+>     m (Typed e t)   = error ("Folding: mmapTExpr: unexpected Typed expression: "++
 >                              show (pretty e))
->     m e             = error ("mmapTExpr: unexpected expression: "++
+>     m e             = error ("Folding: mmapTExpr: unexpected expression: "++
 >                              show (pretty e))
 
 >     mt2 (x, y) = (mt x,mt y)
@@ -267,7 +267,7 @@ variables are typed.  Should be rewritten to update the state \'a la
 >        map2 (VarBind v t) (mapl mt ps) (mt e)
 >     mq (Polytypic n t fun cs) = 
 >        map1 (Polytypic n t fun) (mapl mtSnd cs)
->     mq _ = error "PolyInstance: mmapTEqn: impossible: not a binding"
+>     mq _ = error "Folding.mmapTEqn: impossible: not a binding"
 >     mtSnd (x,y) = mt y <@ (pair x)
 >     mt = mmapTExpr f
 

@@ -39,7 +39,7 @@ The following section needs to be reworked. (Use material from Masters Thesis)
 > makeFunctorStruct :: Eqn -> (Struct,Func)
 > makeFunctorStruct (DataDef def [arg] alts _)
 >   = ( ((def,1),map (mapSnd length) alts) , convAlts def alts)
-> makeFunctorStruct _ = error "Functorize: makeFunctorStruct: impossible: not a DataDef"
+> makeFunctorStruct _ = error "Functorize.makeFunctorStruct: impossible: not a DataDef"
 
 > convAlts :: ConID -> [(ConID, [Type])] -> Type
 > convAlts def alts = foldr1 plus (map (convAlt def) alts)
@@ -60,7 +60,7 @@ Skall ga ned i tradet rekursivt.
 >   | con == def = TCon "Rec"
 > convType def (TCon con :@@: t) = 
 >    TCon "@" :@@: TCon con :@@: convType def t
-> convType def _ = error "convType: Type not regular enough"
+> convType def _ = error "Functorize.convType: Type not regular enough"
 
 \end{verbatim}
 Far too many bad functors get through this a the moment.
@@ -126,7 +126,7 @@ The {\tt inn} function is recovered by supplying an empty list as {\tt
 
 > firstLow :: String -> String
 > firstLow (c:cs) = toLower c:cs
-> firstLow [] = error "Functorize: firstLow: impossible: empty string"
+> firstLow [] = error "Functorize.firstLow: impossible: empty string"
 
 > eitherfs :: [Expr' t] -> Expr' t
 > eitherfs = foldr1 eitherf
@@ -152,7 +152,7 @@ out_name x = case x of
 >     x = Var "x"
 >     calt (nam,num) = (apply nam vars,nestpairs vars)
 >       where vars = map (Var . variablename) [0..num-1]
->     calts []  = error "Functorize: out_def: impossible: empty case"
+>     calts []  = error "Functorize.out_def: impossible: empty case"
 >     calts [p] = [calt p]
 >     calts (p:ps) = (mapSnd inl alt) : map (mapSnd inr) alts
 >       where alt  = calt p
@@ -255,7 +255,7 @@ instead of {\tt F[]} to make it possible to parse.
 >     s (TCon "*")     = ('P':)
 >     s (TCon "@")     = ('A':)
 >     s (TCon d)       = ((codeTyCon d)++)
->     s t@(TVar v)     = error ("codeFunctor: uninstantiated functor variable " ++
+>     s t@(TVar v)     = error ("Functorize: codeFunctor: uninstantiated functor variable " ++
 >                               show (pretty t) ++ " found as part of " ++ show (pretty f) )
 
 > decodeFunctor :: String -> Func
@@ -271,8 +271,8 @@ instead of {\tt F[]} to make it possible to parse.
 >     p ('P':xs)  = mapSnd prod (popp xs)
 >     p ('A':xs)  = mapSnd appl (popp xs)
 >     p ( c :xs) | isDigit c = mapSnd TCon (decodeTyCon (c:xs))
->                | otherwise = error "Functorize: decodeFunctor: bad functor encoding"
->     p ""        = error "Functorize: decodeFunctor: functor ended prematurely"
+>                | otherwise = error "Functorize.decodeFunctor: bad functor encoding"
+>     p ""        = error "Functorize.decodeFunctor: functor ended prematurely"
 >     popp = p `op` p
 >     plus (t,t') = TCon "+" :@@: t :@@: t'
 >     prod (t,t') = TCon "*" :@@: t :@@: t'

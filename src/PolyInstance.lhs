@@ -204,7 +204,7 @@ both the type at the definition and the type at the instance.
 >      (q,matchfuns (maydebug $ tdef name,maydebug $ tinst),tdef name)
 >    where tdef na = maybe (err na) id (lookupEnv na typeenv)
 >          err n = error ("pairType: type not in environment:"++n)
-> pairType _ _ _ = error "PolyInstance: pairType: impossible: nor a VarBind"
+> pairType _ _ _ = error "PolyInstance.pairType: impossible: nor a VarBind"
 
 \end{verbatim}
 \subsection{Inn and out}
@@ -223,7 +223,7 @@ both the type at the definition and the type at the instance.
 >         extra = codeFunctors functors
 >         fundefs "inn" = inn_def ("inn"++extra)
 >         fundefs "out" = out_def ("out"++extra)
->         fundefs _     = error "PolyInstance: specPolyInst: impossible: neither inn nor out"
+>         fundefs _     = error "PolyInstance.specPolyInst: impossible: neither inn nor out"
 
 \end{verbatim}
 \subsection{Uncurry$n$}
@@ -326,7 +326,7 @@ generated for them.)
 >   else case lookupEnv name defenv of
 >     (Just q@(Polytypic _ _ _ _)) -> PolyDef q
 >     (Just q@(VarBind _ _ _ _))   -> VarDef  q
->     (Just _)                     -> error "PolyInstance: classifyDef: impossible: not a binding"
+>     (Just _)                     -> error "PolyInstance.classifyDef: impossible: not a binding"
 >     Nothing                      -> Unknown
 
 \end{verbatim}
@@ -373,7 +373,7 @@ Get the correct equation out of the poly case.
 >     (VarBind n (Just tdef) [] e, s, tdef) 
 >   where f = getFunctor funcenv fname tdef t
 >         (e,s) = functorCase f cs
-> pickPolyEqn _ _ _ = error "PolyInstance: pickPolyEqn: impossible: not Polytypic"
+> pickPolyEqn _ _ _ = error "PolyInstance.pickPolyEqn: impossible: not Polytypic"
 
 > functorCase :: Func -> [(QType, e)] -> (e, Subst)
 > functorCase f [] = error ("functorCase: no match for "++show (pretty f))
@@ -494,7 +494,7 @@ Make sure match works for variables too. (insert dictionaries?)
 >         m = thread (map match' pairs) []
 >         thread :: Monad m => [a -> m a] -> a -> m a
 >         thread = foldr (@@) return
->         err = error "matchfuns: no match"
+>         err = error "PolyInstance.matchfuns: no match"
 
 > match :: (Type, Type) -> Maybe Subst
 > match p = match' p []
@@ -561,7 +561,7 @@ make sure that no name clashes occur in the resulting type.
 >   where pairwithname q@(VarBind n _ _ _)   = (n,q)
 >         pairwithname q@(Polytypic n _ _ _) = (n,q)
 >         pairwithname q@(DataDef n _ _ _)   = (n,q)
->         pairwithname _ = error "PolyInstance: eqnsToDefenv: impossible: not a binding or a DataDef"
+>         pairwithname _ = error "PolyInstance.eqnsToDefenv: impossible: not a binding or a DataDef"
 
 \end{verbatim}
 % ----------------------------------------------------------------

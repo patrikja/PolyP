@@ -119,7 +119,7 @@ program as a whole.
 >             , (VarBind, DataDef, Polytypic, ExplType)
 >             )
 >   where letrec [qs] body = Letrec (dependencyEqns qs) body
->         letrec _ _ = error "DependencyAnalysis: dependencyEqn: impossible: input list not of length 1"
+>         letrec _ _ = error "DependencyAnalysis.dependencyEqn: impossible: input list not of length 1"
 
 > dependencyProgram eqns = (dataDefs,bindss)
 >   where [dataDefs, binds] = splitUp [isDataDef] eqns
@@ -149,7 +149,7 @@ so the explicit type can not simply be placed on the rhs.
 > ets2TyEnv :: [Eqn] -> TypeEnv 
 > ets2TyEnv ets = extendsEnv (concat (map get ets)) newEnv
 >   where get (ExplType vs t) = zip vs (repeat t)
->         get _ = error "DependencyAnalysis: ets2TyEnv: impossible: only ExplType allowed."
+>         get _ = error "DependencyAnalysis.ets2TyEnv: impossible: only ExplType allowed."
 
 > mayInsType :: (Pretty t,Show t, Eq t) => Maybe t -> Eqn' t -> Eqn' t
 > mayInsType t (VarBind v _ ps e) = VarBind v t ps e
