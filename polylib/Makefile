@@ -6,10 +6,10 @@ polyp = ../bin/ghcpolyp
 chase = ../bin/chase
 split = ../bin/splitHeader
 
-# PolyPFLAGS =
+# POLYPFLAGS =
 
 %.hs : %.phs
-	$(polyp) $(PolyPFLAGS) $< > $@
+	$(polyp) $(POLYPFLAGS) $< > $@
 
 phs_files = $(wildcard *.phs)
 hs_files = $(phs_files:.phs=.hs)
@@ -36,6 +36,6 @@ Show.hs : Base.hs ConstructorName.hs
 #	$(chase) $(CHASEFLAGS) $< > /tmp/$(<:.phs=.full)
 #	$(split) $@ /tmp/$(<:.phs=.body) /tmp/$(<:.phs=.full)
 #	echo import MyPolyPrel >> $@
-#	$(polyp) $(PolyPFLAGS) /tmp/$(<:.phs=.body) >> $@
+#	$(polyp) $(POLYPFLAGS) /tmp/$(<:.phs=.body) >> $@
 
 

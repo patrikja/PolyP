@@ -6,18 +6,18 @@ module PolyPrelude where
 ---
 
 class FunctorOf f d | d -> f where
-    inn			:: f a (d a) -> d a
-    out			:: d a -> f a (d a)
+    inn                 :: f a (d a) -> d a
+    out                 :: d a -> f a (d a)
 
-    datatypeName	:: d a -> String
-    constructorName	:: d a -> String
-    constructorFixity	:: d a -> Fixity
+    datatypeName        :: d a -> String
+    constructorName     :: d a -> String
+    constructorFixity   :: d a -> Fixity
     -- Defaults
     constructorFixity _ = defaultFixity
 
-data Fixity = Fixity	{ associativity :: Associativity
-			, precedence	:: Int
-			}
+data Fixity = Fixity    { associativity :: Associativity
+                        , precedence    :: Int
+                        }
     deriving (Eq, Show)
 
 defaultFixity = Fixity LeftAssoc 9
@@ -30,15 +30,16 @@ data Associativity = NonAssoc | LeftAssoc | RightAssoc
 ---
 
 instance FunctorOf (SumF EmptyF (ProdF ParF RecF)) [] where
-    inn (InL EmptyF)			= []
-    inn (InR ((ParF a) :*: (RecF b)))	= a : b
-    out []				= InL EmptyF
-    out (a : b)				= InR ((ParF a) :*: (RecF b))
-    datatypeName			= const "[]"
-    constructorName []			= "[]"
-    constructorName (_:_)		= ":"
-    constructorFixity []		= defaultFixity
-    constructorFixity (_:_)		= Fixity RightAssoc 5
+    inn (InL EmptyF)                    = []
+    inn (InR ((ParF a) :*: (RecF b)))   = a : b
+    out []                              = InL EmptyF
+    out (a : b)                         = InR ((ParF a) :*: (RecF b))
+
+    datatypeName                        = const "[]"
+    constructorName []                  = "[]"
+    constructorName (_:_)               = ":"
+    constructorFixity []                = defaultFixity
+    constructorFixity (_:_)             = Fixity RightAssoc 5
  
 instance FunctorOf (SumF EmptyF ParF) Maybe where
     inn (InL EmptyF)            = Nothing
@@ -53,15 +54,15 @@ instance FunctorOf (SumF EmptyF ParF) Maybe where
 --              Structure types
 ---
 
-data    SumF f g a b  = InL (f a b)
+data    SumF  f g a b = InL (f a b)
                       | InR (g a b)                    deriving Show
 data    ProdF f g a b = f a b :*: g a b                deriving Show
-newtype FunF f g a b  = FunF   {unFunF   :: f a b -> g a b}
-data    EmptyF a b    = EmptyF                         deriving Show
-newtype ParF a b      = ParF   {unParF   :: a}         deriving Show
-newtype RecF a b      = RecF   {unRecF   :: b}         deriving Show
+data    EmptyF    a b = EmptyF                         deriving Show
+newtype FunF  f g a b = FunF   {unFunF   :: f a b -> g a b}
+newtype ParF      a b = ParF   {unParF   :: a}         deriving Show
+newtype RecF      a b = RecF   {unRecF   :: b}         deriving Show
 newtype CompF d g a b = CompF  {unCompF  :: d (g a b)} deriving Show
-newtype ConstF t a b  = ConstF {unConstF :: t}         deriving Show
+newtype ConstF t  a b = ConstF {unConstF :: t}         deriving Show
 
 infixr 5 :*:
 

@@ -1,6 +1,20 @@
 module Sum(psum,fsum,size) where 
 import Base(cata,pmap)
 
+psum :: (Regular d, Num a) => d a -> a
+psum = cata fsum
+
+polytypic fsum :: Num a => f a a -> a
+  = case f of 
+      g + h    ->  fsum `foldSum` fsum
+      g * h    ->  \(x:*:y) -> fsum x + fsum y
+      Empty    ->  \x -> fromInt 0
+      Par      ->  unParF
+      Rec      ->  unRecF
+      d @ g    ->  psum . pmap fsum . unCompF
+      Const t  ->  \x -> fromInt 0
+
+{-
 psum :: Regular d => d Int -> Int
 psum = cata fsum
 
@@ -13,6 +27,7 @@ polytypic fsum :: f Int Int -> Int
       Rec      ->  unRecF
       d @ g    ->  psum . pmap fsum . unCompF
       Const t  ->  \x -> 0
+-}
 
 size :: Regular d => d a -> Int
 size = psum . pmap (\_->1)
