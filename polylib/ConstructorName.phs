@@ -31,5 +31,8 @@ polytypic fconstructor2Int :: f a b -> Int =
 plus1 :: Int -> Int
 plus1 x = 1 + x
 
--- int2Constructor :: Int -> d a
-int2Constructor n = constructors !! n
+-- int2constructor :: Int -> d a
+int2constructor n = constructors !! n
+
+-- int2fconstructor :: Int -> f a b
+int2fconstructor n = fconstructors !! n
