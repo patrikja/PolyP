@@ -62,9 +62,9 @@ In verbose mode every stage of the program generation presents s summary:
 \begin{verbatim}
 
 > report :: IO ()
-> report = (putStrLn "{-" >> 
->           getArgs       >>= 
->           handleargs)   >>= 
+> report = (putStrLn "{-" >>  -- Resync the emacs haskell mode -}
+>           getArgs       >>=  
+>           handleargs)   >>=  
 >           report' 
 >   where handleargs [] = putStr "Filename: " >> getLine
 >         handleargs (('-':c:str):rest) | c `elem` "?h" = showUsage

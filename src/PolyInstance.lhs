@@ -296,12 +296,12 @@ uncn ::
 >             ([Req], [TEqn])
 > traverse typeenv (q,subst,tdef) tinst = 
 >     (mapSnd (:[]) . executeST typeenv . runOutput []) m 
->   where m = traverseTEqn (tr subst) newq 
+>   where m = traverseTEqn (tracing subst) newq 
 >         newq = changeNameOfBind (++extra) q 
 >         extra = codeFunctors functors
 >         functors = getFunctors tdef tinst
->	  tr :: Subst -> Subst
->	  tr s = maytrace ("{- Subst:"++show s++"-}\n") s
+>	  tracing :: Subst -> Subst
+>	  tracing s = maytrace ("{- Subst:"++show s++"-}\n") s
 
 > isSpecFun :: VarID -> Bool
 > specFuns :: [VarID]
