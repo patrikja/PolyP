@@ -32,7 +32,7 @@ hyloM iM oM = iM      @@ fmapM idM (hyloM iM oM) @@ oM
 
 -- new names for symmetry
 innM = idM . inn
-outM = idM . inn
+outM = idM . out
 idM  = return
 
 {- ekvivalent definitions
@@ -42,17 +42,17 @@ cataM iM    = iM      @@ fmapM idM (cataM iM   ) @@ outM
 anaM     oM = innM    @@ fmapM idM (anaM     oM) @@   oM
 -}
 
--- para :: Regular d => (d a -> FunctorOf d a b -> m b) -> d a -> m b
+-- paraM :: Regular d => (d a -> FunctorOf d a b -> m b) -> d a -> m b
 paraM iM x = applyM (iM x) (fmapM idM (paraM iM) (out x))
 
-main = pmapM id []
 ----------------------------------------------------------------
 -- Monad operations (that are not in PolyPs prelude)
 
+-- mapm :: Monad m => (a->b) -> m a -> m b
 mapm f mx = mx >>= \x -> return (f x)
-
+-- applyM :: Monad m => (a->m b) -> m a -> m b
 applyM f x = x >>= f
-
+-- (@@) :: Monad m => (b->m c) -> (a->m b) -> (a->m c)
 f @@ g = \y -> g y >>= f
 
 {-

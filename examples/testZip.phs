@@ -1,5 +1,5 @@
 module Main where
-import Zip(pzip)
+import Zip(pzip,punzip)
 
-main = print (pzip ("Pti","ark"))
--- expected output: Just [('P', 'a'), ('t', 'r'), ('i', 'k')]
+main = print (pzip ("Pti","ark"),punzip (Just ('P','J')))
+-- expected output: (Just [('P', 'a'), ('t', 'r'), ('i', 'k')], (Just 'P',Just 'J'))

@@ -204,7 +204,7 @@ import MonadLibrary(Error)
 > prArrow r d = sep [ppleft r (prType r) <> text " ->", prType d] 
 >   where
 >     ppleft (c :@@: s :@@: t) 
->        | isFunctionType s    = ppParentheses 
+>        | isFunctionType c    = ppParentheses 
 >     ppleft   _               = id
 
 \end{verbatim}

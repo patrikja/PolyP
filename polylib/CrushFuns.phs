@@ -8,11 +8,13 @@ import Base(pmap)
 
 -- psum :: Regular d => d Int -> Int
 -- prod :: Regular d => d Int -> Int
+-- comp :: Regular d => d (a->a) -> (a->a)
 -- conc :: Regular d => d [a] -> [a]
 -- pand :: Regular d => d Bool -> Bool
 -- por  :: Regular d => d Bool -> Bool
 psum = crush (+)  0
 prod = crush (*)  1
+comp = crush (.)  id
 conc = crush (++) []
 pand = crush (&&) True
 por  = crush (||) False
@@ -27,3 +29,4 @@ flatten = conc . pmap (\x->[x])
 pall p  = pand . pmap p
 pany p  = por  . pmap p
 pelem x = pany (\y->x==y)
+flatten'= (\f -> f []) . comp . pmap (:)
