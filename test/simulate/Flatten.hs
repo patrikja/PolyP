@@ -1,4 +1,4 @@
-module Flatten(flatten,fflatten,fl_par,fl_rec,fl_all) where
+module Flatten(flatten,fflatten,fl_par,fl_rec,fl_all,singleton,nil) where
 import Base(pmap,fmap2)
 import PolyPTypes
 

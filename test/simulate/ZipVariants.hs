@@ -14,10 +14,3 @@ pzip' p = ( pzipWith'    inn     (const undefined)    id      p
           , pzipWith' (and.fl_all) (const False) (const True) p
           )
 
--- incomplete definition
--- fzipWith op1 op2 p = fmap2 fzip p
---   Maybe (f i j) <- Maybe (f (a,b) (c,d)) <- (f a c, f b d) 
-
---pzipWith' ins fail op (x,y)  =
---  maybe (fail (x,y)) (ins . fmap2 op (pzipWith' ins fail op)) 
---        (fzip (out x, out y))

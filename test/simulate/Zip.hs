@@ -18,6 +18,11 @@ pzipWith' ins fail op (x,y)  =
   maybe (fail (x,y)) (ins . fmap2 op (pzipWith' ins fail op)) 
         (fzip (out x, out y))
 
+{-
+pzipWith' ins fail op (x,y) =  
+  maybe (fail (x,y)) ins (fzipWith op (pzipWith' ins fail op) (out x, out y))
+-}
+
 pzipWith :: Regular d => ((a, b) -> Maybe c) -> (d a, d b) -> Maybe (d c)
 pzipWith  = pzipWith' (mapMaybe inn.fprop) (const zeroM)
 
@@ -41,12 +46,13 @@ sumzip p = case p of
 prodzip :: ((a,b),(c,d)) -> Maybe ((a,c),(b,d))
 prodzip ((x,y),(s,t))  =  resultM ((x,s),(y,t))
 
--- should be
---   constzip :: Eq t => (t,t) -> Maybe t
---   constzip (x,y) = if x==y then resultM x else zeroM
--- but this requires an inexpressible type of fzip
-constzip :: (t,t) -> Maybe t
-constzip (x,y) = resultM x
+-- This requires an inexpressible type of fzip, but works due to a PolyP bug
+constzip :: Eq t => (t,t) -> Maybe t
+constzip (x,y) = if x==y then resultM x else zeroM
+
+-- this is the intended meaning: one for each instance of Eq
+--constzipInt :: (Int,Int) -> Maybe Int
+--constzipInt (x,y) = if x==y then resultM x else zeroM
 
 {-
   Maybe monad functions
