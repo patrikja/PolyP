@@ -38,13 +38,13 @@ instance FunctorOf (SumF EmptyF ParF) Maybe where
 ---
 
 data SumF f g a b		= InL (f a b)
-							| InR (g a b)
-data ProdF f g a b	= f a b :*: g a b
-data EmptyF a b		= EmptyF
-data ParF a b			= ParF a
-data RecF a b			= RecF b
-data CompF d g a b	= CompF (d (g a b))
-data ConstF t a b		= ConstF t
+							| InR (g a b)			deriving Show
+data ProdF f g a b	= f a b :*: g a b		deriving Show
+data EmptyF a b		= EmptyF					deriving Show
+data ParF a b			= ParF a					deriving Show
+data RecF a b			= RecF b					deriving Show
+data CompF d g a b	= CompF (d (g a b))	deriving Show
+data ConstF t a b		= ConstF t				deriving Show
 
 unSumF (InL x) = Left x
 unSumF (InR y) = Right y

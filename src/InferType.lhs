@@ -6,7 +6,7 @@
 > import TypeGraph(HpType,NodePtr,HpNode(..),HpQType,NonGenerics,
 >                  mkFOfd,(==>),checkCon,
 >                  typeIntoHeap,qtypeIntoHeap,qtypeOutOfHeap,allGeneric,
->                  spineWalkHpType,getChild, showNodePtr)
+>                  spineWalkHpType,getChild, showNodePtr,showHpNode,fetchNode)
 > import TypeBasis(Basis,FuncEnv,getTBasis,getFuncEnv,instantiate)
 > import Env(Env,newEnv,rangeEnv,lookupEnv,extendsEnv)
 > import MyPrelude(fMap, trace,debug)
@@ -15,7 +15,7 @@
 > import StateFix -- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 > import Grammar(Eqn'(..),Expr'(..),
 >		 Qualified(..),Qualifier,QType,
->                VarID,ConID,Type(TVar))
+>                VarID,ConID,Type(..))
 > import ParseLibrary(parse)
 > import Parser(pType1)
 > import PrettyPrinter()
@@ -276,6 +276,7 @@ The evaluation is done by side-effecting the pointer structure.
 >   where f:args   = map snd pargs
 >         nargs    = length args
 >         children = map getChild args
+>	  debug	   = fmap (error . show) $ sequence $ map (uncurry showHpNode) pargs
 >         def      = return children
 >         eval (arity,syn) | arity > nargs = def -- partial application
 >                          | otherwise     = applySynonym syn children >>= again
@@ -288,7 +289,7 @@ The evaluation is done by side-effecting the pointer structure.
 >         again2 ptr = 
 >           root2 ==> ptr >>
 >           spineWalkHpType root >>= \pargs2->
->           hpTypeEval' funcenv (pargs2++ rest2)
+>           hpTypeEval' funcenv (pargs2) -- ++ rest2)
 >         (root2,_):rest2 = drop 1 pargs
 
 >         --evalFunctorOf :: FuncEnv -> [NodePtr s] -> ST s [NodePtr s]
@@ -320,14 +321,14 @@ applying the following rewrite rules: \\
 \begin{verbatim}
 
 > typeSynEnv :: Env VarID (Int,QType)
-> typeSynEnv = extendsEnv [typeSyn "+" "fgab" "SumF f g a b",
->                          typeSyn "*" "fgab" "ProdF f g a b",
+> typeSynEnv = extendsEnv [typeSyn "+" "" "SumF",
+>                          typeSyn "*" "" "ProdF",
 >                          typeSyn ">" "fgab" "f a b -> g a b",
->                          typeSyn "@" "dgab" "CompF d g a b",
->                          typeSyn "Par" "ab" "ParF a b",
->                          typeSyn "Rec" "ab" "RecF a b",
->                          typeSyn "Const" "tab" "ConstF t a b",
->                          typeSyn "Empty" "ab" "EmptyF a b"
+>                          typeSyn "@" "" "CompF",
+>                          typeSyn "Par" "" "ParF",
+>                          typeSyn "Rec" "" "RecF",
+>                          typeSyn "Const" "" "ConstF",
+>                          typeSyn "Empty" "" "EmptyF"
 >                         ] newEnv
 
 \end{verbatim}
@@ -348,9 +349,20 @@ Problem: The program loops if not all synonyms are present.
 >         f _ = error "InferType.splitTypeSyn: not a type variable"
 
 > applySynonym :: QType -> [HpType s] -> ST s (HpType s)
-> applySynonym syn args = 
->     qtypeIntoHeap syn <@ splitTypeSyn  >>= \(vars,rhs)->
->     accumseq (zipWith (==>) vars args) <@- rhs
+> applySynonym syn@(vs:=>body) args =
+>	do  let syn' = case splitTypeSyn syn of
+>		    (vars, rhs)
+
+>			| length args > length vars -> let len = length args - length vars in
+>							(vs ++ take len extraCtx)
+>							:=> foldl (:@@:) rhs
+>							    (take len extraArgs)
+
+>			| otherwise		    -> syn
+>	    (vars,rhs) <- qtypeIntoHeap syn' <@ splitTypeSyn
+>	    accumseq (zipWith (==>) vars args) <@- rhs
+>   where   extraArgs	= map (TVar . ('_':) . show) [0..]
+>	    extraCtx	= map (\v -> ("",[v])) extraArgs
 
 \end{verbatim}
 \section{Groups}

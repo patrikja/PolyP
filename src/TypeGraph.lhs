@@ -445,7 +445,7 @@ pointer structure looks like.
 >              HpVar v | v === p -> return "Var"
 >                      | True    -> fMap ('-':) (showNodePtr v)
 >              HpCon c -> return ('C':c)
->              HpApp p1 p2 -> liftop (++) (showNodePtr p1) (showNodePtr p2 <@ ('@':))
+>              HpApp p1 p2 -> liftop (\a b -> a ++ "@(" ++ b ++ ")") (showNodePtr p1) (showNodePtr p2)
 
 \end{verbatim}
 \subsection{Simplification of contexts}

@@ -1,1 +1,1 @@
-(Right ('h',"ej"),"hej")
+(InR (ParF 'h' :*: RecF "ej"),"hej")

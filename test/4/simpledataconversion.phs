@@ -8,8 +8,8 @@ dc f = inn . f . fmap2 id (dc f) . out
 
 flist2ftree :: FunctorOf ([]) a (Tree a) -> FunctorOf Tree a (Tree a)
 flist2ftree x = case x of 
-  (Left ())     -> Left ()
-  (Right (x,y)) -> Right (Right (Leaf x, y))
+  (InL EmptyF)   -> InL EmptyF
+  (InR (ParF x :*: RecF y)) -> InR (InR (RecF (Leaf x) :*: RecF y))
 
 data Tree a = Empty | Leaf a | Bin (Tree a) (Tree a) deriving Show
 

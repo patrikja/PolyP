@@ -1,7 +1,7 @@
 data Tree a = Leaf a | Bin (Tree a) (Tree a) deriving Show
 
-smallftree = Left 1  :: FunctorOf Tree Int a
-shortflist = Left () :: FunctorOf ([]) a b
+smallftree = InL (ParF 1)  :: FunctorOf Tree Int a
+shortflist = InL EmptyF :: FunctorOf ([]) a b
 smalltree  = inn smallftree
 shortlist  = inn shortflist :: String
 main = print (smalltree,shortlist)
