@@ -99,7 +99,7 @@ changed by \texttt{hpQTypeEval}.
 > tevalC funcenv ("Poly", fun : _ ) = fMap (map poly) (funEval funcenv fun)
 >    where poly :: HpType s -> Qualifier (HpType s)
 >          poly f = ("Poly", [f])
-> tevalC funcenv c = return [ c ] --*** types in other contexts should be simplified as well
+> tevalC funcenv c = return [ c ] -- *** types in other contexts should be simplified as well
 
 \end{verbatim}
 
