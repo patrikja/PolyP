@@ -12,25 +12,27 @@
 
 \begin{verbatim}
 
+> errorfile = IO.stderr
+
 > stopNow :: IO a
 > stopNow = exitWith ExitSuccess
 
 > fatalError :: String -> IO a
-> fatalError s = IO.hPutStr IO.stderr ("PolyP ERROR: "++s) >> exitWith (ExitFailure 1)
+> fatalError s = IO.hPutStr errorfile ("PolyP ERROR: "++s) >> exitWith (ExitFailure 1)
 
 > putErrStr   :: String -> IO ()
 > putErrStrLn :: String -> IO ()
 #ifdef __DEBUG__
-> putErrStr     = IO.hPutStr   IO.stderr 
+> putErrStr     = IO.hPutStr   errorfile 
 > putErrStrLn s = putErrStr (s ++ "\n")
 #else
 > putErrStr   = if verbose flags 
->	        then IO.hPutStr   IO.stderr 
+>	        then IO.hPutStr   errorfile 
 >		else const (return ())
 > putErrStrLn s = putErrStr (s++"\n")
 #endif
 > flushErr :: IO ()
-> flushErr = IO.hFlush IO.stderr
+> flushErr = IO.hFlush errorfile
 
 > putStrNow :: String -> IO ()
 > putStrNow s = putStr s >> IO.hFlush IO.stdout

@@ -222,11 +222,16 @@ Two possible approaches:
 \begin{verbatim}
  
 > main :: IO ()
-> main = seq IO.stderr report 
+> main = report 
+
+main = seq IO.stderr report 
 
 The "seq stderr" is a try to work around a ghc-bug:
   "The problem is caused by overzealous locking in our I/O library"
 (GHC 4.06 Mini-FAQ, http://haskell.org/ghc/faq_406.html)
+
+It does not seem to work.
+
 
 #ifdef __DEBUG__
 > testunify = do t <- getType
