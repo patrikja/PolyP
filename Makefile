@@ -1,5 +1,5 @@
 # The Makefile is for the following PolyP-version
-version=1.0
+version=1.1
 
 help: 
 	@echo Makefile for PolyP by Patrik Jansson
@@ -80,7 +80,7 @@ WWWDIR = $(HOME)/pub/www/poly
 
 export version
 
-www:	polyp$(version).tar.gz
+www: polyp$(version).tar.gz
 	cp polyp$(version).tar.gz $(WWWDIR)
 	cd $(WWWDIR); $(MAKE) -e polyp$(version)
 # `-e' `--environment-overrides'
@@ -93,8 +93,7 @@ packpolylib:
 local:	polyp$(version)
 	$(MAKE) -C polyp$(version) ghc
 	$(MAKE) -C polyp$(version) check.ghc
-	rm $(HOME)/bin/polyp
-	ln -s $(HOME)/poly/polyp/polyp$(version)/bin/ghcpolyp $(HOME)/bin/polyp
+	cp polyp$(version)/bin/ghcpolyp $(HOME)/bin/polyp
 	@echo Skicka brev lokalt och meddela detta
 
 fromwww:
@@ -103,10 +102,15 @@ fromwww:
 	gunzip < polyp.tar.gz | tar xf -
 	cd polyp$(version); $(MAKE) check.hbc
 
-WEBSITE = http://www.cs.chalmers.se/~patrikj/poly/polyp$(version)/
+WEBSITE = http://www.cs.chalmers.se/~patrikj/poly/polyp/
+WEBDIR  = $(HOME)/pub/www/poly/polyp
 
 README:	index.html
+	mv $(WEBDIR)/index.html qqq
+	cp index.html $(WEBDIR)
 	lynx -dump $(WEBSITE) >README
+	mv qqq $(WEBDIR)/index.html
+	 
 
 # These targets are not real files
 .PHONY: help install hugs ghc hbc clean distclean packpolylib \

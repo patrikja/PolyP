@@ -1,8 +1,6 @@
 In the polytypic construct the paper [1] writes 
-  `()'  where PolyP uses `Empty'.
-  `Con' where PolyP uses `Const'.
-  `Poly (FunctorOf d)' where PolyP uses `Regular d'
-  `Bifunctor' where PolyP uses `Poly'
+  `()'   where PolyP uses `Empty'.
+  `Con'  where PolyP uses `Const'.
   `junc' where PolyP uses `either'
 
 The prelude contains (at least):
@@ -10,27 +8,10 @@ The prelude contains (at least):
   Mu        :: (* -> * -> *) -> (* -> *)
   FunctorOf :: (* -> * -> *) <- (* -> *)
 
-  data (->) a b 
-  data ([]) a = [] | a : [a]
-  data Either a b = Left a | Right b
-  data Bool = False | True
-  data Maybe a  =  Nothing | Just a
-  data () = ()
-  data (,) a b = (a,b)
-  data (,,) a b c = (a,b,c)
-
   inn :: Poly (FunctorOf d) => FunctorOf d a (d a) -> d a
   out :: Poly (FunctorOf d) => d a -> FunctorOf d a (d a)
 
-
-  (+) :: Num a => a->a->a
-  (==) :: Eq a => a->a->Bool
-  (.) :: (b->c)->(a->b)->(a->c)
-  (++) :: [a]->[a]->[a]
-  const :: a->b->a
-  id :: a->a
-  map :: (a->b)->[a]->[b]
-
+and the functions in "lib/PolyPrel.hs".
 
 ----------------------------------------------------------------
 [1] Polytypic Programming

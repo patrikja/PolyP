@@ -4,9 +4,6 @@
 > module PrettyPrinter(module PrettyPrinter,module PrettyPrintExtra,
 >                      module Grammar) where
 > import Char(isAlpha)
-
-import MonadLibrary(Error)
-
 > import PrettyPrintExtra(Pretty(..),ppVerticalList,ppCommaList,
 >                         ppTuple,ppParentheses,ppApp,ppPackedList,showDoc,
 >                         (<>),($$),nest,text,Doc,sep)
@@ -18,7 +15,7 @@ import MonadLibrary(Error)
 
 > instance Show Type where
 >   showsPrec _ = (++) . showDoc . pretty
-> instance Show (Qualified Type) where
+> instance (Typelike t, Pretty t) => Show (Qualified t) where
 >   showsPrec _ = (++) . showDoc . pretty
 > instance Pretty a => Show (Eqn' a) where
 >  showsPrec _ = (++) . showDoc . pretty
@@ -27,7 +24,19 @@ import MonadLibrary(Error)
 > instance Pretty a => Pretty [a] where
 >   pretty = sep . map pretty
 
+> class Typelike t where
+>   checkFOf         :: t -> Maybe t
+>   isSimpleTypelike :: t -> Bool
+
+> instance Typelike Type where
+>   checkFOf (TCon "FunctorOf" :@@: d) = Just d
+>   checkFOf _                         = Nothing
+>   isSimpleTypelike = isSimpleType
+
 \end{verbatim}
+The class \texttt{Typelike} is only used to get past the Haskell 1.4
+restriction that forbids instances for \texttt{Qualified Type}.
+
 \section{Equations}
 \begin{verbatim}
 
@@ -171,27 +180,27 @@ output Haskell code violates the monomorphism restriction.
 {\em Insert types on all functions.}
 \begin{verbatim}
 
-> instance Pretty (Qualified Type) where
+> instance (Typelike t, Pretty t) => Pretty (Qualified t) where
 >   pretty = prQualified
 
-> prQualified :: Qualified Type -> Doc
+> prQualified :: (Typelike t, Pretty t) => Qualified t -> Doc
 > prQualified (cs:=>t) = prQ cs t
 > 
-> prQ :: [Qualifier Type] -> Type -> Doc
+> prQ :: (Typelike t, Pretty t) => [Qualifier t] -> t -> Doc
 > prQ []  t = pretty t
 > prQ [c] t = sep [prContext c   <> text " =>", nest 2 (pretty t)]
 > prQ cs  t = sep [prContexts cs <> text " =>", nest 2 (pretty t)]
 
-> prContexts :: [(String, [Type])] -> Doc
+> prContexts :: (Typelike t, Pretty t) => [(String, [t])] -> Doc
 > prContexts cs = ppTuple (map prContext cs)
 
-> prContext :: (String, [Type]) -> Doc
-> prContext ("Poly",[TCon "FunctorOf" :@@: d]) 
->                        = prContext' ("Regular",[d])
-> prContext ("Poly",[f]) = prContext' ("Bifunctor",[f])
+> prContext :: (Typelike t, Pretty t) => (String, [t]) -> Doc
+> prContext ("Poly",[f]) = case checkFOf f of
+>                            Just d  -> prContext' ("Regular",[d])
+>                            Nothing -> prContext' ("Bifunctor",[f])
 > prContext p            = prContext' p
 
-> prContext' :: (String, [Type]) -> Doc
+> prContext' :: (Typelike t, Pretty t) => (String, [t]) -> Doc
 > prContext' (c,ts) =  
 >   sep (text c : map (nest 2 . prT) ts)
 
@@ -212,8 +221,8 @@ output Haskell code violates the monomorphism restriction.
 >     (fun:args) = spineWalkType x
 >     n = length args
 
-> prT :: Type -> Doc
-> prT x = (if isSimpleType x then id else ppParentheses) (prType x)
+> prT :: (Typelike t,Pretty t) => t -> Doc
+> prT x = (if isSimpleTypelike x then id else ppParentheses) (pretty x)
 
 > prArrow :: Type -> Type -> Doc
 > prArrow r d = sep [ppleft r (prType r) <> text " ->", prType d] 
@@ -270,6 +279,9 @@ output Haskell code violates the monomorphism restriction.
 > isSimple (Con _)      = True
 > isSimple (Literal _)  = True
 > isSimple WildCard     = True
+> isSimple x | tupletest fun == length args
+>                       = True
+>   where (fun:args) = spineWalk x
 > isSimple _            = False
 
 > isSimpleType :: Type -> Bool
@@ -335,3 +347,13 @@ prArrow& prType & \\
 prTypeOp & prT & \\
 \end{tabular}
 }
+
+\section{To be done}
+
+\begin{itemize}
+\item Improve printing of datatype declarations: replace
+  \texttt{ppParentheses} with \texttt{prT} in \texttt{prAlt}.
+%
+  This requires changes to a series of types as they will need a
+  \texttt{Typelike t} context.
+\end{itemize}

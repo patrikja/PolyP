@@ -95,6 +95,8 @@ PolyInstance.o : ./Env.hi
 PolyInstance.o : ./Grammar.hi
 PolyInstance.o : ./Folding.hi
 PolyInstance.o : ./Functorize.hi
+PolyInstance.o : ./TypeGraph.hi
+PolyInstance.o : ./InferType.hi
 PolyInstance.o : ./MonadLibrary.hi
 PolyInstance.o : ./MyPrelude.hi
 PolyInstance.o : ./PrettyPrinter.hi
@@ -136,6 +138,7 @@ TypeGraph.o : ./PrettyPrinter.hi
 TypeGraph.o : ./MonadLibrary.hi
 TypeGraph.o : ./Env.hi
 TypeGraph.o : ./Folding.hi
+TypeGraph.o : ./StateFix.hi
 UnifyTypes.o : UnifyTypes.lhs
 UnifyTypes.o : ./TypeGraph.hi
 UnifyTypes.o : ./TypeError.hi

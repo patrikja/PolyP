@@ -34,19 +34,25 @@ head    :: [a]->a
 id      :: a->a
 isSpace :: Char->Bool
 length  :: [a]->Int
+lines   :: String -> [String]
 map     :: (a->b)->[a]->[b]
+maximum :: Ord a => [a] -> a
 maybe   :: a -> (b -> a) -> Maybe b -> a
 negate  :: Num a => a->a
 not     :: Bool->Bool	       
 or      :: [Bool]->Bool
 print   :: Show a => a -> IO ()
+putStr  :: String -> IO ()
+read    :: Read a => String -> a
 return  :: Monad m => a -> m a
 show    :: Show a => a -> String
 snd     :: (a,b)->b
 tail    :: [a]->[a]
 take    :: Int->[a]->[a]
+takeWhile:: (a -> Bool) -> [a] -> [a]
 uncurry :: (a -> b -> c) -> (a,b) -> c
 undefined :: a
+unlines :: [String] -> String
 unwords :: [String]->String
 words   :: String->[String]
 zip     :: [a] -> [b] -> [(a,b)]
