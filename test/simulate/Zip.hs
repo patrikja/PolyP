@@ -1,10 +1,7 @@
----------------------------------------------------------------
--- Zip functions
----  980409 Patrik Jansson
----------------------------------------------------------------
 module Zip(pzip,fzip,pzipWith,pzipWith',(@@),resultM) where
 import Base(pmap,fmap2,(-+-),(-*-))
 import Propagate(fprop,sumprop,prodprop,propagate,mapMaybe)
+import PolyPTypes
 -- Maybe could be replaced by any MonadZero
 
 pzip :: Regular d => (d a,d b) -> Maybe (d (a,b))
@@ -27,17 +24,8 @@ pzipWith  = pzipWith' (mapMaybe inn.fprop) (const zeroM)
 funzip :: Bifunctor f => f (a,c) (b,d) -> (f a b,f c d)
 funzip x = (fmap2 fst fst x, fmap2 snd snd x)
 
--- Bifunctor f => ...
-polytypic fzip :: (f a b,f c d) -> Maybe (f (a,c) (b,d))
-  = case f of
-      g + h     ->  (sumprop   . (fzip -+- fzip)) @@ sumzip
-      g * h     ->  (prodprop  . (fzip -*- fzip)) @@ prodzip
-      Empty     ->  const (resultM ())
-      Par       ->  resultM
-      Rec       ->  resultM
-      d @ g     ->  (propagate . (pmap fzip)    ) @@ pzip
-      Const t   ->  constzip
-
+fzip :: Bifunctor f => (f a b,f c d) -> Maybe (f (a,c) (b,d))
+fzip p = onlyUsefulForTypeChecking "fzip"
 
 sumzip :: (Either a b,Either c d)-> Maybe (Either (a,c) (b,d))
 sumzip p = case p of

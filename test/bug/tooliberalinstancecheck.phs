@@ -1,6 +1,10 @@
+main = inn (badfmap singleton singleton (out []))
+singleton :: a -> [a]
+singleton x = [x]
+
 -- This should not be accepted by PolyP since the type of id
 --   is more restricted than the type of badfmap
-
+-- 
 polytypic badfmap :: (a -> c) -> (b -> d) -> f a b -> f c d
   = \p r -> case f of                             
       	      g -> id

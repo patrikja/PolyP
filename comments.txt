@@ -83,7 +83,6 @@ data Ordering = LT | EQ | GT  deriving (Eq, Ord, Enum, Read, Show, Bounded)
  and :: [Bool] -> Bool 
  any :: (a -> Bool) -> [a] -> Bool 
  appendFile :: FilePath -> String -> IO ()
- applyM :: Monad m => (a -> m b) -> m a -> m b
  asTypeOf :: a -> a -> a 
  asin :: Floating a => a -> a 
  asinh :: Floating a => a -> a 

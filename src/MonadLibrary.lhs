@@ -75,7 +75,7 @@ join      :: Monad m => m (m a) -> m a
 join x     = x >>= id
 
 #ifdef __Haskell98__
-Removed from the prelude:
+Removed from the prelude: (renamed to (=<<))
 
 > applyM :: Monad m => (a -> m b) -> m a -> m b
 > applyM = flip (>>=)

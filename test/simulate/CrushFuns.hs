@@ -1,10 +1,7 @@
----------------------------------------------------------------
--- CrushFuns
---   980409 Patrik Jansson
----------------------------------------------------------------
 module CrushFuns(psum,prod,conc,pand,por,size,flatten,pall,pany,pelem) where
 import Crush(crush)
 import Base(pmap)
+import PolyPTypes
 
 psum :: Regular d => d Int -> Int
 prod :: Regular d => d Int -> Int

@@ -1,12 +1,9 @@
----------------------------------------------------------------
--- Equality and ordering
---   980409 Patrik Jansson 
----------------------------------------------------------------
 module EqOrd(pequal,peq,peq',pord) where
 import Base(fmap2)
 import ConstructorName(constructor2Int)
 import Flatten(flatten,fl_all)
 import Zip(pzip,fzip,pzipWith')
+import PolyPTypes
 
 pequal :: Regular d => (a->b->Bool) -> d a -> d b -> Bool
 pequal op l r = pzipWith' (and . fl_all)
@@ -39,6 +36,3 @@ ordop :: Ordering -> Ordering -> Ordering
 ordop x y = case x of 
               EQ -> y
               _  -> x
-
-
-

@@ -1,14 +1,12 @@
 module Base(fmap2,pmap,cata,ana,hylo,para,(-*-),(-+-),module PolyPTypes) where 
 import PolyPTypes
 
-class Bifunctor f where
-  fmap2 :: (a->c) -> (b->d) -> f a b -> f c d
+fmap2 :: Bifunctor f => (a->c) -> (b->d) -> f a b -> f c d
+fmap2 p r x = error "fmap2: only useful for type checking"
 
 pmap :: Regular d => (a -> b) -> d a -> d b
 pmap f   = inn . fmap2 f  (pmap f)   . out
 
-instance Regular d => Bifunctor (FunctorOf d) where
-  fmap2 f g x = undefined
 
 cata :: Regular d => (FunctorOf d a b -> b) -> (d a -> b)
 ana  :: Regular d => (b -> FunctorOf d a b) -> (b -> d a)

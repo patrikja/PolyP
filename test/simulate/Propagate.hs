@@ -1,24 +1,13 @@
----------------------------------------------------------------
--- Propagate Maybe to the top
---   980409 Patrik Jansson  
--- (Can be generalised to thread any monad, see Thread)
----------------------------------------------------------------
 module Propagate(propagate,fprop,sumprop,prodprop,mapMaybe) where
 import Base(cata,inn,pmap)
+import PolyPTypes
 
 propagate  :: Regular d => d (Maybe a) -> Maybe (d a)
 propagate  =  cata (mapMaybe inn . fprop)
 
--- Bifunctor f => ...
-polytypic fprop :: f (Maybe a) (Maybe b) -> Maybe (f a b)
-  = case f of
-      g + h     ->  sumprop   . (fprop -+- fprop)
-      g * h     ->  prodprop  . (fprop -*- fprop)
-      Empty     ->  Just
-      Par       ->  id
-      Rec       ->  id
-      d @ g     ->  propagate . (pmap fprop)
-      Const t   ->  Just
+
+fprop :: Bifunctor f => f (Maybe a) (Maybe b) -> Maybe (f a b)
+fprop x = onlyUsefulForTypeChecking "fprop"
 
 sumprop  :: Either (Maybe a) (Maybe b) -> Maybe (Either a b)
 sumprop  =  mapMaybe Left `either` mapMaybe Right

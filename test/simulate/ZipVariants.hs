@@ -1,10 +1,7 @@
-----------------------------------------------------------------
--- ZipVariants
--- 980409 Patrik Jansson
-----------------------------------------------------------------
 module ZipVariants(pzipWith'',pzip'',pzip') where
 import Zip(pzipWith,pzipWith',resultM)
 import Flatten(fl_all)
+import PolyPTypes
 
 pzipWith'' :: Regular d => ((a, b) -> c) -> (d a, d b) -> Maybe (d c)
 pzipWith'' op = pzipWith (resultM.op)
@@ -24,4 +21,3 @@ pzip' p = ( pzipWith'    inn     (const undefined)    id      p
 --pzipWith' ins fail op (x,y)  =
 --  maybe (fail (x,y)) (ins . fmap2 op (pzipWith' ins fail op)) 
 --        (fzip (out x, out y))
-

@@ -3,5 +3,4 @@ import Base(pmap)
 import Propagate(propagate)
 
 main = print (propagate (pmap Just "Patrik"))
-
 -- expected output: Just "Patrik"

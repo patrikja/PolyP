@@ -8,10 +8,11 @@
 (-)     :: Num a => a->a->a
 (.)     :: (b->c)->(a->b)->(a->c)
 (/=)    :: Eq a => a->a->Bool
+(/=)    :: Eq a => a->a->Bool
 (<)     :: Ord a => a->a->Bool
 (<=)    :: Ord a => a->a->Bool
+(=<<)   :: Monad m => (a -> m b) -> m a -> m b
 (==)    :: Eq a => a->a->Bool
-(/=)    :: Eq a => a->a->Bool
 (>)     :: Ord a => a->a->Bool
 (>=)    :: Ord a => a->a->Bool
 (>>)    :: Monad m => m a -> m b -> m b
@@ -20,7 +21,6 @@
 all     :: (a -> Bool) -> [a] -> Bool
 and     :: [Bool]->Bool
 any     :: (a -> Bool) -> [a] -> Bool
-applyM  :: Monad m => (a -> m b) -> m a -> m b
 asTypeOf:: a->a->a
 compare :: Ord a => a -> a -> Ordering
 concat  :: [[a]]->[a]
@@ -35,8 +35,8 @@ head    :: [a]->a
 id      :: a->a
 isSpace :: Char->Bool
 length  :: [a]->Int
-lookup  :: Eq a => a -> [(a,b)] -> Maybe b
 lines   :: String -> [String]
+lookup  :: Eq a => a -> [(a,b)] -> Maybe b
 map     :: (a->b)->[a]->[b]
 maximum :: Ord a => [a] -> a
 maybe   :: a -> (b -> a) -> Maybe b -> a

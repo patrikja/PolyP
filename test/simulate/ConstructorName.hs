@@ -1,11 +1,11 @@
----------------------------------------------------------------
--- ConstructorName
---   990602 Patrik Jansson
 module ConstructorName where
----------------------------------------------------------------
+import PolyPTypes
+
 constructorName :: Regular d => d a -> String
 constructorName = fconstructorName . out
--- fconstructorName :: Bifunctor f => f a b -> String -- is built in
+
+fconstructorName :: Bifunctor f => f a b -> String -- is built in
+fconstructorName = onlyUsefulForTypeChecking "fconstructorName"
 
 constructorNames :: Regular d => d a -> [String]
 constructorNames = fconstructorNames . out
@@ -17,18 +17,14 @@ fconstructorNames x =
 constructors  :: Regular d => [d a]
 constructors  =  map inn fconstructors
 
-polytypic fconstructors :: [f a b] =
-  case f of 
-    g + h -> map Left fconstructors ++ map Right fconstructors
-    g     -> [undefined]
+fconstructors :: [f a b]
+fconstructors = onlyUsefulForTypeChecking "fconstructors"
 
 constructor2Int :: Regular d => d a -> Int
 constructor2Int = fconstructor2Int . out
 
-polytypic fconstructor2Int :: f a b -> Int =
-  case f of 
-    g + h -> const 0 `either` (plus1 . fconstructor2Int)
-    g     -> const 0
+fconstructor2Int :: f a b -> Int
+fconstructor2Int x = onlyUsefulForTypeChecking "fconstructor2Int"
 
 plus1 :: Int -> Int
 plus1 x = 1 + x

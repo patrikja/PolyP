@@ -45,7 +45,7 @@ pmapMl :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
 pmapMl = pmapM
 
 paraM :: (Regular d, Monad m) => (d a -> FunctorOf d a b -> m b) -> d a -> m b
-paraM iM x = applyM (iM x) (fmap2M idM (paraM iM) (out x))
+paraM iM x = iM x =<< fmap2M idM (paraM iM) (out x)
 
 -- Reverse order traversals
 pmapMr :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)

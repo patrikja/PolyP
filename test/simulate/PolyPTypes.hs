@@ -1,6 +1,7 @@
 -- Fake definitions of the basic polytypic combinators in Haskell
 --   Useful for typechecking (fragments of) polytypic programs with hugs.
-module PolyPTypes(Regular,inn,out,FunctorOf,Mu) where 
+module PolyPTypes(Regular,inn,out,Bifunctor,FunctorOf,Mu,
+		  onlyUsefulForTypeChecking) where 
 -- fake definitions of FunctorOf and Mu with the correct kinds
 -- FunctorOf :: (*->*) -> (*->*->*)
 data FunctorOf d a b = FunctorOf (d a)
@@ -11,9 +12,14 @@ data Mu f a = In f (Mu f a)
 class Regular d where
   inn :: FunctorOf d a (d a) -> d a
   out :: d a -> FunctorOf d a (d a)
-  inn = error "inn: Only useful for typechecking"
-  out = error "out: Only useful for typechecking"
+  inn = onlyUsefulForTypeChecking "inn"
+  out = onlyUsefulForTypeChecking "out"
 
 instance Regular []
 instance Regular Maybe
 
+class Bifunctor f where 
+  makeBifunctorhavetherightkinddummy :: f a b
+instance Regular d => Bifunctor (FunctorOf d)
+
+onlyUsefulForTypeChecking name = error (name ++ ": Only useful for typechecking.")

@@ -10,9 +10,11 @@ cataM iM = applyM iM . fmapM idM (cataM iM  ) . out
 anaM  oM = applyM (mapm inn . fmapM idM (anaM oM)) . oM
 cataM iM    = iM      @@ fmapM idM (cataM iM   ) @@ outM
 anaM     oM = innM    @@ fmapM idM (anaM     oM) @@   oM
+
 -}
 
 {- alternative definitions
+applyM f x = f =<< x = x >>= f
 f @@ g = (>>= f) . g
 f @@ g = applyM f . g
 (@@) = (.) . (flip (>>=))
