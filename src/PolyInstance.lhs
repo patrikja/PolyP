@@ -132,6 +132,7 @@ the datatype and its functor.
 >           inn'' ((TCon "ConstF" :@@: t):fs) (n:names)
 >              = addPE (Con "ConstF" :@: Var n) (Var n) $ inn'' fs names
 >           inn'' [] _ = ([],[])
+>	    inn'' (x:fs) _ = error $ "inn'' applied to " ++ show x
 
 >           -- Pattern/result pairs for out
 >           out _ []          = []
@@ -198,8 +199,8 @@ the correct types and constraints for polytypic functions.
 >     -- Calculate the types of polytypic functions (polyenv) and a correctly
 >     -- annotaded set of equations (treqs)
 >     (polyenv, treqs) = mapAccumL  (curry contextify)
->                                   (createPolyEnv (findPolys $ concat teq) typeenv)
->                                   (map translateEqns teq)
+>                                   (createPolyEnv funcenv (findPolys $ concat teq) typeenv)
+>                                   (map (translateEqns funcenv) teq)
 >     contextify (env, eqns)
 >        | env == env'  = (env', eqns')
 >        | otherwise    = contextify (env', eqns')
@@ -277,14 +278,14 @@ ParF}) we have to transform the branch body so that it gets the right type.
 
 \begin{verbatim}
 
->           convert t var ep = case t of
->              TCon "->" :@@: f :@@: g
->                    -> case (convert f var ep, convert g var ep) of
->                          (Var "idEP", Var "idEP")   -> Var "idEP"
->                          (epF, epG)                 -> Var "funEP" :@: epF :@: epG
->              f :@@: _ :@@: _ | f == var
->                    -> ep
->              _     -> Var "idEP"
+           convert t var ep = case t of
+              TCon "->" :@@: f :@@: g
+                    -> case (convert f var ep, convert g var ep) of
+                          (Var "idEP", Var "idEP")   -> Var "idEP"
+                          (epF, epG)                 -> Var "funEP" :@: epF :@: epG
+              f :@@: _ :@@: _ | f == var
+                    -> ep
+              _     -> Var "idEP"
 
 >     rewrite _ eq = [simp eq]
 
@@ -307,35 +308,36 @@ generate a variable name from the type {\tt d} that is unique in every case.
 
 \begin{verbatim}
 
-> createPolyEnv :: [VarID] -> TypeEnv -> PolyEnv
-> createPolyEnv polys = foldr contextEnv []
+> createPolyEnv :: FuncEnv -> [VarID] -> TypeEnv -> PolyEnv
+> createPolyEnv funcenv polys = foldr contextEnv []
 >  where
 >     contextEnv (v,t) env
->        | isPoly t  = (v, translateQType polys v t) : env
+>        | isPoly t  = (v, translateQType funcenv polys v t) : env
 >        | otherwise = env
 >     isPoly (c :=> _) = any ((=="Poly").fst) c
 
 > -- Translate a qualified type
-> translateQType polys v (c :=> t) = translateContext polys v c :=> translateType t
+> translateQType funcenv polys v (c :=> t) = translateContext funcenv polys v c :=> translateType funcenv t
 
 > -- Translate a type context
-> translateContext polys v = map translateQ' . concatMap (translateQ polys v)
+> translateContext funcenv polys v = map (translateQ' funcenv) . concatMap (translateQ funcenv polys v)
 
 > -- Translate FunctorOf a => functorOf_a in contexts
-> translateQ' (c, ts) = (c, map translateType ts)
+> translateQ' funcenv (c, ts) = (c, map (translateType funcenv) ts)
 
 > -- Translate a constraint
-> translateQ polys v ("Poly", [f]) = case checkFOf f of
+> translateQ funcenv polys v ("Poly", [f]) = case checkFOf f of
 >     Just d                  -> [("FunctorOf", [fOfVar d, d])]
 >     Nothing  | elem v polys -> [("P_" ++ v, [f])]
 >              | otherwise    -> []
-> translateQ _ v q = [q]
+> translateQ funcenv _ v q = [q]
 
 > -- Translate a type
-> translateType t = case t of
->     TCon "FunctorOf" :@@: d -> fOfVar d
->     a :@@: b                -> translateType a :@@: translateType b
->     _                       -> t
+> translateType funcenv t = case t of
+>     TCon "FunctorOf" :@@: d@(TCon c)	-> maybe (fOfVar d) snd $ lookupEnv c funcenv
+>     TCon "FunctorOf" :@@: d	    -> fOfVar d
+>     a :@@: b			    -> translateType funcenv a :@@: translateType funcenv b
+>     _				    -> t
 
 > -- The variable name for FunctorOf d
 > fOfVar d = TVar $ "functorOf_" ++ encode d
@@ -350,40 +352,40 @@ generate a variable name from the type {\tt d} that is unique in every case.
 >     f :@@: g       -> "'" ++ encode f ++ "_" ++ encode g ++ "'"
 
 > -- Translate a list of equations
-> translateEqns :: [Eqn] -> [Eqn]
-> translateEqns = concatMap translateEqn
+> translateEqns :: FuncEnv -> [Eqn] -> [Eqn]
+> translateEqns funcenv = concatMap (translateEqn funcenv)
 >  where
 
 >     -- Translate an equation
->     translateEqn eqn = case eqn of
+>     translateEqn funcenv eqn = case eqn of
 >        VarBind name mt ps e       -> [VarBind
 >                                         name
->                                         (fmap (translateQType [] name) mt)
->                                         (map translateExpr ps)
->                                         (translateExpr e)]
+>                                         (fmap (translateQType funcenv [] name) mt)
+>                                         (map (translateExpr funcenv) ps)
+>                                         (translateExpr funcenv e)]
 >        Polytypic name t var alts  -> [Polytypic
 >                                         name
->                                         (translateQType [] name t)
+>                                         (translateQType funcenv [] name t)
 >                                         var
->                                         (map (mapSnd translateExpr) alts)]
->        ExplType vs t              -> map (\v -> ExplType [v] (translateQType [] v t)) vs
+>                                         (map (mapSnd $ translateExpr funcenv) alts)]
+>        ExplType vs t              -> map (\v -> ExplType [v] (translateQType funcenv [] v t)) vs
 >        Class ctx cls eqns         -> [Class
->                                         (translateContext [] "Error" ctx)
+>                                         (translateContext funcenv [] "Error" ctx)
 >                                         cls
->                                         (translateEqns eqns)]
+>                                         (translateEqns funcenv eqns)]
 >        Instance ctx cls eqns      -> [Instance
->                                         (translateContext [] "Error" ctx)
+>                                         (translateContext funcenv [] "Error" ctx)
 >                                         cls
->                                         (translateEqns eqns)]
+>                                         (translateEqns funcenv eqns)]
 >        _                          -> [eqn]
 
 >     -- Translate an expression
->     translateExpr expr = case expr of
->        Typed (Var v) t      -> Typed (Var v) (translateQType [] v t)
->        f :@: e              -> translateExpr f :@: translateExpr e
->        Lambda e e'          -> Lambda (translateExpr e) (translateExpr e')
->        Case e alts          -> Case (translateExpr e) (map (translateExpr -*- translateExpr) alts)
->        Letrec eqnss e       -> Letrec (map translateEqns eqnss) (translateExpr e)
+>     translateExpr funcenv expr = case expr of
+>        Typed (Var v) t      -> Typed (Var v) (translateQType funcenv [] v t)
+>        f :@: e              -> translateExpr funcenv f :@: translateExpr funcenv e
+>        Lambda e e'          -> Lambda (translateExpr funcenv e) (translateExpr funcenv e')
+>        Case e alts          -> Case (translateExpr funcenv e) (map (translateExpr funcenv -*- translateExpr funcenv) alts)
+>        Letrec eqnss e       -> Letrec (map (translateEqns funcenv) eqnss) (translateExpr funcenv e)
 >        _                    -> expr
 
 \end{verbatim}
