@@ -7,7 +7,7 @@
 > import List(intersperse)
 > import LabelType(labelProgram)
 > import MonadLibrary(handleError, LErr, showLErr, mapLErr)
-> import MyPrelude(putErrStr,putErrStrLn,fatalError,fMap)
+> import MyPrelude(putErrStr,putErrStrLn,fatalError,fMap,stopNow)
 > import Parser(parse,pModule)
 > import PolyInstance(instantiateProgram)
 > import PrettyPrinter(Pretty(..),($$),text,pshow)
@@ -55,7 +55,9 @@ In verbose mode every stage of the program generation presents a summary:
 >           report' 
 
 > handleArgs :: IO String
-> handleArgs = if help flags 
+> handleArgs = if version flags 
+>	       then showVersion >> stopNow
+>	       else if help flags 
 >	       then showUsage
 >	       else if null (fileargs flags) 
 >	       then putStr "Filename: " >> getLine
@@ -83,6 +85,12 @@ In verbose mode every stage of the program generation presents a summary:
 >         pqs= dependencyProgram qs 
 >         r1 = parserReport qs
 >         qs = parseProgram p
+
+> showVersion :: IO ()
+> showVersion = putStrLn versionText
+
+> versionText :: String
+> versionText = "PolyP version " ++ __POLYP_VERSION__
 
 > showUsage :: IO a
 > showUsage = getProgName >>= usage

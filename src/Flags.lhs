@@ -2,6 +2,7 @@
 > import CommandLine(unsafeGetArgs,unsafeGetEnvDef)
 
 > data Flags = Flags {verbose          :: Bool, 
+>		      version          :: Bool, 
 >		      help	       :: Bool,
 >		      requests         :: [String],
 >		      preludeFileNames :: [String],
@@ -21,7 +22,8 @@
 
 > defaultflags :: Flags
 > defaultflags = Flags {verbose		 = False, 
->		        help             = False,
+>		        version          = False,
+>			help             = False,
 >			requests	 = [],
 >		        preludeFileNames = [preludeFileName],
 >			fileargs         = []}
@@ -32,6 +34,7 @@
 > analyseFlags :: [String] -> Flags
 > analyseFlags []            = defaultflags
 > analyseFlags (fl:rest)     
+>    | isVersionFlag fl      = (analyseFlags rest) {version = True}	    
 >    | isVerboseFlag fl      = (analyseFlags rest) {verbose = True}	    
 >    | isHelpFlag fl	     = (analyseFlags rest) {help    = True}	    
 > analyseFlags (fl:name:rest) 
@@ -53,6 +56,9 @@
 
 > isVerboseFlag :: String -> Bool
 > isVerboseFlag = ("-v"==)
+
+> isVersionFlag :: String -> Bool
+> isVersionFlag = ("--version"==)
 
 > isRequestFlag :: String -> Bool
 > isRequestFlag = ("-r"==)

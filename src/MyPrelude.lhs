@@ -12,6 +12,9 @@
 
 \begin{verbatim}
 
+> stopNow :: IO a
+> stopNow = exitWith ExitSuccess
+
 > fatalError :: String -> IO a
 > fatalError s = IO.hPutStr IO.stderr ("PolyP ERROR: "++s) >> exitWith (ExitFailure 1)
 
