@@ -25,6 +25,7 @@ any     :: (a -> Bool) -> [a] -> Bool
 asTypeOf:: a->a->a
 compare :: Ord a => a -> a -> Ordering
 concat  :: [[a]]->[a]
+concatMap :: (a -> [b]) -> [a] -> [b]
 const   :: a->b->a
 curry   :: ((a,b) -> c) -> a -> b -> c
 div     :: Integral a => a -> a -> a
@@ -41,6 +42,7 @@ toEnum  :: Enum a => Int -> a
 fst     :: (a,b)->a
 getLine :: IO String
 head    :: [a]->a
+last	:: [a]->a
 id      :: a->a
 isSpace :: Char->Bool
 length  :: [a]->Int

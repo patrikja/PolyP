@@ -55,14 +55,33 @@ instance FunctorOf (SumF EmptyF ParF) Maybe where
 ---
 
 data    SumF  f g a b = InL (f a b)
-                      | InR (g a b)                    deriving Show
-data    ProdF f g a b = f a b :*: g a b                deriving Show
+                      | InR (g a b)
+data    ProdF f g a b = f a b :*: g a b
 data    EmptyF    a b = EmptyF                         deriving Show
 newtype FunF  f g a b = FunF   {unFunF   :: f a b -> g a b}
-newtype ParF      a b = ParF   {unParF   :: a}         deriving Show
-newtype RecF      a b = RecF   {unRecF   :: b}         deriving Show
-newtype CompF d g a b = CompF  {unCompF  :: d (g a b)} deriving Show
-newtype ConstF t  a b = ConstF {unConstF :: t}         deriving Show
+newtype ParF      a b = ParF   {unParF   :: a}
+newtype RecF      a b = RecF   {unRecF   :: b}
+newtype CompF d g a b = CompF  {unCompF  :: d (g a b)}
+newtype ConstF t  a b = ConstF {unConstF :: t}
+
+instance (Show (f a b), Show (g a b)) => Show (SumF f g a b) where
+    showsPrec p (InL x) = showParen (p>9) $ showString "InL " . showsPrec 10 x
+    showsPrec p (InR y) = showParen (p>9) $ showString "InR " . showsPrec 10 y
+
+instance (Show (f a b), Show (g a b)) => Show (ProdF f g a b) where
+    showsPrec p (x :*: y) = showParen (p>5) $ showsPrec 6 x . shows " :*: " . showsPrec 5 y
+
+instance Show a => Show (ParF a b) where
+    showsPrec p (ParF x) = showParen (p>9) $ showString "ParF " . showsPrec 10 x
+
+instance Show b => Show (RecF a b) where
+    showsPrec p (RecF x) = showParen (p>9) $ showString "RecF " . showsPrec 10 x
+
+instance Show (d (g a b)) => Show (CompF d g a b) where
+    showsPrec p (CompF x) = showParen (p>9) $ showString "CompF " . showsPrec 10 x
+
+instance Show t => Show (ConstF t a b) where
+    showsPrec p (ConstF x) = showParen (p>9) $ showString "ConstF " . showsPrec 10 x
 
 infixr 5 :*:
 
