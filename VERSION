@@ -1,5 +1,5 @@
 PolyP 
-version 2.0
+version 2
 written in Haskell 98 + ST monad
 to be used with ghc, hugs or perhaps hbc
 

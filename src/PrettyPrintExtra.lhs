@@ -4,6 +4,7 @@
 > module PrettyPrintExtra(module PrettyPrintLibrary,
 >                         module PrettyPrintExtra) where
 > import PrettyPrintLibrary
+> infixr <+>
 
 > class Pretty a where
 >    pretty :: a -> Doc
@@ -61,7 +62,6 @@
 >                   [(last ds)<>text ")"]) 
 >   where ds = map pretty xs
 
-> infixr <+>
 > x <+> y = x <> text " " <> y
 
 \end{verbatim}
