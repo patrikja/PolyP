@@ -40,8 +40,7 @@ polytypic fzip :: (f a b,f c d) -> Maybe (f (a,c) (b,d))
       Par       ->  resultM
       Rec       ->  resultM
       d @ g     ->  (propagate . (pmap fzip)    ) @@ pzip
-      Const Int ->  constzipInt -- etc.
---      Const t   ->  constzip
+      Const t   ->  constzip
 
 
 sumzip :: (Either a b,Either c d)-> Maybe (Either (a,c) (b,d))
