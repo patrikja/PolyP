@@ -241,11 +241,7 @@ an identifier in the basis together with the corresponding equation.
 \begin{verbatim}
 
 > labelTopBlock :: [Eqn] -> TBasis -> Error ([TEqn],[(VarID,QType)])
-#ifdef __HBC__
-> labelTopBlock eqns tbasis = fMap simplify (runST $ RunST (convertSTErr m))
-#else /* not __HBC__ */
-> labelTopBlock eqns tbasis = fMap simplify (runST         (convertSTErr m))
-#endif /* __HBC__ */
+> labelTopBlock eqns tbasis = fMap simplify (__RUNST__ (convertSTErr m))
 >   where basis = tBasis2Basis tbasis
 >         m :: STErr s ([TEqn],[(VarID,QType)])
 >         m = (lift (foreach eqns' eqnIntoHeap) >>=  

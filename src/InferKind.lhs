@@ -94,11 +94,8 @@ For each datatype constructor the types of the data constructors and the kind
 
 > inferDataDefs' :: TBasis -> [Eqn] -> 
 >                   Error ([(ConID, QType)],[(ConID, Kind)])
-#ifdef __HBC__
-> inferDataDefs' tbasis eqns = runST $ RunST (convertSTErr m)
-#else /* not __HBC__ */
-> inferDataDefs' tbasis eqns = runST         (convertSTErr m)
-#endif /* __HBC__ */
+> inferDataDefs' tbasis eqns = 
+>     __RUNST__ (convertSTErr m)
 >   where m :: STErr s ([(String,QType)],[(String,Kind)])
 >         m = inventKinds names >>= \kinds -> 
 >             let extbasis = extendKindEnv 
@@ -110,7 +107,6 @@ For each datatype constructor the types of the data constructors and the kind
 >                return (tass,kass)
 >         names = map getNameOfDataDef eqns
 >         basis = (getKindEnv tbasis,newEnv) 
-
 
 > inventKinds :: [VarID] -> STErr s [HpKind s]
 > inventKinds = inventTypes

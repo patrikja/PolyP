@@ -17,7 +17,7 @@
 > import TypeBasis(TBasis)
 > import InferKind(inferDataDefs)
 > import NonStdTrace(unsafePerformIO)
-> import System(getEnv,getArgs)
+> import Flags(Flags(..),flags)
 
 \end{verbatim}
 We could need three versions of the prelude:
@@ -52,32 +52,17 @@ Second try: added data-declarations also.
 > preludeAssocs :: [(String,QType)]
 > preludeAssocs = concatMap convExplType explTypes
 
-> preludeEqns, dataDefs, explTypes :: [Eqn]
+> dataDefs, explTypes, preludeEqns :: [Eqn]
 > [dataDefs, explTypes] = splitUp [isDataDef] preludeEqns
-
-> preludeEqns = unDone . parse pTypeFile . unsafePerformIO $ prelfileIO
 
 > convExplType :: Eqn -> [(VarID,QType)]
 > convExplType (ExplType ns t) = ns <@ (\n->(n,t))
 > convExplType _ = error "StartTBasis.convExplType: impossible: not ExplType"
 
-> getEnvDef :: String -> String -> IO String
-> getEnvDef e d = getEnv e `catch` \ _ -> return d
-
-> preludeFileName :: String
-
-#ifdef __POLYPPRELUDE__
-> preludeFileName = __POLYPPRELUDE__
-#else
-> preludeFileName = "PolyPrel.hs"
-#endif
+> preludeEqns = unDone . parse pTypeFile . unsafePerformIO $ prelfileIO
 
 > prelfileIO :: IO String
-> prelfileIO = do 
->    preludename  <- getEnvDef "POLYPPRELUDE" preludeFileName
->    includenames <- getArgs <@ preludeFileNames
->    mapM (readFileDef "") (preludename : includenames) <@ concat
-
+> prelfileIO = mapM (readFileDef "") (preludeFileNames flags) <@ unlines
 
 > readFileDef :: String -> FilePath -> IO String
 > readFileDef d n = (readFile n >>= \s -> 
@@ -85,15 +70,6 @@ Second try: added data-declarations also.
 >                   putErrStr readFailed >> (return d)
 >   where readOk     = "{- Prelude file '" ++ n ++ "' read OK. -}\n"
 >         readFailed = "{- ERROR: Prelude file '" ++ n ++ "' not found. -}\n"
-
-> includeFlag :: String
-> includeFlag = "-p"
-
-> preludeFileNames :: [String] -> [String]
-> preludeFileNames []       = []
-> preludeFileNames (fl:name:rest) 
->    | fl == includeFlag    = name:preludeFileNames rest
-> preludeFileNames (_:rest) = preludeFileNames rest
 
 > haskellass :: [(String,QType)]
 > haskellass = haskellConstructorAssoc ++ preludeAssocs

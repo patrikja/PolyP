@@ -1,0 +1,54 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<title>Known bugs in PolyP</title>
+</head>
+
+<body>
+<h1>Known bugs in PolyP</h1>
+
+<h2></h2>
+<ul>
+  <li>Context simplification errors: 
+      <ul>
+	<li>Problem: currently the context simplification algorithm
+            simply removes all contexts without type variables. This
+            can err in two ways: firstly ill-typed programs can be
+            accepted (too much simplification, for example removing a
+            bad context like Monad Tree => ) and secondly well-typed
+            programs can be rejected (by hugs) (too little
+            simplification, for example Monad (State s) is not
+            simplified away.)
+
+	<li>Solution: improve the context simplification
+            algorithm. Extend PolyP to handle class and instance
+            declarations so that the simlification rules can be given
+            in the prelude file(s).
+
+	<li>Almost solution: Add a PolyP-flag to allow explicit types
+            not to be generated. (The types are there to get around
+            the monomorphism restriction, and it usually bites at the
+            same time as this bug, so the gain might be small.)
+
+	<li>Work-around: Make unwanted contexts variable-free by
+            inserting an explicit type somewhere.
+	    
+      </ul>
+
+</ul>
+
+
+<hr>
+<!-- hhmts start -->
+Last modified: Thu Apr  8 12:33:25 CEST 1999
+<!-- hhmts end -->
+by
+<address>
+<a href="http://www.cs.chalmers.se/~patrikj/"
+ >Patrik Jansson</a> /
+<a href="mailto:patrikj@cs.chalmers.se"
+               >patrikj@cs.chalmers.se</a>
+</address>
+</body>
+</html>

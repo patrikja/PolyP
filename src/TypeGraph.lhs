@@ -287,17 +287,17 @@ types we need a supply of suitable variablenames. For each variable
 encountered we need either its already defined name or a fresh name.
 \begin{verbatim}
 
-#if defined (__HBC__) || defined(__Haskell98__)
+These definitions (using type synonyms of higher kind) are explicitly
+allowed by the Haskell 98 report, but do not (990511) work for HBC,
+GHC.
 
-This inability to define type synonyms of higher kind is against the
-Haskell 98 report.
+type HpType2Int s   =         State (Cache (HpType s) Int)
+type VarSupply  s a = StateM (HpType2Int s                ) Int a
+
+Instead these expanded definitions are used.
 
 > type HpType2Int s a =         State (Cache (HpType s) Int)  a
 > type VarSupply  s a = StateM (State (Cache (HpType s) Int)) Int a
-#else
-> type HpType2Int s   =         State (Cache (HpType s) Int)
-> type VarSupply  s a = StateM (HpType2Int s                ) Int a
-#endif
 
 > runVarSupply :: VarSupply s a -> a
 > runVarSupply = executeST newEnv . executeSTM (0::Int)
@@ -472,16 +472,7 @@ elsewhere.
 \begin{verbatim}
 
 > simplifyContext :: QType -> QType
-> simplifyContext qt = 
-#ifdef __HBC__
->    runST $ RunST mqt
-
-#else /* not __HBC__ */
-
->    runST         mqt
-
-#endif /* __HBC__ */
-
+> simplifyContext qt = __RUNST__ mqt
 >   where mqt :: ST s QType
 >         mqt = qtypeIntoHeap qt >>= simplifyHpContext >>= qtypeOutOfHeap allGeneric
 

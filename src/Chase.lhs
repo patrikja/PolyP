@@ -27,4 +27,4 @@ files to try and a list of files that have been found.
 >   decls <- map (fromMaybe []) (tryRead path file)
 >   --print decls
 >   return (catMaybes [mbImportName s | Haskell s <- decls])
-#endif /* 0 */
+#endif 

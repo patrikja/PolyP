@@ -43,7 +43,6 @@ directories that are to be searched for the imported modules.
 The polytypic library directory <code>POLYPDIR/polylib</code> is a
 typical candidate here.
 
-
 <h2>The main translation phase</h2>
 
 The main compilation (or translation) is done by calling <code>polyp
@@ -65,18 +64,24 @@ In this case these declarations have to be supplied by hand.
 The simplest way to do this is to put them in a separate file and then
 <code>cat</code> it together with the <code>polyp</code> output.
 
-The different phases of the PolyP compilation give progress reports in a
-Haskell comment in the output file:
+If the flag -v (verbose) is used, the different phases of the PolyP
+compilation give progress reports in a Haskell comment in the output
+file:
+
 <ul>
-<li>the parser reports the names of the successfully parsed declarations,
 
-<li>the dependency analysis reports a dependency ordered list of groups of
-mutually recursive declarations,
+  <li>the parser reports the names of the successfully parsed
+      declarations,
 
-<li>the type checker reports the types of all top level declarations
+  <li>the dependency analysis reports a dependency ordered list of
+      groups of mutually recursive declarations,
 
-<li>and the instance generation just reports the generated code.
+  <li>the type checker reports the types of all top level declarations
+
+  <li>and the instance generation just reports the generated code.
+
 </ul>
+
 The error messages from PolyP unfortunately don't give line numbers
 where the error occurred, but it is often possible to pinpoint the
 location quite accurately by studying the reports:
@@ -147,7 +152,7 @@ think about:
 
 <hr>
 <!-- hhmts start -->
-Last modified: Thu Aug 20 18:03:24 MET DST 1998
+Last modified: Tue May 11 13:03:44 CEST 1999
 <!-- hhmts end -->
 by
 <address>

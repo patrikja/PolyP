@@ -1,5 +1,8 @@
+
 # DO NOT DELETE: Beginning of Haskell dependencies
 Chase.o : Chase.lhs
+CommandLine.o : CommandLine.lhs
+CommandLine.o : ./NonStdTrace.hi
 DependencyAnalysis.o : DependencyAnalysis.lhs
 DependencyAnalysis.o : ./Env.hi
 DependencyAnalysis.o : ./Folding.hi
@@ -11,6 +14,8 @@ DependencyAnalysis.o : ./TypeBasis.hi
 Env.o : Env.lhs
 Env.o : ./MyPrelude.hi
 Env.o : ./MonadLibrary.hi
+Flags.o : Flags.lhs
+Flags.o : ./CommandLine.hi
 Folding.o : Folding.lhs
 Folding.o : ./Grammar.hi
 Folding.o : ./MyPrelude.hi
@@ -71,6 +76,7 @@ Main.o : ./Env.hi
 Main.o : ./Grammar.hi
 Main.o : ./LabelType.hi
 Main.o : ./MonadLibrary.hi
+Main.o : ./MyPrelude.hi
 Main.o : ./Parser.hi
 Main.o : ./PolyInstance.hi
 Main.o : ./PrettyPrinter.hi
@@ -78,14 +84,17 @@ Main.o : ./StateFix.hi
 Main.o : ./TypeBasis.hi
 Main.o : ./TypeGraph.hi
 Main.o : ./UnifyTypes.hi
+Main.o : ./Flags.hi
 MonadLibrary.o : MonadLibrary.lhs
 MonadLibrary.o : ./StateFix.hi
 MonadLibrary.o : ./MyPrelude.hi
 MyPrelude.o : MyPrelude.lhs
 MyPrelude.o : ./NonStdTrace.hi
+MyPrelude.o : ./Flags.hi
 NonStdTrace.o : NonStdTrace.lhs
 ParseLibrary.o : ParseLibrary.lhs
 ParseLibrary.o : ./MonadLibrary.hi
+ParseLibrary.o : ./MyPrelude.hi
 Parser.o : Parser.lhs
 Parser.o : ./MyPrelude.hi
 Parser.o : ./MonadLibrary.hi
@@ -119,6 +128,8 @@ StartTBasis.o : ./Env.hi
 StartTBasis.o : ./TypeBasis.hi
 StartTBasis.o : ./InferKind.hi
 StartTBasis.o : ./NonStdTrace.hi
+StartTBasis.o : ./CommandLine.hi
+StartTBasis.o : ./Flags.hi
 StateFix.o : StateFix.lhs
 TypeBasis.o : TypeBasis.lhs
 TypeBasis.o : ./Grammar.hi
@@ -137,6 +148,7 @@ TypeGraph.o : ./MyPrelude.hi
 TypeGraph.o : ./Grammar.hi
 TypeGraph.o : ./PrettyPrinter.hi
 TypeGraph.o : ./MonadLibrary.hi
+TypeGraph.o : ./MyPrelude.hi
 TypeGraph.o : ./Env.hi
 TypeGraph.o : ./Folding.hi
 TypeGraph.o : ./StateFix.hi

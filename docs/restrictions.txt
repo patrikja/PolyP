@@ -9,8 +9,9 @@ Syntax restrictions:
      use if then else
   ...
 
-The error messages are not very good, but the information in the
-comments in the output file can often be used to locate the error.
+The error messages are not very good, but the -v (verbose) flag gives
+information in the comments in the output file that often can be used
+to locate the error.
 
 No non-printable character constants.
 

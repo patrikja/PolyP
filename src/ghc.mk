@@ -12,5 +12,5 @@ prog = ../bin/ghcpolyp
 hs_flags += -fglasgow-exts
 
 mkdependHS = mkdependHS
-#mkdependHS_flags = 
+mkdependHS_flags = -x IOExts -x ST
 include rules.mk

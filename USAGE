@@ -6,10 +6,9 @@ More specifically: If you enter
 
   polyp file.phs > file.hs
 
-(the suffixes are just suggestions) you will get a file.hs containing a
-comment {- with some info about the different phases of PolyP -}
-followed by the generated code. This file is (hopefully) a valid Hugs
-program. It should also be a Haskell program if main has type IO ().
+(the suffixes are just suggestions) you will get the generated code in
+file.hs . This file is (hopefully) a valid Hugs program. It should
+also be a Haskell program if main has type IO ().
 
 The file.hs can be read by hugs (a Haskell interpreter)
 

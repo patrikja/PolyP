@@ -2,29 +2,34 @@
 \begin{verbatim}
 
 > module MyPrelude(module MyPrelude,trace) where
-
 > import NonStdTrace(trace)
 > import List(nubBy)
 > import qualified IO(hFlush,hPutStr,stdout,stderr)
+> import Flags(Flags(..),flags)
+> import System(exitWith,ExitCode(..))
 
 \end{verbatim}
 \section{Error messages}
 
 \begin{verbatim}
 
+> fatalError :: String -> IO a
+> fatalError s = IO.hPutStr IO.stderr ("PolyP ERROR: "++s) >> exitWith (ExitFailure 1)
+
 > putErrStr   :: String -> IO ()
 > putErrStrLn :: String -> IO ()
 #ifdef __DEBUG__
-> putErrStr   = IO.hPutStr   IO.stderr 
-> putErrStrLn = IO.hPutStrLn IO.stderr 
+> putErrStr     = IO.hPutStr   IO.stderr 
+> putErrStrLn s = putErrStr (s ++ "\n")
 #else
-> putErrStr   s = return ()
-> putErrStrLn s = return ()
+> putErrStr   = if verbose flags 
+>	        then IO.hPutStr   IO.stderr 
+>		else const (return ())
+> putErrStrLn s = putErrStr (s++"\n")
 #endif
 
 > putStrNow :: String -> IO ()
 > putStrNow s = putStr s >> IO.hFlush IO.stdout
-
 
 \end{verbatim}
 
@@ -36,11 +41,7 @@ To achieve backward compatibility we define \texttt{fMap} even for
 earlier Haskell versions.
 
 > fMap :: Functor f => (a->b) -> f a -> f b
-#ifdef __Haskell98__
-> fMap = fmap
-#else
-> fMap = map
-#endif
+> fMap = __FMAPNAME__
 
 \section{Some list utilities}
 
@@ -144,6 +145,8 @@ In H1.3 (hbc) we include the trace function from the module NonStdTrace.
 >         try _ [] (_:_:_) = error "MyPrelude.lhs: splitUp: impossible: too many lists"
 
 > debug x = trace (show x) x
+> maydebug :: Show a => a -> a
+> maydebug x = maytrace (show x) x
 
 > mapFst f (a,b) = (f a,b)
 > mapSnd f (a,b) = (a,f b)

@@ -24,10 +24,8 @@
 > import Monad(join)
 #endif
 #ifdef __Haskell98__
-#define FMAPNAME fmap
 #define MONADZERONAME MonadPlus
 #else
-#define FMAPNAME map
 #define MONADZERONAME MonadZero
 #endif
 
@@ -130,8 +128,8 @@ instance Functor (ST a) where
 
 
 > instance Functor Error where
->   FMAPNAME f (Done x) = Done (f x)
->   FMAPNAME f (Err s)  = Err s
+>   __FMAPNAME__ f (Done x) = Done (f x)
+>   __FMAPNAME__ f (Err s)  = Err s
 
 > instance Monad Error where
 >     return         = Done
@@ -180,7 +178,7 @@ instance Functor (ST a) where
 > mapIOE f (IOErr xs) = IOErr (xs <@ fMap f)
 > 
 > instance Functor IOErr where   
->   FMAPNAME = mapIOE
+>   __FMAPNAME__ = mapIOE
 > 
 > returnIOE :: a -> IOErr a 
 > returnIOE x = IOErr (return (Done x))
@@ -234,7 +232,7 @@ instance Functor (ST a) where
 > mapSTE f (STErr xs) = STErr (xs <@ fMap f)
 > 
 > instance Functor (STErr s) where   
->   FMAPNAME = mapSTE
+>   __FMAPNAME__ = mapSTE
 > 
 > returnSTE :: a -> STErr s a 
 > returnSTE x = STErr (return (Done x))
@@ -285,7 +283,7 @@ instance Functor (ST a) where
 > data State s a = ST (s -> (a,s))
 > 
 > instance Functor (State s) where
->   FMAPNAME f (ST st) = 
+>   __FMAPNAME__ f (ST st) = 
 >     ST (\s -> let {(x,s') = st s} in (f x, s'))
 > 
 > instance Monad (State s) where
@@ -307,7 +305,7 @@ instance Functor (ST a) where
 > data StateM m s a = STM (s -> m (a,s)) 
 > 
 > instance Functor m => Functor (StateM m s) where
->   FMAPNAME f (STM xs) = 
+>   __FMAPNAME__ f (STM xs) = 
 >     STM (\s -> fMap (\(x,s') -> (f x, s')) 
 >                     (xs s)                                
 >         )                                 
@@ -403,7 +401,7 @@ will be a nice left recursive black hole;-)
 
 > data Writer a b = Writer ([a]->[a]) b
 > instance Functor (Writer a) where
->   FMAPNAME f (Writer s x) = Writer s (f x)
+>   __FMAPNAME__ f (Writer s x) = Writer s (f x)
 > instance Monad (Writer a) where
 >   return = Writer id
 >   (Writer s a) >>= f = Writer (s.t) b
@@ -418,7 +416,7 @@ will be a nice left recursive black hole;-)
 > unOT (OT m) = m
 
 > instance Functor m => Functor (OutputT a m) where
->   FMAPNAME f (OT mx) = OT (fMap (fMap f) mx)
+>   __FMAPNAME__ f (OT mx) = OT (fMap (fMap f) mx)
 
 > instance (Functor m ,Monad m) => Monad (OutputT a m) where
 >   return x     = OT (return (return x))

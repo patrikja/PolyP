@@ -11,10 +11,3 @@ POLYPPRELUDE
 
   [1:] gmake ghc POLYPPRELUDE="path_to_my_prelude"
 
-Flags:
-
--p prelude_file
-   scans the specified file for additional explicitly typed declarations.
-
-
-  

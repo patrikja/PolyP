@@ -18,17 +18,10 @@ functions.
 > import InferType(qTypeEval)
 > import MonadLibrary(State, executeST, mapl,(<@),(@@),unDone,
 >                     OutputT,output,runOutput,mliftOut,map0,map1,map2)
-> import MyPrelude(maytrace,pair,mapFst,mapSnd,combineUniqueBy,fMap,  debug)
+> import MyPrelude(maytrace,pair,mapFst,mapSnd,combineUniqueBy,fMap,maydebug)
 > import PrettyPrinter(Pretty(pretty))
 > import StartTBasis(preludeFuns,preludedatadefs)
 > import TypeBasis(TBasis,TypeEnv)
-
-#ifdef __DEBUG__
-> maydebug :: Show a => a -> a
-> maydebug = debug
-#else
-> maydebug = id
-#endif
 
 \end{verbatim} 
 Given a program with explicitly typed identifiers, an environment

@@ -10,7 +10,7 @@
 > import MonadLibrary(Error(..), handleError, unDone, 
 >                     LErr, showLErr, mapLErr, 
 >                     convertSTErr,mliftErr,(<@),(@@))
-> import MyPrelude(putErrStr,putErrStrLn,fMap)
+> import MyPrelude(putErrStr,putErrStrLn,fatalError,fMap)
 > import Parser(parse,pModule,pType1)
 > import PolyInstance(instantiateProgram)
 > import PrettyPrinter(Pretty(..),($$),text)
@@ -19,6 +19,7 @@
 > import TypeBasis(TBasis)
 > import TypeGraph(kindIntoHeap,typesOutOfHeap)
 > import UnifyTypes(unify)
+> import Flags(Flags(..),flags)
 
 \end{verbatim}
 \section{The main compilation function}
@@ -55,20 +56,19 @@ In verbose mode every stage of the program generation presents s summary:
 
 > report :: IO ()
 > report = (putErrStrLn "{-" >>  -- Resync the emacs haskell mode: -}
->           getArgs       >>=  
 >           handleArgs)   >>=  
 >           report' 
 
-> includeFlag :: String
-> includeFlag = "-p"
+> handleArgs :: IO String
+> handleArgs = if help flags 
+>	       then showUsage
+>	       else if null (fileargs flags) 
+>	       then putStr "Filename: " >> getLine
+>	       else if length (fileargs flags) > 1 
+>	       then fatalError "too many file arguments"
+>	       else foldr (>>) (return (head (fileargs flags)))
+>		    (map checkExists (preludeFileNames flags))
 
-> handleArgs :: [String] -> IO String
-> handleArgs [] = putStr "Filename: " >> getLine
-> handleArgs (('-':c:str):rest) 
->   | c `elem` "?h" = showUsage
-> handleArgs (fl:fileName:rest) 
->   | fl == includeFlag = checkExists fileName >> handleArgs rest
-> handleArgs (file:rest)= return file
 
 > checkExists :: String -> IO ()
 > checkExists fN = (readFile fN >> return ()) `catch` \_ -> 
@@ -224,13 +224,8 @@ Two possible approaches:
 >                putStr (show (pretty t2))
 >                putStr (show (pretty t2'))
 
-#ifdef __HBC__
-> testunify' (t,t') = unDone $ runST $ RunST m'
+> testunify' (t,t') = unDone $ __RUNST__ m'
 >   where m'= convertSTErr m
-#else /* not __HBC__ */
-> testunify' (t,t') = unDone $ runST         m' 
->   where m'= convertSTErr m
-#endif /* __HBC__ */
 >         m = mliftErr (kindIntoHeap t) >>= \ht-> 
 >             mliftErr (kindIntoHeap t')>>= \ht'->
 >             unify ht ht'              >>

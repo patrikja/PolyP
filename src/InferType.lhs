@@ -106,11 +106,7 @@ way that they can be lazily pulled out of it one group at a time.
 \begin{verbatim}
 
 > inferGroup :: [Eqn] -> TBasis -> Error [(VarID,QType)]
-#ifdef __HBC__
-> inferGroup eqns tbasis = runST $ RunST (convertSTErr (mInferGroup eqns tbasis))
-#else /* not __HBC__ */
-> inferGroup eqns tbasis = runST         (convertSTErr (mInferGroup eqns tbasis))
-#endif /* __HBC__ */
+> inferGroup eqns tbasis = __RUNST__ (convertSTErr (mInferGroup eqns tbasis))
 
 > mInferGroup :: [Eqn] -> TBasis -> STErr s [(String,QType)]
 > mInferGroup eqns tbasis = inferBlock basis eqns   >>= \basis' ->
@@ -364,17 +360,12 @@ hpQTypeEval (Poly Par => (Par) a b -> b) =
 \begin{verbatim}
 
 > qTypeEval :: QType -> QType
-> qTypeEval qt = 
-#ifdef __HBC__
->    runST $ RunST mqt
-#else /* not __HBC__ */
->    runST         mqt
-#endif /* __HBC__ */
+> qTypeEval qt = __RUNST__ mqt
 >   where mqt :: ST s QType
 >         mqt = qtypeIntoHeap qt >>= hpQTypeEval >>= qtypeOutOfHeap allGeneric
 
 typeEval :: Type -> Type
-typeEval t = runST m
+typeEval t = __RUNST__ m
   where m :: ST s Type
         m = typeIntoHeap t >>= \hpt ->
             hpTypeEval hpt >>
