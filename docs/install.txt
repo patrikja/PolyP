@@ -7,13 +7,14 @@ POLYPPRELUDE
   type checking the polytypic files.
 
   The default (POLYPDIR/lib/PolyPrel.hs) or a value supplied at build
-  time is compiled into the code.
-  gmake ghc POLYPPRELUDE=path_to_my_prelude
+  time [1] is compiled into the code.
+
+  [1:] gmake ghc POLYPPRELUDE=path_to_my_prelude
 
 Flags:
 
 -p prelude_file
-   scans the specified file for explicitly typed declarations.
+   scans the specified file for additional explicitly typed declarations.
 
 
   

@@ -1,0 +1,129 @@
+This text is a reference manual for PolyP.
+(Patrik Jansson, 1998)
+
+Invoking the compiler phases:
+
+  chase [-i ImportDir] PolyPModule.phs  > PolyPcode.Phs
+
+  polyp [-p ExplTypes.hs] PolyPcode.Phs > Haskellcode.Hs
+
+  [cat HelpTypes.hs Haskellcode.Hs      > Haskellcode.hs]
+
+The import chaser <CODE>chase</CODE> takes a polytypic program module
+and inlines the text of all imported modules (recursively).
+
+The output consists of one big module of the concatenated texts of the
+involved modules and should normally be directed to a file (ending in
+.Phs - a big 'P' to denote a big PolyP file).
+
+If your input consists of just one file and does not need any others
+the <code>chase</code> is unnecessary.
+
+(If you don't paste the polytypic prelude into your file by hand, not
+needing <code>chase</code> is very unusual.)
+
+The flag <code>-i</code> can be used (any number of times) to specify
+directories that are to be searched for the imported modules.
+
+The polytypic library directory <code>POLYPDIR/polylib</code> is a
+typical candidate here.
+
+
+<!-- New section -->
+
+The main compilation (or translation) is done by calling <code>polyp
+P.Phs</code>.
+
+It type checks the input file <code>P.Phs</code> and generates the
+instances of all polytypic functions that are used in the code
+reachable from <code>main</code>.
+
+The output is Haskell code and can be fed into hugs or a Haskell
+compiler.
+
+Sometimes the generated code is rejected as a Haskell program due to
+the lack of explicit type declarations of top level overloaded
+function.
+
+In this case these declarations need to be supplied by hand.
+
+The simplest way is to put them in a separate file and then
+<code>cat</code> it together the <code>polyp</code> output.
+
+The different phases of the compilation give progress reports in a
+Haskell comment in the ouptut file:
+
+the parser reports the names of the successfully parsed declarations,
+
+the dependency analysis reports a dependency ordered list of groups of
+mutually recursive declarations,
+
+the type checker reports the types of all top level declarations
+
+and the instance generation just reports the generated code.
+
+The error messages from PolyP do unfortunately not give line numbers
+where the error occurred, but it is often possible to pinpoint the
+location quite accurately by studying the reports:
+
+If a type error occurred, check to see what function is the last one
+before the error in the type report and look up the name following
+this one in the dependency report. This definition is probably the
+culprit.
+
+
+The flag <code>-p</code> is used when you want to use Haskell
+functions that are not in the built in part of the Haskell prelude.
+
+By listing these functions, with types, in a file
+<code>ExplTypes.hs</code> and by calling PolyP with <code>polyp -p
+ExplTypes.hs PolyPCode.Phs</code> you can use the listed functions in
+the definitions in <code>PolyPCode.Phs</code>.
+
+<!-- New section -->
+
+When writing polytypic programs with PolyP there are some things to
+think about:
+
+<ul>
+
+  <li>
+
+      Try to separate the essentially polytypic part from the pure
+      Haskell parts.
+
+      This helps by keeping the PolyP input small thus simplifying
+      debugging and by giving you the full power of Haskell to write
+      the non-polytypic part, instead of the restricted subset that
+      PolyP can handle.
+
+      The way to achieve the separation in practice is to work with
+      some Haskell files, some polytypic files and one file containing
+      explicit type declarations of the Haskell definitions needed in
+      the polytypic part. If these types are collected in the file
+      <code>Types.hs</code>, invoke PolyP by <code>polyp -p Types.hs
+      Code.Phs</code>.
+
+  <li>
+      
+      Use as few <code>polytypic</code> constructs as possible.
+
+      The <code>polytypic</code> construct is powerful, but difficult
+      to use. 
+
+      Often one more general polytypic function can solve a number of
+      related polytypic problems given different parameters.
+
+  <li>
+
+      Use the polytypic library PolyLib.
+
+      Code reuse is always very often possible with this supply of
+      generic combinators.
+
+      Using these predefined definitions in your code makes it
+      shorter, and easier to read as the function names are more well
+      known.
+
+</ul>
+

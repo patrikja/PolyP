@@ -13,3 +13,5 @@ The error messages are not very good, but the information in the
 comments in the output file can often be used to locate the error.
 
 No non-printable character constants.
+
+No type synonyms except String = [Char].
