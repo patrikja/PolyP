@@ -1,0 +1,3 @@
+fromJust :: Maybe a -> a
+isJust :: Maybe a -> Bool
+isNothing :: Maybe a -> Bool
