@@ -1,3 +1,4 @@
+% Literate Haskell + LaTeX script -*- Mode: latex -*-
 \chapter{Unification}
 \begin{verbatim}
 
@@ -197,6 +198,14 @@ run into.
 >             | Mu (HpType s)           -- Mu f
 >             | FOf (HpType s)          -- FunctorOf d
 
+\end{verbatim}
+
+The Mu case has been disabled since the unification algorithm does not
+do proper semantic unification anyway, and since no example in PolyLib
+nor in any of the bigger applications use Mu. 
+
+\begin{verbatim}
+
 > constrNum :: HpTy s -> Int
 > constrNum (V _  ) = 0
 > constrNum (C _  ) = 1
@@ -222,7 +231,7 @@ run into.
 > analyzeApp f' x' 
 >   = fetchNode f' <@ \(_, nodeF) ->
 >     case nodeF of
->       HpCon c | c == "Mu"        -> Mu   x'
+>       HpCon c | c == "Mu"        -> error "UnifyTypes.analyzeApp: Mu types removed"-- Mu   x'
 >               | c == "FunctorOf" -> FOf  x'
 >       _                          -> A f' x'
 

@@ -7,7 +7,7 @@ module PolyPTypes(Regular,inn,out,Bifunctor,FunctorOf,Mu,
 data FunctorOf d a b = FunctorOf (d a)
 -- Mu :: (*->*->*) -> (*->*)
 data Mu f a = In f (Mu f a)
--- (Note that the relation between FunctorOf and Mu is lost
+-- Note that the relation between FunctorOf and Mu is lost
 
 class Regular d where
   inn :: FunctorOf d a (d a) -> d a

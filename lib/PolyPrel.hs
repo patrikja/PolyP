@@ -31,6 +31,7 @@ filter  :: (a->Bool)->[a]->[a]
 flip    :: (a -> b -> c) -> b -> a -> c
 foldr   :: (a -> b -> b) -> b -> [a] -> b
 fst     :: (a,b)->a
+getLine :: IO String
 head    :: [a]->a
 id      :: a->a
 isSpace :: Char->Bool
