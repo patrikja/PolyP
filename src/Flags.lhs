@@ -15,7 +15,7 @@
 #ifdef __POLYPDIR__
 > defaultPolyPDir = __POLYPDIR__
 #else
-> defaultPolyPDir = ""
+> defaultPolyPDir = "."
 #endif
 
 #ifdef __POLYPPRELUDE__

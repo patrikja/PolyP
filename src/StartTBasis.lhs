@@ -80,16 +80,20 @@ Second try: added data-declarations also.
 
 > readFileDef :: String -> FilePath -> IO String
 > readFileDef d n = (((readFile n >>= \s -> 
->                     putErrStr readOk <@- s) `catch` \_ ->
+>                     putErrStr (readOk n)<@- s) `catch` \_ ->
 >                     readFile altFile >>= \s ->
->                     putErrStr readOk <@- s) `catch` \_ ->
+>                     putErrStr (readOk altFile) <@- s) `catch` \_ ->
 >                     readFile altFile2 >>= \s ->
->                     putErrStr readOk <@- s) `catch` \_ ->
+>                     putErrStr (readOk altFile2) <@- s) `catch` \_ ->
 >                     putErrStr readFailed >> (return d)
->   where readOk     = "{- Interface file '" ++ n ++ "' read OK. -}\n"
->         readFailed = "{- ERROR: Interface file '" ++ altFile2 ++ "' not found. -}\n"
->         altFile    = polypDir flags ++ "lib/" ++ n
->         altFile2   = polypDir flags ++ "polylib/" ++ n
+>   where readOk n   = "{- Interface file '" ++ n ++ "' read OK. -}\n"
+>         readFailed = "{- ERROR: Interface file '" ++ n ++ 
+>                      "' not found: neither as '" ++ n ++
+>                      "', '" ++ altFile ++ 
+>                      "' nor '" ++ altFile2 ++ 
+>                      "'. -}\n"
+>         altFile    = polypDir flags ++ "/lib/" ++ n
+>         altFile2   = polypDir flags ++ "/polylib/" ++ n
 
 > haskellass :: [(String,QType)]
 > haskellass = haskellConstructorAssoc ++ preludeAssocs
