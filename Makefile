@@ -40,6 +40,7 @@ veryclean:	clean
 
 distclean:	veryclean
 	rm -fr  bin/hugspolyp bin/ghcpolyp bin/hbcpolyp bin/polyp
+	rm -r   CVS */CVS
 
 packpolylib:
 	tar cf polylib.tar polylib examples 
@@ -51,8 +52,9 @@ dist:
 	cp -r * ../polyp$(version)
 	$(MAKE) -C ../polyp$(version) distclean
 	-rm ../polyp$(version).tar
-	tar cf ../polyp$(version).tar ../polyp$(version)
-	gzip   ../polyp$(version).tar
+# change directory to store the correct path in the .tar-file
+	cd ..; tar cf polyp$(version).tar polyp$(version)
+	gzip ../polyp$(version).tar
 
 disthugs:
 	-rm -r ../polyphugs$(version)
@@ -60,7 +62,8 @@ disthugs:
 	cp -r * ../polyphugs$(version)
 	$(MAKE) -C ../polyphugs$(version) distclean
 	$(MAKE) -C ../polyphugs$(version)/src hugssrc
-	tar cf ../polyphugs$(version).tar ../polyphugs$(version); gzip ../polyphugs$(version).tar
+	cd ..; tar cf polyphugs$(version).tar polyphugs$(version); 
+	gzip ../polyphugs$(version).tar
 	cd ../polyphugs$(version); tar -zcf hugssrc.tar.gz hugssrc
 
 # These targets are not real files
