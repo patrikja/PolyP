@@ -42,6 +42,7 @@ maximum :: Ord a => [a] -> a
 maybe   :: a -> (b -> a) -> Maybe b -> a
 negate  :: Num a => a->a
 not     :: Bool->Bool
+null	:: [a] -> Bool
 or      :: [Bool]->Bool
 print   :: Show a => a -> IO ()
 putStr  :: String -> IO ()

@@ -26,11 +26,12 @@ command line via flags and parameters to instantiateProgram.
 \begin{verbatim}
 
 > module PolyInstance(instantiateProgram) where
-> import Env(Env,mapEnv,lookasideST,lookupEnv,extendsEnv,newEnv,showsEnv)
+> import Env(Env,mapEnv,lookasideST,lookupEnv,extendsEnv,
+>            rangeEnv,newEnv,showsEnv)
 > import Grammar(Eqn'(..),Expr'(..),Type(..),Qualified(..),
 >                Eqn,TEqn,Expr,Func,QType,VarID,ConID,
 >                PrgTEqns, changeNameOfBind,
->                tupleConstructor,(-=>),qualify)
+>                tupleConstructor,(-=>),qualify,Qualifier)
 > import Folding(cataType,stripTEqn,mmapTEqn,mapEqn)
 > import Functorise(Struct,makeFunctorStruct)
 > import FunctorNames(codeFunctors)
@@ -41,10 +42,10 @@ command line via flags and parameters to instantiateProgram.
 > import InferType(qTypeEval)
 > import MonadLibrary(State, executeST,(@@),handleError,
 >                     OutputT,output,runOutput,mliftOut)
-> import MyPrelude(maytrace,mapSnd,combineUniqueBy,fMap,maydebug)
+> import MyPrelude(trace,maytrace,mapSnd,unique,combineUniqueBy,fMap,maydebug)
 > import PrettyPrinter(pshow)
 > import StartTBasis(preludeFuns,preludedatadefs)
-> import TypeBasis(TBasis,TypeEnv,getTypeEnv)
+> import TypeBasis(TBasis,FuncEnv,TypeEnv,getFuncEnv,getTypeEnv)
 > import Flags(Flags(..),flags)
 
 \end{verbatim} 
@@ -55,54 +56,95 @@ the Haskell-translation of the program.
 \begin{verbatim}
 
 > instantiateProgram :: (TBasis,PrgTEqns) -> [Eqn]
-> polyInstPrg :: [Eqn] -> [[TEqn]] -> TypeEnv -> [Eqn]
+> polyInstPrg :: [Eqn] -> [[TEqn]] -> FuncEnv -> TypeEnv -> [Eqn]
 
 \end{verbatim}
 Implementation:
 \begin{verbatim}
 
 > instantiateProgram (tbasis,(datadefs,eqnss)) = 
->     datadefs ++ polyInstPrg datadefs eqnss (getTypeEnv tbasis) 
+>     datadefs ++ polyInstPrg datadefs eqnss (getFuncEnv tbasis) (getTypeEnv tbasis) 
 
-> polyInstPrg datadefs prg typeenv = 
+> polyInstPrg datadefs prg funcenv typeenv = 
 >     map (simplifyTEqn funcenv . stripTEqn) teqns
->   where funcenv    = mapEnv makeFunctorStruct datadefenv
->         teqns      = polyInst funcenv defenv typeenv (startRequests typeenv)
+>   where teqns      = polyInst funcenv defenv typeenv (startRequests funcenv typeenv)
 >         defenv     = eqnsToDefenv (concat prg)
 >         datadefenv = eqnsToDefenv (preludedatadefs++datadefs)
 
 \end{verbatim}
-The main request should have the correct type of main. 
+
+Translating different kinds of requests from flags to [Req]:
+
+If no request flags are present then the default "main" is assumed.
+
+The types of the starting requests are looked up in the type
+environment. 
+
+The list of requests should always be free from duplicates, to avoid
+duplicated code in the output. To ensure this combineUniqueBy eqReq is
+applied after the flags are handled. (Duplicates could come from
+different flag combinations: "-r p:A -r p:A", "-r p:A -r p:all" or "-r
+f:all", where f is not polytypic.)
+
 \begin{verbatim}
 
-> startRequests :: TypeEnv -> [Req]
-> startRequests typeenv = if null (requests flags)
->                     then [mainreq typeenv]
->                     else map (parseReq typeenv) (requests flags)
+> startRequests :: FuncEnv -> TypeEnv -> [Req]
+> startRequests funcenv typeenv = 
+>       combineUniqueBy eqReq []
+>     $ concat 
+>     $ map (transformReq funcenv typeenv . parseReq) 
+>     $ reqflags
+>   where reqflags = requests flags
+>         reqtexts = if null reqflags
+>                    then defaultRequestTexts
+>                    else reqflags
+>         defaultRequestTexts = ["main"]
 
-> makeReq :: String -> QType -> Req
+> makeReq :: VarID -> QType -> Req
 > makeReq s t = (s,t)
 
-> parseReq :: TypeEnv -> String -> Req
-> parseReq typeenv s = makeReq name insttype
->   where (name,rest) = span (':'/=) s
->         insttype | null rest = typ
->	           | otherwise = tOK
->         tycon = TCon (tail rest)
->         typ = maybe err id (lookupEnv name typeenv)
+\end{verbatim}
+The request is parsed into the following type:
+\begin{verbatim}
 
->         tOK   = substQType subst typ
->         subst = matchfuns (typ,[regular tycon] :=> undefined)
->         regular d = ("Poly",[TCon "FunctorOf" :@@: d])
->         err = error ("PolyInstance.parseReq:"++name++" is missing "++
->                      "(maybe the type checking failed)")
+> data ReqType = SimpleReq {nameOfReq::VarID, maybeTyCon::Maybe ConID}
+>              | ForAllTyConsReq {nameOfReq::VarID}
 
-> mainreq :: TypeEnv -> Req
-> mainreq typeenv = ("main", maintype)
->   where maintype :: QType
->         maintype = maybe err id (lookupEnv "main" typeenv)
->         err = error ("PolyInstance.mainreq: main is missing "++
->                      "(maybe the type checking failed)")
+> parseReq :: String -> ReqType
+> parseReq s = if isForAllTyCons
+>              then ForAllTyConsReq name
+>              else SimpleReq name $
+>                if hasProperRest 
+>                then Just regularTypeCon
+>                else Nothing
+>   where (name,colonrest) = span (':'/=) s
+>         hasProperRest    = not (null colonrest)
+>         regularTypeCon   = tail colonrest
+>         isForAllTyCons   = hasProperRest && regularTypeCon == "all"
+
+\end{verbatim}
+
+\begin{verbatim}
+
+> transformReq :: FuncEnv -> TypeEnv -> ReqType -> [Req]
+> transformReq funcenv typeenv rt = map (makeReq (nameOfReq rt)) (insttypes rt)
+>   where insttypes (SimpleReq n Nothing) = [typeOf n]
+>	  insttypes (SimpleReq n (Just t))= [f n t]
+>         insttypes (ForAllTyConsReq n)   = map (f n) allRegularTyCons
+>         allRegularTyCons = rangeEnv funcenv
+>         typeOf name = maybe err id (lookupEnv name typeenv)
+>           where err = error ("PolyInstance.handleReq:"++name++" was requested "++
+>                              "but did not get through the type checking.")
+
+>         f :: VarID -> ConID -> QType
+>         f name tycon = substQType subst typ
+>           where typ = typeOf name
+>                 subst = matchfuns (typ,[regular tycon] :=> undefined)
+>
+
+> regular :: ConID -> Qualifier Type
+> regular d = ("Poly",[TCon "FunctorOf" :@@: (TCon d)])
+
 
 
 \end{verbatim}
@@ -234,6 +276,10 @@ Only for debugging:
 > mayTraceReq :: Req -> Req
 > mayTraceReq r@(name,ps:=>_) = 
 >   ("{- Request:"++name++pshow (map snd ps)++"-}\n") `maytrace` r
+
+> traceReq :: Req -> Req
+> traceReq r@(name,ps:=>_) = 
+>   ("{- Request:"++name++pshow (map snd ps)++"-}\n") `trace` r
 
 \end{verbatim}
 
@@ -746,8 +792,7 @@ polyInstPrg :: [Eqn] -> [[TEqn]] -> TypeEnv -> [Eqn]
 traverseTEqn :: (Functor m, Monad m) => Subst -> TEqn -> OutEnvM Req m TEqn
   codeFunctor, (substQType)
 polyInst :: FuncEnv -> DefEnv -> TypeEnv -> [TEqn]
-  handleReq, mainreq
-mainreq :: Req
+  handleReq
 handleReq :: FuncEnv -> DefEnv -> TypeEnv -> (VarID, QType) -> ([Req], [TEqn]) 
   classifyDef, traverse, pickPolyEqn, pairType, specPolyInst
 pairType :: TypeEnv -> Eqn' t -> QType -> (Eqn' t, Subst, QType)

@@ -1,7 +1,7 @@
 > module FunctorNames(codeFunctors) where
 > import MonadLibrary(Error(..),ErrorMonad(..),map0,map1,map2,accumseq)
 > import MyPrelude(fMap)
-> import Grammar(Type(..),Func,ConID,listConstructor)
+> import Grammar(Type(..),Func,ConID,VarID,listConstructor)
 > import PrettyPrinter(pshow)
 
 % ----------------------------------------------------------------
@@ -43,12 +43,16 @@ instead of {\tt F[]} to make it a legal Haskell identifier(-suffix).
 >     s (TCon "+")     = map0 ('S':)
 >     s (TCon "*")     = map0 ('P':)
 >     s (TCon "@")     = map0 ('A':)
->     s (TCon d)       = map0 ((codeTyCon d)++)
+>     s (TCon d)       = map0 ((codeTCon d)++)
 >     s t@(TVar _)     = failEM ("FunctorNames.codeFunctor: uninstantiated functor variable " ++
 >                               pshow t ++ " found as part of " ++ pshow f )
 
 > codeType :: Type -> Error (String -> String)
-> codeType _ = Done id
+> codeType (f :@@: t) = map2 (.) (codeType f) (codeType t)
+> codeType (TCon d)  = map0 ((codeTCon d)++)
+> codeType (TVar v)  = map0 ((codeTVar v)++)
+
+
 
 > {- 
 > decodeType :: String -> (String, Func)
@@ -66,7 +70,7 @@ instead of {\tt F[]} to make it a legal Haskell identifier(-suffix).
 >     p ('S':xs)  = mapSnd plus (popp xs)
 >     p ('P':xs)  = mapSnd prod (popp xs)
 >     p ('A':xs)  = mapSnd appl (popp xs)
->     p ( c :xs) | isDigit c = mapSnd TCon (decodeTyCon (c:xs))
+>     p ( c :xs) | isDigit c = mapSnd TCon (decodeTCon (c:xs))
 >                | otherwise = error "FunctorNames.decodeFunctor: bad functor encoding"
 >     p ""        = error "FunctorNames.decodeFunctor: functor ended prematurely"
 >     popp = p `op` p
@@ -77,14 +81,22 @@ instead of {\tt F[]} to make it a legal Haskell identifier(-suffix).
 >       where (ys,y) = w  xs
 >             (zs,z) = w' ys
 
-> decodeTyCon :: String -> (ConID,String)
-> decodeTyCon s | n > 0  = splitAt n text
+> decodeTCon :: String -> (ConID,String)
+> decodeTCon s | n > 0  = splitAt n text
 >               | n == 0 = (listConstructor,text)
->               | True   = error "FunctorNames.decodeTyCon: impossible: negative length"
+>               | True   = error "FunctorNames.decodeTCon: impossible: negative length"
 >    where (num,text) = span isDigit s
 >          n :: Int
 >          n = if length num == 0 || (read num :: Float) > fromInt (maxBound :: Int)
->              then error ("decodeTyCon: Bad number: '"++ num ++"'")
+>              then error ("decodeTCon: Bad number: '"++ num ++"'")
+>              else read num
+
+> decodeTVar :: String -> (VarID,String)
+> decodeTVar s = splitAt n text
+>    where (num,text) = span isDigit s
+>          n :: Int
+>          n = if length num == 0 || (read num :: Float) > fromInt (maxBound :: Int)
+>              then error ("decodeTVar: Bad number: '"++ num ++"'")
 >              else read num
 
 \end{verbatim}
@@ -102,8 +114,11 @@ Just a test expression --- not used.
 >            fBoolAlg  = "Se"++fVNumber
 > -}
 
-> codeTyCon :: ConID -> String
-> codeTyCon c | c == listConstructor = "0"
+> codeTCon :: ConID -> String
+> codeTCon c | c == listConstructor = "0"
 >             | otherwise            = show (length c) ++ c
+
+> codeTVar :: VarID -> String
+> codeTVar v = show (length v) ++ v
 
 \end{verbatim}

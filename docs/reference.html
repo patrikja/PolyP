@@ -9,7 +9,7 @@
 <h1>PolyP reference manual</h1>
 
 This text is a reference manual for PolyP.
-(Patrik Jansson, 1998)
+(Patrik Jansson, 1999)
 
 <h2>Flag summary</h2>
 Usage:
@@ -23,7 +23,7 @@ Usage:
   <dd>Verbatim - print information about the compiler phases while compiling
   <dt><code>-p <em>file</em></code>
   <dd>Read explicit type information from <em>file</em> before starting.
-  <dt><code>-r <em>value[:type constructor]</em></code>
+  <dt><code>-r <em>value[</em>:<em>type constructor</em>|all<em>]</em></code>
   <dd>Start polytypic instantiation from <em>value</em> (default is
       from main). If <em>value</em> is polytypic, the desired datatype
       constructor <em>D</em> must be given. 
@@ -61,8 +61,8 @@ the <code>chase</code> is unnecessary.
 The flag <code>-i</code> can be used (any number of times) to specify
 directories that are to be searched for the imported modules.
 
-The polytypic library directory <code>POLYPDIR/polylib</code> is a
-typical candidate here.
+For convenience the polytypic library directory
+<code>POLYPDIR/polylib</code> is always implicitly included. 
 
 <h2>The main translation phase</h2>
 
@@ -74,11 +74,13 @@ instances of all polytypic functions that are used in the code
 reachable from the definitions of the start values.
 
 By default there is one start value - <code>main</code> - but the flag
-<code>-r value[:D]</code> can be used (any number of times) to specify other
-start values.
+<code>-r <em>value[</em>:<em>D|</em>all<em>]</em></code> can be used
+(any number of times) to specify other start values. 
 
-If the start value is polytypic, it must be instatiated to a type
-constructor (<em>D</em>) given after the colon.
+If the start value is polytypic, it must be instatiated to a regular type
+constructor (<em>D</em>) (or to <code>all</code> regular type constructors)
+given after the colon. 
+
 <p>
 
 The output is Haskell code and can be loaded in hugs or compiled with
@@ -181,7 +183,7 @@ think about:
 
 <hr>
 <!-- hhmts start -->
-Last modified: Thu Jul 15 17:30:51 MET DST 1999
+Last modified: Sat Jul 24 14:13:06 MET DST 1999
 <!-- hhmts end -->
 by
 <address>

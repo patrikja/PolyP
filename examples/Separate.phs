@@ -41,7 +41,7 @@ polytypic fmap2 :: (a -> c) -> (b -> d) -> f a b -> f c d
       	      d @ g   ->  pmap (fmap2 p r)       
       	      Const t ->  id                    
       
-{- 
+{-
 Non-polytypic help functions. In Haskell the datatype for sums is
   predefined together with its catamorphism: either.
   data Either a b = Left a | Right b 

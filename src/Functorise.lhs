@@ -39,7 +39,7 @@ in inn, out, or forbidden below.
 > makeFunctorStruct' (DataDef def args alts _) | arity == 1
 >   = convAlts def alts <@ pair ((def,arity),map (mapSnd length) alts)
 >					       | otherwise
->   = failEM "Only 1-parameter datatypes are Regular"
+>   = failEM (def++" is not Regular as only 1-parameter datatypes are Regular")
 >   where arity = length args
 > makeFunctorStruct' _ = error "Functorise.makeFunctorStruct: impossible: not a DataDef"
 
