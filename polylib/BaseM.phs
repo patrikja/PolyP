@@ -3,6 +3,7 @@
 --   980504 Patrik Jansson
 ---------------------------------------------------------------
 module BaseM(pmapM,fmap2M,cataM,anaM,hyloM,paraM,innM,outM,idM,(@@),mapm) where
+import Base((-*-))
 
 pmapM :: (Regular d, Monad m) => (a -> m b) -> d a -> m (d b)
 pmapM fM   = mapm inn . fmap2M fM  (pmapM fM)   . out
