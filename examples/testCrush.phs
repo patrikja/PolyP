@@ -1,5 +1,6 @@
 module Main where
-import CrushFuns(flatten,pany)
+import PolyLib.Prelude
+import PolyLib.CrushFuns(flatten,pany)
 data Rose a = Fork a [Rose a]
 f = Fork 
 l x = f x []

@@ -3,8 +3,9 @@
 --   980409 Patrik Jansson [NOT CLEANED UP]
 ----------------------------------------------------------------
 module Show (pshow,ppretty,Expr(..)) where
-import Base(pmap,cata)
-import ConstructorName(constructors)
+import PolyLib.Prelude
+import PolyLib.Base(pmap,cata)
+import PolyLib.ConstructorName(constructors)
 
 pshow :: Regular d =>(a->[Char]) -> d a -> [Char]
 pshow sh x = cata (fshow (cnames x)) (pmap sh x)

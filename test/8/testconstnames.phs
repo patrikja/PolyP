@@ -1,3 +1,4 @@
+import PolyLib.Prelude
 data IC a = IC Int Char String deriving Show
 
 main = print ic
@@ -10,4 +11,4 @@ polytypic x :: f a b
       Const Int    -> ConstF 1
       Const Char   -> ConstF 'a'
       Const String -> ConstF "hej"
-      
+

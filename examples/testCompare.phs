@@ -1,4 +1,5 @@
 module Main where
-import Compare(pcompare')
+import PolyLib.Prelude
+import PolyLib.Compare(pcompare')
 main = print (pcompare' "Pat" "rik")
 -- expected output: LT

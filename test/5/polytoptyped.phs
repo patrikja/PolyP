@@ -1,7 +1,8 @@
-main = print p >>
-       print (oM (fst p),oL (snd p))
+import PolyLib.Prelude
+
+main = print p 
 
 oM = out :: Maybe Int -> FunctorOf Maybe Int (Maybe Int)
-oL = out :: String -> FunctorOf [] Char String
+oL = out :: String    -> FunctorOf [] Char String
 p  = (,) (Just 1) "" :: (,) (Maybe Int) ([] Char)
 

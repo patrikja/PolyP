@@ -1,5 +1,6 @@
 -- Functions for separate. Patrik Jansson, July 18, 1999
 --  (a self-contained polytypic example)
+import PolyLib.Prelude
 {-
 The default starting point for code generation in a PolyP file is the
   value main. Everything possibly reachable from main is instantiated.

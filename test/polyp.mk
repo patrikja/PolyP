@@ -40,7 +40,7 @@ CHASE = $(POLYPDIR)/bin/chase
 	lhs2TeX -code -lcodeOnly=True $< | cut -c3- > $@
 
 %.out2: %.hs
-	$(runhugs) $(HUGSFLAGS) -P:$(POLYPDIR)/lib:$(POLYPDIR)/polylib $< > $@
+	$(runhugs) $(HUGSFLAGS) -P:$(POLYPDIR)/polylib $< > $@
 
 %.out2: %.lhs
 	$(runhugs) $(HUGSFLAGS) $< > $@

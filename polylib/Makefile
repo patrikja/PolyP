@@ -8,20 +8,15 @@ split = ../bin/splitHeader
 %.hs : %.phs
 	$(polyp) $(POLYPFLAGS) $< > $@
 
-all: $(hs_files)
+modules = BaseM Base Compare ConstructorName CrushFuns Crush Equal EqualVariants Flatten Fold Propagate Show Substructures Sum ThreadFuns Thread Zip ZipVariants EP
+
+hs_files = $(patsubst %,PolyLib/%.hs,$(modules))
+phi_files = $(patsubst %,PolyLib/%.phi,$(modules))
+
+all : $(hs_files)
 
 clean :
 	rm -f $(hs_files) $(phi_files)
-
-modules = BaseM Base Compare ConstructorName CrushFuns Crush Equal EqualVariants Flatten Fold Propagate Show Substructures Sum ThreadFuns Thread Zip ZipVariants EP
-
-hsfiles = $(patsubst %,PolyLib/%.hs,$(modules))
-phifiles = $(patsubst %,PolyLib/%.phi,$(modules))
-
-all : $(hsfiles)
-
-clean :
-	rm -f $(hsfiles) $(phifiles)
 
 PolyLib/BaseM.hs         : PolyLib/Base.hs
 PolyLib/CrushFuns.hs     : PolyLib/Crush.hs PolyLib/Base.hs

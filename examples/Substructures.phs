@@ -1,6 +1,7 @@
 module Substructures(substructures) where
-import Base(para)
-import Flatten(fl_rec)
+import PolyLib.Prelude
+import PolyLib.Base(para)
+import PolyLib.Flatten(fl_rec)
 
 -- all substructures as a list
 substructures :: Regular d => d a -> [d a]

@@ -1,4 +1,5 @@
-import Base(fmap2)
+import PolyLib.Prelude
+import PolyLib.Base(fmap2)
 -- PJ 990705
 
 dc :: (Regular d, Regular e) => 

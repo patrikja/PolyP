@@ -1,6 +1,7 @@
 module Main where
-import Base(pmap)
-import Propagate(propagate)
+import PolyLib.Prelude
+import PolyLib.Base(pmap)
+import PolyLib.Propagate(propagate)
 
 main = print (propagate (pmap Just "Patrik"))
 -- expected output: Just "Patrik"

@@ -1,4 +1,5 @@
 module Main where
+import PolyLib.Prelude
 import Show(pshow,ppretty,Expr(..))
 
 main = print (showExpr (ppretty x))

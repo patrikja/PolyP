@@ -138,7 +138,7 @@ the datatype and its functor.
 
 >           -- Takes a list of constructor arguments and computes pattern and result arguments
 >           inn'' (TCon "EmptyF":fs) names   = addP (Con "EmptyF") $ inn'' fs names
->           inn'' (c:fs) (n:names)          = addPE (Var n) (fromFunction c :@: Var n) $ inn'' fs names
+>           inn'' (c:fs) (n:names)          = addPE (Var n) (fromFunction :@: Var n) $ inn'' fs names
 
            inn'' (TCon "ParF":fs) (n:names) = addPE (Con "ParF" :@: Var n) (Var n) $ inn'' fs names
            inn'' (TCon "RecF":fs) (n:names) = addPE (Con "RecF" :@: Var n) (Var n) $ inn'' fs names
@@ -163,7 +163,7 @@ the datatype and its functor.
 
 >           -- Takes a list of constructor arguments and computes pattern and result arguments
 >           out'' (TCon "EmptyF":fs) names   = addE (Con "EmptyF") $ out'' fs names
->           out'' (c:fs) (n:names)           = addPE (Var n) (toFunction c :@: Var n) $ out'' fs names
+>           out'' (c:fs) (n:names)           = addPE (Var n) (toFunction :@: Var n) $ out'' fs names
 
            out'' (TCon "ParF":fs) (n:names) = addPE (Var n) (Con "ParF" :@: Var n) $ out'' fs names
            out'' (TCon "RecF":fs) (n:names) = addPE (Var n) (Con "RecF" :@: Var n) $ out'' fs names
@@ -176,21 +176,11 @@ the datatype and its functor.
 
 >           -- Remodelling
 
->           -- toFunction : g --> toG
->           toFunction (TCon "ParF")                = Var "toPar"
->           toFunction (TCon "RecF")                = Var "toRec"
->           toFunction (TCon "CompF" :@@: _ :@@: g) = Var "toComp" :@: toFunction g
->           toFunction (TCon "ConstF" :@@: _)       = Var "toConst"
->           toFunction (TCon "FunF" :@@: g :@@: h)  = Var "toFun" :@: fromFunction g
->                                                                 :@: toFunction h
+>           -- toFunction : using a clever class
+>           toFunction = Var "to"
 
->           -- fromFunction : g --> fromG
->           fromFunction (TCon "ParF")                  = Var "fromPar"
->           fromFunction (TCon "RecF")                  = Var "fromRec"
->           fromFunction (TCon "CompF" :@@: _ :@@: g)   = Var "fromComp" :@: fromFunction g
->           fromFunction (TCon "ConstF" :@@: _)         = Var "fromConst"
->           fromFunction (TCon "FunF" :@@: g :@@: h)    = Var "fromFun" :@: toFunction g
->                                                                       :@: fromFunction h
+>           -- fromFunction : 
+>           fromFunction = Var "from"
 
            -- Helpers
            unF (TCon "ParF") = Var "unParF"

@@ -1,5 +1,6 @@
 module Main where
-import Flatten(flatten)
+import PolyLib.Prelude
+import PolyLib.Flatten(flatten)
 
 data Foo a = Bar | Cee a | Doo (Foo a) a (Foo a)
 
