@@ -1,0 +1,19 @@
+000330:
+  Fortsätter med .lphs-dokumenten och uppdaterar samtidigt filerna så
+    att de skall fungera bättre. Tar bort EqOrd.phs till förmån för
+    Compare.phs och EqualVariants.phs. Jag skall lagra både .lphs och
+    .phs i CVS trots att .phs kan fås från de andra mha lhs2TeX så att
+    inte PolyP-distributionen blir beroende av programmet lhs2TeX.
+  OK, ändringarna genomförda och de automatiskt genererade .phs-filer
+    är testade med PolyP. Dags att göra CVS commit.
+       
+000329:
+  Skapar .lphs-document för att lätt generera LaTeX.
+  Ändrar namnet mapm till liftM för att stämma med Haskells Monad.liftM
+  Egentligen borde Monad.liftM importeras och inte definieras (den
+    definieras nu i både BaseM och Thread, men första steget är att
+    byta namnet, inte exportera den och kolla att PolyP och
+    tillämpningarna inte använder den gamla.
+  OK, ändringen genomförd och alla förkomster i PolyP och poly är ändrade.
+  Jag borde kanske lägga icke-polytypiska hjälpfunktioner i en egen modul.
+    

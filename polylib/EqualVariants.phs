@@ -1,0 +1,17 @@
+module EqualVariants(pequal,peq) where
+import Flatten(flatten,fl_all)
+import Zip(pzip,pzipWith')
+pequal :: Regular d => (a->b->Bool) -> d a -> d b -> Bool
+pequal op l r = pzipWith' (and . fl_all)
+                          (\_ -> False) 
+                          (uncurry op)
+                          (l,r)        
+peq :: (Regular d, Eq a) => d a -> d a -> Bool
+peq l r = pzipWith' (and . fl_all)
+                    (\_ -> False) 
+                    (uncurry (==))
+                    (l,r)        
+peq' :: (Regular d, Eq a) => d a -> d a -> Bool
+peq' x y = maybe False 
+                 (all (uncurry (==)) . flatten) 
+                 (pzip (x,y))
