@@ -1,22 +1,27 @@
 #!/usr/bin/perl
 # import chasing for PolyP
 
+# Usage:
+#   perl chase file.phs
+# or if line 1 above points to your perl binary
+#   chase file.phs
+
 # Bugs: 
 #  import declaration must not be more than one line
-#  they must start at column zero (after the $lineprefix)
+#  they must start at column zero (or after the $lineprefix)
 #  unknown imports can end up mixed with infix declarations
 
 $filenamesuffix = ".phs"; $lineprefix="";
-# $filenamesuffix = ".hs";  $lineprefix="";
-# $filenamesuffix = ".lhs"; $lineprefix="> ";
+# $filenamesuffix = ".hs";  $lineprefix=""; Try it on Haskell-files
+# $filenamesuffix = ".lhs"; $lineprefix="> "; ... or literate Haskell.
 
 $true = 1; $false = 0;
-chase($ARGV[0],"fh00",1,$true); # borja med kommandoradsargumentets filnamn
-chase($ARGV[0],"fh00",2,$false); 
+&chase($ARGV[0],"fh00",1,$true);  # start with the first filename 
+&chase($ARGV[0],"fh00",2,$false); #   on the command line
 
 sub chase {
-    my($filename,$handle,$phase,$print_module_line) = @_ ;
-    my($fresh);
+    local($filename,$handle,$phase,$print_module_line) = @_ ;
+    local($fresh);
     open($handle,$filename) || die "Can't open file $filename";
     $stored{$filename} = $phase; # kom ihag att vi varit har (undvik loop)
 
@@ -50,7 +55,7 @@ sub chase {
 		    print $_ ; # skriv ut raden
 		}
 	    }
-        elsif ( ($phase eq 2) xor (/^${lineprefix}infix[lr \t]/) )
+        elsif ( ($phase eq 2) ^ (/^${lineprefix}infix[lr \t]/) )
         { # 
 	  print $_ ; # skriv ut raden
 	}
