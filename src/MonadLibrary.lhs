@@ -4,7 +4,7 @@
 > module MonadLibrary(module StateFix,
 >                     State     ,updateST ,fetchST ,executeST ,
 >                     StateM(..),updateSTM,fetchSTM,executeSTM,mliftSTM,
->                     (<@),(<@-),(<*>),(<:*>),(<<),(@@),mIf,applyM2,
+>                     (<@),(<@-),(<*>),(<:*>),(<<),(@@),(<|),mIf,applyM2,
 >                     Error(..),unDone,LErr,mapLErr,showLErr,handleError,
 >                     STErr,mliftErr,convertSTErr,ErrorMonad(failEM),
 >                     OutputT,output,runOutput,mliftOut,
@@ -17,6 +17,7 @@
 > infixl 9 <@-
 > infixr 9 @@
 > infixr 9 <*>
+> infixl 7 <|
 > infixr 1 <<
 
 \end{verbatim}
@@ -65,6 +66,9 @@ Haskell 1.4. (Though it should be, in my opinion.)
 > mguard p x | p x = return x
 >            | True= zero
 
+> (<|) :: MonadZero m => m a -> (a -> Bool) -> m a
+> m <| p = m >>= \x -> if p x then return x else zero
+
 \end{verbatim}
 \section{IO and ST monads}
 Hugs:
@@ -80,7 +84,7 @@ instance Functor (ST a) where
 
 > data Error a = Done a
 >              | Err String
->              deriving Show
+>              deriving (Show, Eq)
 
 > instance Functor Error where
 >   map f (Done x) = Done (f x)

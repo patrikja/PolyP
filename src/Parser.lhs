@@ -6,7 +6,11 @@ they receive be non-space.
 
 Known bugs:
 
-The argument to \texttt{pBackQuoted} should not allow trailing white-space. (Because this allows the incorrect `elem  `.)
+\begin{itemize}
+\item 
+The argument to \texttt{pBackQuoted} should not allow trailing
+white-space. (Because this allows the incorrect `elem `.)
+\end{itemize}
 
 \begin{verbatim}
 
@@ -14,7 +18,7 @@ The argument to \texttt{pBackQuoted} should not allow trailing white-space. (Bec
 
 > import Char(isUpper,isLower,isAlphanum,isDigit)
 > import MyPrelude(mapSnd)
-> import MonadLibrary((<:*>),(<*>),(<@),(<@-),(<<),liftop,
+> import MonadLibrary((<:*>),(<*>),(<@),(<@-),(<<),(<|),liftop,
 >                     mapl,ErrorMonad(failEM))
 > import ParseLibrary(Parser,item,lit,sat,digit,opt,optional,
 >                     some_offside,mustbe,symbol,sepby,string,
@@ -170,9 +174,8 @@ Currently this is done for Lambda expressions only.
 > infixfunccon  = strip (sat (`elem` "+*@") <@ (TCon.(:[])))
 
 > infixcon :: Parser ConID
-> infixcon = strip (lit ':' <:*> many (sat isOpChar)) >>= \ys -> 
->                   if ys `elem` specialops then zero
->                   else return ys
+> infixcon = strip (lit ':' <:*> many (sat isOpChar)) 
+>               <| (`notElem` specialops)
 
 \end{verbatim}
 \section{Expressions}
@@ -219,42 +222,59 @@ This implementation is {\em very} inefficient.
  
 > nappexpr  = symbol "-" >> map ((Var "negate") :@:) appexpr 
  
-> appexpr   = pAtomic`chainl` return (:@:)
+> appexpr   = pAtomic `chainl` return (:@:)
 
 > isOpChar a    = a `elem` ":!#$%&*+./<=>?@\\^|-" 
-> pOps = [ var "$" 
->        , var "||" 
->        , var "&&"
->        , pBackQuoted ((var "elem") ++ (var "notElem"))
+> pOps = [ var "$"                                       -- 0 
+>        , var "||"                                      -- 1
+>        , var "&&"                                      -- 2
+>        , pBackQuoted ((var "elem") ++ (var "notElem")) -- 3
 >        ++ (var "==")
 >        ++ (var "/=")
 >        ++ (var "<" )
 >        ++ (var "<=")
 >        ++ (var ">")
 >        ++ (var ">=")
->        , (var "++")
->        ++ (con ":")
->        ++ (var "\\\\")
->        , (var "+")
+>        , (var "++")                                    -- 4
+>        ++ (con ":")                                    
+>        ++ (var "\\\\")                                 
+>        , (var "+")                                     -- 5
 >        ++ (var "-")
->        , (var "/")
+>        , (var "/")                                     -- 6
 >        ++ (var "*")
 >        ++ pBackQuoted ((var "div") ++ 
 >                    (var "rem") ++ (var "mod"))
->        , var "^"
->        , var "."
->        , var "!!"
+>        , var "^"                                       -- 7
+>        , var "."                                       -- 8
+>        , var "!!"                                      -- 9
 >        ++ (pBackQuoted pVarID <@ Var)
->        ++ (infixcon <@ Con ++ infixop <@ Var)]
+>        ++ (infixcon' <@ Con ++ infixop' <@ Var)
+>        ]
 >  where con s = symbol s <@ Con
 >        var s = symbol s <@ Var
 
-> infixop = strip (some (sat isOpChar)) >>= \xs -> 
->           if xs `elem` specialops then zero
->           else return xs
+> infixop'  :: Parser String
+> infixop'  = infixop  <| (`notElem` preludeops)
+			  
+> infixcon' = infixcon <| (`notElem` preludecons)
+
+> -- infix operators, including infix constructors but not `op`s
+> infixop :: Parser String
+> infixop = strip (some (sat isOpChar)) 
+>               <| (`notElem` specialops)
+
 > specialops :: [String]
 > specialops = [ "..", "::", "=", "\\", "|", 
 >                "<-", "->", "@", "~", "=>" ]
+
+> preludeops :: [String]
+> preludeops = [ "$" , "||" , "&&" , "elem" , "notElem" , "==" , "/=",
+>                "<" , "<=", ">", ">=", "++", ":", "\\\\", "+" , "-",
+>                "/", "*", "div", "rem", "^", ".", "!!"
+>              ]
+
+> preludecons :: [String]
+> preludecons = [":"]
 
 \end{verbatim}
 Operator sections are not yet handled but they could be introduced
@@ -464,9 +484,8 @@ From the Haskell report:
 
 > pConID = strip (sat isUpper <:*> many (sat isVarChar))
 
-> pVarID = strip (sat isLower <:*> many (sat isVarChar)) >>= \ys -> 
->                   if ys `elem` keywords then zero
->                   else return ys
+> pVarID = strip (sat isLower <:*> many (sat isVarChar)) 
+>              <| (`notElem` keywords)
  
 > isVarChar c = isAlphanum c || c `elem` "_'"
  

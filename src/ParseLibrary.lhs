@@ -48,7 +48,8 @@ we will use a more refined type of parsers:
 > item :: Parser Char
 > item = STM (\(s,(l,c,ol,oc)) -> case s of
 >             []     -> []
->             (x:xs) -> if l > ol && c < oc then []
+>             (x:xs) -> -- trace (x:"") $ 
+>                       if l > ol && c < oc then []
 >                       else [(x,(xs,(l',c',ol,oc)))]
 >                       where (l',c') = case x of
 >                                         '\t' -> (l,((c `div` 8)+1)*8)
