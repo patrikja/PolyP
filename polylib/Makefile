@@ -1,6 +1,6 @@
 
 %.phs: %.lphs
-	lhs2TeX -code -lcodeOnly=True $< | cut -c3- > $@
+	lhs2TeX --code -lcodeOnly=True $< | cut -c3- > $@
 
 polyp = ../bin/ghcpolyp
 chase = ../bin/chase

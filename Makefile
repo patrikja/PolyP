@@ -58,7 +58,7 @@ install: installdirs ghc
 
 # Run some regression tests
 #   -s makes the testcompilations silent (unless there is an error)
-check: boilerplate.mk
+check: ghc boilerplate.mk
 	$(MAKE) -e -s -C examples check
 	$(MAKE) -e -s -C test check
 
