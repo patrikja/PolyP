@@ -19,7 +19,7 @@
 > import MyPrelude(pair,splitUp,fMap)
 > import MonadLibrary(STErr,mliftErr,convertSTErr,Error(..),unDone,(@@),
 >                     foreach,mapl,(<@),(<@-),LErr,accumseq,accumseq_)
-> import StateFix-- (ST [,runST [,RunST]]) in hugs, ghc, hbc
+> import StateFix -- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 > import Grammar -- (Qualified,Type(..),PrgEqns)
 > import Folding(freeVarsPat)
 > import ParseLibrary(parse)

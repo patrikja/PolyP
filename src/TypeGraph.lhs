@@ -12,7 +12,7 @@
 > import MyPrelude(fMap)
 > import Env(Env,Cache,lookupEqEnv,rememberST,newEnv,lookaside,remember)
 > import Folding(mmapEqn,mmapQualified,dmmapQualified,mcataType)
-> import StateFix-- (ST [,runST [,RunST]]) in hugs, ghc, hbc
+> import StateFix -- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 
 > infixr 6 +#+
 

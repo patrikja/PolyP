@@ -13,7 +13,7 @@
 >                     convertSTErr, Error(..), mapl, foreach)
 > import MyPrelude(pair,mapSnd,splitUp,fMap,  maytrace)
 > import StartTBasis(startTBasis)
-> import StateFix-- (ST [,runST [,RunST]]) in hugs, ghc, hbc
+> import StateFix -- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 > import TypeBasis(Basis,TBasis,
 >                  tBasis2Basis,extendTypeAfterTBasis,
 >                  extendTypeEnv,extendTypeTBasis,

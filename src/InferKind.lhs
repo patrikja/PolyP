@@ -10,7 +10,7 @@
 > import TypeBasis(KindBasis,TBasis,lookupKind,inventTypes,
 >                  extendKindEnv,ramKindToRom,getKindEnv,
 >                  extendTypeTBasis,extendKindTBasis)
-> import StateFix-- (ST [,runST [,RunST]]) in hugs, ghc, hbc
+> import StateFix -- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 > import Env(newEnv)
 > import PrettyPrinter(pshow)
 > import UnifyTypes(unify)
