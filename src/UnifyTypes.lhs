@@ -9,7 +9,7 @@
 >                  
 > import TypeError
 > import MonadLibrary(STErr,mliftErr,ErrorMonad(failEM),
->                     (<@),mIf,applyM,applyM2,
+>                     (<@),(<@-),mIf,applyM,applyM2,
 >                     ST,(===))
 > import Env(Env,newEnv,lookupEnv,extendsEnv)
 > import Grammar(Qualified(..),Func)
@@ -44,6 +44,12 @@ non-generic. This means that this list is automatically kept up to
 date without being explicitly used in \verb|unify|. (A useful `side
 effect'!)
 
+If an error occurs in the unification process, the \texttt{STErr}
+monad contains an error message stating the local problem. Here on the
+top level this should be extended with a message stating the types
+that failed to unify. The error reporting function
+\texttt{mayreportTypeError} is defined in \texttt{TypeError.lhs}.
+
 \begin{verbatim}
 
 > unify :: HpType s -> HpType s -> STErr s ()
@@ -52,14 +58,14 @@ effect'!)
 >             maytrace ">" 
 >               (return ()))
 
-> unifyVar :: HpType s -> HpType s -> STErr s ()
+> unifyVar :: HpType s -> HpType s -> STErr s (ErrMsg (HpType s))
 > unifyVar a b= -- mayshowargs a b >>
 >               if a === b 
->               then maytrace "unifyVar:equal pointers" ok 
+>               then maytrace "unifyVar: equal pointers" ok <@- noErrMsg
 >               else
 >                 mIf (a `occursIn` b) 
->                  (failWith "unifyVar: Cyclic types not allowed" a b)
->                  (lifE (a ==> b))
+>                  (failHere a b ECyclicType)
+>                  (lifE (a ==> b) <@- noErrMsg)
 >   where   t1 `occursIn` t2 = lifE (t1 `occursInType` t2)
 
 \end{verbatim}
@@ -99,7 +105,7 @@ algorithm changes the types pointer structure using {\tt (==>)}.
 > checkInstance ngs (_:=>a) (_:=>b) =
 >      lifE (flattenNgs ngs >>= \allngs ->
 >            isInstance allngs a b) >>= 
->      mayreportTError ngs a
+>      mayreportTError ngs a b
 
 \end{verbatim}
 This function answers the equivalent questions:
@@ -137,12 +143,9 @@ The algorithm implements the following (successful) cases:
 >            (HpVar _, _) ->
 >              err toogeneral a b
 >            (HpApp af ax, HpApp bf bx) ->
->              (b ==> a)            >>
->              (isInstance ngs af bf >>= \inst -> 
->               case inst of
->                 TOk -> isInstance ngs ax bx
->                 _   -> return inst 
->              )
+>              --(b ==> a)            >>
+>              isInstance ngs af bf >>= 
+>	       continueIfNoError (isInstance ngs ax bx)
 >            (HpCon conA, HpCon conB) | conA==conB -> ok
 >            _ -> 
 >              err mismatch a b
@@ -150,7 +153,8 @@ The algorithm implements the following (successful) cases:
 >           mIf (t1 `occursInType` t2)
 >               (err "Cyclic types not allowed" t1 t2)
 >               (t1 `instantiateWith` t2)
->         t1 `instantiateWith` t2 = (t1 ==> t2) >> ok
+>         t1 `instantiateWith` t2 = (t1 ==> t2) >> 
+>				    ok
 >         isGen v = isGenericApproximation v ngs
 >         ok = return TOk
 >         err msg t1 t2 = return (TBad msg t1 t2)
@@ -231,19 +235,43 @@ level constructors, we have 25 cases to handle. To reduce the
 complexity we use (in \texttt{punify1}) the symmetry of unification to
 reduce this to 15 cases by ordering the constructors.
 
+The unification should actually need a few more arguments: 
+\begin{itemize}
+\item The functor environment to be able to simplify and check types
+  containing things like \texttt{FunctorOf Tree}.
+\item The non-generic variabels (so that \texttt{handleTypeError} can
+  print the types with genericity taken inte account)
+\item The kind environment (so that we can do kinded unification
+  correctly)
+\end{itemize}
+As all of these are in the \texttt{TypeBasis.Basis} so it would
+suffice to pass this along. Probably all uses of unification does have
+a the basis accessible, so the change should not be too big.
+
+All functions except punify use the result type \texttt{STErr s
+(ErrMsg (HpType s))} which is used as if it were \texttt{STErr2 s ()},
+where \texttt{STErr2} has better error reporting than
+\texttt{STErr}. This is an ugly solution and should be replaced with a
+better error reporting monad.
+
 \begin{verbatim}
 
 > punify :: HpType s -> HpType s -> STErr s ()
-> punify a' b'
->   = applyM2 punify1 (lifE (analyzeTop a')) (lifE (analyzeTop b'))
+> punify a b = 
+>   punify' a b >>=
+>   handleTypeError a b
 
-> punify1 :: (HpType s, HpTy s) -> (HpType s, HpTy s) -> STErr s ()
-> punify1 p q | fst p === fst q  = ok -- identical types
+> punify' :: HpType s -> HpType s -> STErr s (ErrMsg (HpType s))
+> punify' a b
+>   = applyM2 punify1 (lifE (analyzeTop a)) (lifE (analyzeTop b))
+
+> punify1 :: (HpType s, HpTy s) -> (HpType s, HpTy s) -> STErr s (ErrMsg (HpType s))
+> punify1 p q | fst p === fst q  = ok <@- noErrMsg -- identical types
 >             | snd p <=  snd q  = punify2 p q
 >             | otherwise        = punify2 q p
 
 > -- We require snd p <= snd q for all calls punify2 p q
-> punify2 :: (HpType s, HpTy s) -> (HpType s, HpTy s) -> STErr s ()
+> punify2 :: (HpType s, HpTy s) -> (HpType s, HpTy s) -> STErr s (ErrMsg (HpType s))
 
 The first five cases are dealt with by the variable rule
 \texttt{unifyVar}: it checks for circularity (occur check), performs
@@ -254,26 +282,30 @@ the substitution.
 The four remaining diagonal cases are handled as usual - by unifying
 the children pairwise.
 
-> punify2 (a,C cA ) (b,C cB)  | cA==cB    = ok
->                             | otherwise = failWith (cA++"/="++cB) a b
-> punify2 (a,A f x) (b,A g y) = lifE (a ==> b) >> punify f g >> punify x y 
-> punify2 (a,Mu f ) (b,Mu g ) = lifE (a ==> b) >> punify f g 
-> punify2 (a,FOf d) (b,FOf e) = lifE (a ==> b) >> punify d e
+> punify2 (a,C cA ) (b,C cB)  | cA==cB    = ok <@- noErrMsg
+>                             | otherwise = failHere a b EDifferentConstructors
+> punify2 (a,A f x) (b,A g y) = -- [1]  lifE (a ==> b) >> 
+>				punify' f g >>=
+>				continueIfNoErr (punify' x y)
+> punify2 (a,Mu f ) (b,Mu g ) = -- [1]  lifE (a ==> b) >> 
+>				punify' f g 
+> punify2 (a,FOf d) (b,FOf e) = -- [1]  lifE (a ==> b) >> 
+>				punify' d e
 > -- alternatively we could unify fOf d with fOf e ?
 
 Now there is the classical mismatch case, and a new error case due to
 kind mismatch as \texttt{Mu f :: *->*} and \texttt{FOf d :: *->*->*}.
 
-> punify2 (a,C cA)  (b,A _ _) = failWith (show (EUnifyConstApp cA)) a b
-> punify2 (_,Mu _)  (_,FOf _) = failHere EUnifyKind
+> punify2 (a,C cA)  (b,A _ _) = failHere a b (EUnifyConstApp cA)
+> punify2 (a,Mu _)  (b,FOf _) = failHere a b EUnifyKind
 
 Finally we have the four interesting new cases when the functor
 constructors are matched against other types.
 
-> punify2 (a,C _  ) (_,Mu f ) = punifyMu a f
-> punify2 (_,A _ _) (_,Mu _ ) = failHere ENoMuApp
-> punify2 (a,C _  ) (_,FOf d) = punifyFOf d a
-> punify2 (a,A _ _) (_,FOf d) = punifyFOf d a
+> punify2 (a,C _  ) (b,Mu f ) = punifyMu a f
+> punify2 (a,A _ _) (b,Mu _ ) = failHere a b ENoMuApp
+> punify2 (a,C _  ) (b,FOf d) = punifyFOf d a b
+> punify2 (a,A _ _) (b,FOf d) = punifyFOf d a b
 
 As an extra precaution a base case checks for missed cases or
 violations of the invariant that the arguments to \texttt{punify2}
@@ -284,40 +316,36 @@ should be ordered.
 
 Take care of D ~ Mu f by calling Mu (FOf D) ~ Mu f, or rather FOf D ~ f
 
-> punifyMu :: HpType s -> HpType s -> STErr s ()
-> punifyMu d f = applyM (punify f) (lifE $ mkFOfd d)
+> punifyMu :: HpType s -> HpType s -> STErr s (ErrMsg (HpType s))
+> punifyMu d f = applyM (punify' f) (lifE $ mkFOfd d)
 
 Take care of FOf d ~ f by calling fOf d ~ f. Requires that d is a
 datatype constructor.
 
-> punifyFOf :: HpType s -> HpType s -> STErr s ()
-> punifyFOf d' f' = -- applyM (punifyFOf' f') (lifE (analyzeTop d'))
+> punifyFOf :: HpType s -> HpType s -> HpType s -> 
+>              STErr s (ErrMsg (HpType s))
+> punifyFOf d' f' b =
 >    do (_,d) <- lifE (analyzeTop d')
->       f <- punifyFOf' d
->       punify f f'
+>       fOrErr <- punifyFOf' d f' b
+>       either (punify' f') return fOrErr
 
 > -- **** punifyfuns should be a parameter
-> punifyFOf' :: HpTy s -> STErr s (HpType s)
-> punifyFOf' (C d) = case lookupEnv d punifyfuns of 
->                      Nothing   -> failHere (ENoFunctorFor d)
->                      Just fOfd -> lifE $ typeIntoHeap fOfd
-> punifyFOf' (Mu f') = return f'
-> punifyFOf' _       = failHere EFOfnonDT 
+> punifyFOf' :: HpTy s -> HpType s -> HpType s -> STErr s (Either (HpType s) (ErrMsg (HpType s)))
+> punifyFOf' (C d)   a b = case lookupEnv d punifyfuns of 
+>                            Nothing   -> failHere a b (ENoFunctorFor d) <@ Right
+>                            Just fOfd -> (lifE $ typeIntoHeap fOfd)     <@ Left
+> punifyFOf' (Mu f') a b = return f' <@ Left
+> punifyFOf' (FOf _) a b = failHere a b (EFOfnonDT "FunctorOf (FunctorOf _) not allowed") <@ Right
+> punifyFOf' (A _ _) a b = failHere a b (EFOfnonDT "FunctorOf (type application) not allowed") <@ Right
+> punifyFOf' (V _)   a b = failHere a b (EFOfnonDT "FunctorOf (variable) not implemented") <@ Right
 
-> failHere :: ErrorMonad m => ErrMsg -> m a
-> failHere = failEM . show
-
-Below bug is (probably) fixed
-{\small Fix the bug due to assymmetry
-
-a=CFunctorOf@Var=FunctorOf a
-,b=C(,)=(,)
-
-unifyFun: Application expected (this should not happen!)
-}%end small
+> failHere :: HpType s -> HpType s -> LocalErrMsg -> STErr s (ErrMsg (HpType s))
+> failHere a b lerr = return (ErrMsg (Just (lerr,a,b)))
 
 > ok :: Monad m => m ()
-> ok = return () 
+> ok = return ()
+
+(internalError "Unify.ok: This value should not have been used.")
 
 > punifyfuns :: Env String Func
 > punifyfuns = extendsEnv l newEnv
@@ -351,8 +379,16 @@ in the same call to (the top level) \texttt{punify}. It is not clear
 if this means a speedup in practice as there is a tradeoff between the
 extra work added by this equality test, and the reduced work during
 unification. In types with lots of sharing it should pay off.
+
+
+990703: Simple test: Work done by hugs when run on exaples/Separate.phs
+With    ==> (3484618 reductions, 6346771 cells, 34 garbage collections)
+Without ==> (3462077 reductions, 6313207 cells, 34 garbage collections)
+
+Thus we can probably remove the overwriting and gain speed.
+
 (Originally the unification algorithm was written to deal with
-recursive types, and in that case the overwriting was essential for
+possibly infinite types, and in that case the overwriting was essential for
 termination. Currently it is only an optimization and can be removed
 without invalidating the algorithm.) The overwriting might make the
 type error messages look strange if a mismatch is encountered further

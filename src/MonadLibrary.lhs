@@ -6,9 +6,10 @@
 >                     StateM(..),updateSTM,fetchSTM,executeSTM,mliftSTM,
 >                     (<@),(<@-),(<*>),(<:*>),(<<),(@@),(<|),(+++),mIf,
 >                     applyM,applyM2,
->                     Error(..),unDone,
+>                     Error(..),unDone,noErrorFilter,errorToList,
 >                     LErr,unLErr,mapLErr,showLErr,handleError,
 >                     STErr,mliftErr,convertSTErr,ErrorMonad(failEM),
+>		      changeError,
 >                     OutputT,output,runOutput,mliftOut,
 >                     mapl,foreach,liftop,map0,map1,map2,mfoldl,mfoldr,
 >		      mZero,mplus,
@@ -167,6 +168,13 @@ instance Functor (ST a) where
 >   where h (Done x)   = x
 >         h (Err mess) = d mess
 
+> errorToList :: Error a -> [a]
+> errorToList (Err msg) = []
+> errorToList (Done x)  = [x]
+
+> noErrorFilter :: [Error a] -> [a]
+> noErrorFilter = concatMap errorToList
+
 > instance ErrorMonad [] where
 >   failEM _ = []
 
@@ -260,6 +268,11 @@ instance Functor (ST a) where
 > 
 > instance ErrorMonad (STErr s) where
 >   failEM = failSTE
+> 
+> changeError :: (String -> String) -> STErr s a -> STErr s a
+> changeError f (STErr m) = STErr $ m >>= \e-> case e of
+>				Done x -> return (Done x)
+>				Err msg-> return (Err (f msg))
 > 
 > liftSTtoSTErr :: ST s a -> STErr s a
 > liftSTtoSTErr = STErr . fMap Done

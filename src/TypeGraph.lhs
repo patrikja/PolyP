@@ -7,7 +7,7 @@
 > import PrettyPrinter(Pretty(..),text)
 > import MonadLibrary(State,StateM,(<@),liftop,(<@-),
 >                     fetchST,executeST,mliftSTM,executeSTM,updateSTM,
->                     mfoldl,mfoldr,map2,mapl,mIf,
+>                     mfoldl,mfoldr,map2,mapl,mIf,foreach,
 >                     ST,MutVar,newVar,writeVar,readVar, (===))
 > import MyPrelude(fMap)
 > import Env(Env,Cache,lookupEqEnv,rememberST,newEnv,lookaside,remember)
@@ -71,9 +71,11 @@ We need a version of \verb|lookaside| that uses pointer equality,
 > fetchNode :: NodePtr s -> ST s (NodePtr s, HpNode s)
 > checkCon  :: HpType  s -> ST s (Maybe ConID)
 
-> qtypeOutOfHeap :: NonGenerics s -> HpQType s -> ST s QType
-> typeOutOfHeap  :: NonGenerics s -> HpType s  -> ST s Type
-> kindOutOfHeap  ::                  HpKind s  -> ST s Kind
+> qtypesOutOfHeap:: NonGenerics s -> [HpQType s] -> ST s [QType]
+> qtypeOutOfHeap :: NonGenerics s -> HpQType s   -> ST s QType
+> typesOutOfHeap :: NonGenerics s -> [HpType s]  -> ST s [Type]
+> typeOutOfHeap  :: NonGenerics s -> HpType s    -> ST s Type
+> kindOutOfHeap  ::                  HpKind s    -> ST s Kind
 
 > qtypeIntoHeap :: QType -> ST s (HpQType s)
 > typeIntoHeap  :: Type  -> ST s (HpType s)
@@ -222,21 +224,20 @@ variables. This is assured by first calling \verb|flattenNgs|.
 >   qtypeOutOfHeap' allngs ptr <@
 >   runVarSupply
 
+> qtypesOutOfHeap ngs types =
+>   flattenNgs ngs            >>= \allngs->
+>   foreach types (qtypeOutOfHeap' allngs) <@
+>   (runVarSupply . mapl id)
+
 > typeOutOfHeap ngs ptr =
 >   flattenNgs ngs            >>= \allngs->
 >   typeOutOfHeap' allngs ptr <@
 >   runVarSupply
 
-
-> typesOutOfHeap :: NonGenerics s -> (HpType s,HpType s) -> 
->                               ST s (Type    ,Type)
-> typesOutOfHeap ngs (a,b) =
->    mkApp a b                  >>= \hpt -> 
->    flattenNgs ngs             >>= \allngs->
->    typeOutOfHeap' allngs hpt <@
->    (unApp.runVarSupply)
->  where unApp (ta :@@: tb) = (ta,tb)
->        unApp _            = error "TypeGraph.typesOutOfHeap: impossible: no application found"
+> typesOutOfHeap ngs types =
+>   flattenNgs ngs            >>= \allngs->
+>   foreach types (typeOutOfHeap' allngs) <@
+>   (runVarSupply . mapl id)
 
 \end{verbatim}
 During type inference we will use the heap representation of the types

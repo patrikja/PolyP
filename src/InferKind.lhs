@@ -2,8 +2,9 @@
 \begin{verbatim}
 
 > module InferKind(inferDataDefs) where
-> import Functorise(makeFunctorStruct)
-> import Grammar(Kind,Type(..),Eqn,Eqn'(..),VarID,ConID,QType,
+> import Functorise(makeFunctorStruct',makeFunctorStruct,Struct)
+> import MyPrelude(pair)
+> import Grammar(Kind,Type(..),Eqn,Eqn'(..),VarID,ConID,QType,Func,
 >                (-=>),qualify,getNameOfDataDef)
 > import TypeGraph(HpKind,HpNode(..),fetchNode,mkVar,mkFun,
 >                  kindOutOfHeap)
@@ -15,7 +16,7 @@
 > import PrettyPrinter(pshow)
 > import UnifyTypes(unify)
 > import MonadLibrary(STErr,mliftErr,convertSTErr,ErrorMonad(failEM),
->                     Error(..),LErr, foreach,(<@))
+>                     Error(..),LErr, foreach,(<@),noErrorFilter)
 
 > infix 9 |*
 
@@ -70,9 +71,6 @@ before \verb|f|.)
 For each datatype constructor the types of the data constructors are
 returned and the kinds are checked. For all regular type constructors
 the corresponding functors are added to the functor environment.
-
-
-
 \begin{verbatim}
 
 > inferDataDefs :: TBasis -> [Eqn] -> LErr TBasis
@@ -82,9 +80,11 @@ the corresponding functors are added to the functor environment.
 >           Done (tass,kass) -> 
 >            let basis = (extendTypeTBasis tass . 
 >                         extendKindTBasis kass .
->			  extendFuncTBasis fass) startTBasis
->	         fass = map (\d->(getNameOfDataDef d,makeFunctorStruct d)) dataDefs
+>			  extendFuncTBasis funcass) startTBasis
 >            in (basis,Done ())
+>  where funcass = noErrorFilter 
+>		 . map (\d->makeFunctorStruct' d <@ (pair (getNameOfDataDef d))) 
+>		 $ dataDefs
 
 > inferDataDefs' :: TBasis -> [Eqn] -> 
 >                   Error ([(ConID, QType)],[(ConID, Kind)])

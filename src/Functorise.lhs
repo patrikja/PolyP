@@ -1,8 +1,9 @@
-> module Functorise(makeFunctorStruct,Struct) where
+> module Functorise(makeFunctorStruct,makeFunctorStruct',Struct) where
 > import Grammar(ConID,VarID,Eqn,Eqn'(DataDef),Func,
 >		 Type(..),spineWalkType,isTupleCon)
-> import MyPrelude(mapSnd)
+> import MyPrelude(mapSnd,pair)
 > import Folding(cataType)
+> import MonadLibrary(foreach,(<@),Error,handleError,ErrorMonad(..))
 
 \section{Extracting functors from {\tt data}-definitions} 
 For every regular datatype we need the functor that represents its
@@ -31,31 +32,53 @@ in inn, out, or forbidden below.
 \begin{verbatim}
 
 > makeFunctorStruct :: Eqn -> (Struct,Func)
-> makeFunctorStruct (DataDef def [_] alts _)
->   = ( ((def,1),map (mapSnd length) alts) , convAlts def alts)
-> makeFunctorStruct _ = error "BuiltinInstances.makeFunctorStruct: impossible: not a DataDef"
+> makeFunctorStruct = handleError err . makeFunctorStruct'
+>   where err s = error ("Functorise.makeFunctorStruct: not a regular datatype:\n  "++s)
 
-> convAlts :: ConID -> [(ConID, [Type])] -> Func
-> convAlts def alts = foldr1 plus (map (convProd def . snd) alts)
->   where x `plus` y = TCon "+" :@@: x :@@: y
+> makeFunctorStruct' :: Eqn -> Error (Struct,Func)
+> makeFunctorStruct' (DataDef def args alts _) | arity == 1
+>   = convAlts def alts <@ pair ((def,arity),map (mapSnd length) alts)
+>					       | otherwise
+>   = failEM "Only 1-parameter datatypes are Regular"
+>   where arity = length args
+> makeFunctorStruct' _ = error "Functorise.makeFunctorStruct: impossible: not a DataDef"
 
-> convProd :: ConID -> [Type] -> Func
-> convProd _   [] = TCon "Empty" 
-> convProd def ts = foldr1 prodFunctor (map (convType def) ts)
+> convAlts :: ConID -> [(ConID, [Type])] -> Error Func
+> convAlts def []   = failEM "An empty sum type is illegal"
+> convAlts def alts = foreach alts (convProd def . snd) <@ foldr1 sumFunctor
+
+> convProd :: ConID -> [Type] -> Error Func
+> convProd _   [] = return (TCon "Empty")
+> convProd def ts = foreach ts (convType def) <@ foldr1 prodFunctor
+
+> convType :: ConID -> Type -> Error Func
+> convType _   (TVar _)          = return parFunctor -- indexed if multiple params
+> convType _   t 
+>   | isConstantType t		 = return (constFunctor t)
+> convType def (TCon con :@@: TVar _)
+>   | con == def		 = return recFunctor
+> convType def t 
+>   | isTupleCon tup             = convProd def ts
+>      where (TCon tup:ts) = spineWalkType t
+> convType def (TCon con :@@: t) = convType def t <@ applyFunctor con
+>   
+> convType def _ = failEM ("Can't calculate FunctorOf "++ def ++" as the type is not regular enough.")
+
+> parFunctor, recFunctor :: Func
+> parFunctor = TCon "Par"
+> recFunctor = TCon "Rec"
+
+> constFunctor :: Type -> Func
+> constFunctor t = TCon "Const" :@@: t
+
+> sumFunctor :: Func -> Func -> Func
+> sumFunctor x y = TCon "+" :@@: x :@@: y
+
+> applyFunctor :: ConID -> Func -> Func
+> applyFunctor d f = TCon "@" :@@: TCon d :@@: f
 
 > prodFunctor :: Func -> Func -> Func
 > prodFunctor f g = TCon "*" :@@: f :@@: g
-
-> convType :: ConID -> Type -> Func
-> convType _   (TVar _) = TCon "Par" -- indexed if multiple params
-> convType _   t | isConstantType t = TCon "Const" :@@: t
-> convType def (TCon con :@@: TVar _)
->   | con == def = TCon "Rec"
-> convType def t | isTupleCon tup   = convProd def ts
->      where (TCon tup:ts) = spineWalkType t
-> convType def (TCon con :@@: t)    = 
->    TCon "@" :@@: TCon con :@@: convType def t
-> convType def _ = error ("BuiltinInstances.convType: Can't calculate FunctorOf "++ def ++" as the type is not regular enough.")
 
 > isConstantType :: Type -> Bool
 > isConstantType = null . typeVars

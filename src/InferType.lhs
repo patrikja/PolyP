@@ -67,15 +67,27 @@ typeEval t = __RUNST__ m
             hpTypeEval hpt >>
             typeOutOfHeap [] hpt
                
+\end{verbatim}
+
+When calling \texttt{checkInstance} the type \texttt{big} might be
+changed (to become equal to small if the check succeeds) but
+\texttt{small} is not changed. This behaviour should be the same also
+for \texttt{checkTypedInstance} so if the first call to
+\texttt{checkInstance} fails, \texttt{small} is copied (using
+TypeBasis.instantiate) before it is evaluated, to keep it from being
+changed by \texttt{hpQTypeEval}.
+
+\begin{verbatim}
+
 > checkTypedInstance :: Basis s -> NonGenerics s -> 
 >                       HpQType s -> HpQType s -> STErr s ()
 > checkTypedInstance basis ngs small big 
 >   = checkInstance ngs small big 
 >   `mplus`
->     (mliftErr (hpQTypeEval (getFuncEnv (getTBasis basis)) small) >>= \small' ->
->     checkInstance ngs small' big)
-
-
+>     do smallsimple <- mliftErr $
+>	  do smallcopy <- TypeBasis.instantiate ngs small
+>	     hpQTypeEval (getFuncEnv (getTBasis basis)) smallcopy
+>	 checkInstance ngs smallsimple big
 
 > hpQTypeEval :: FuncEnv -> HpQType s -> ST s (HpQType s)
 > hpQTypeEval funcenv (l :=> t) = 
@@ -275,7 +287,7 @@ The evaluation is done by side-effecting the pointer structure.
 >         evalFunctorOf funcenv (d:args) = checkCon d >>= maybe def fOf
 >
 >         -- fOf :: ConID -> ST s [NodePtr s]
->	  fOf d = maybe def (again2 @@ (typeIntoHeap . debug . snd)) $ 
+>	  fOf d = maybe def (again2 @@ (typeIntoHeap . snd)) $ 
 >		  lookupEnv d funcenv
 
 

@@ -9,9 +9,10 @@
 > import Parser(pType0,pType1,pTypeFile)
 > import ParseLibrary(parse)
 > import MyPrelude(mapSnd,splitUp,variablename,putErrStr)
-> import Grammar(Eqn,Eqn'(..),Qualified(..),Type(..),VarID,
+> import Grammar(Eqn,Eqn'(..),Qualified(..),Type(..),VarID,Func,ConID,
 >                (-=>),QType,Kind,qualify,deQualify,isDataDef,
->                tupleConstructor,listConstructor,functionConstructor)
+>                tupleConstructor,listConstructor,functionConstructor,
+>		 getNameOfDataDef)
 > import MonadLibrary(unDone,(<@),(<@-),unLErr)
 > import TypeBasis(TBasis,extendTypeTBasis,extendKindTBasis,emptyTBasis)
 > import InferKind(inferDataDefs)
@@ -104,7 +105,7 @@ Gofer's {\tt cc.prelude}.
 >                          (extendTypeTBasis typeass . 
 >			    extendKindTBasis kindass $
 >                           emptyTBasis)
->                          dataDefs
+>                          preludedatadefs 
 >   where 
 >     s2s     = starKind -=> starKind
 >     s2s2s   = starKind -=> s2s
@@ -157,6 +158,7 @@ Gofer's {\tt cc.prelude}.
 > fofd    = TCon "FunctorOf" :@@: TVar "d"
 
 > sumdatadef :: Eqn' a
+
 > preludedatadefs :: [Eqn]
 > (sumtypename,[leftname,rightname]) = ("Either",["Left","Right"])
 > sumdatadef = DataDef sumtypename ["a","b"] 

@@ -10,7 +10,7 @@
 > import InferKind(inferDataDefs)
 > import InferType(checkTypedInstance,tevalAndSubst)
 > import MonadLibrary(STErr, (<@),(<@-), mliftErr, unDone, LErr, mapLErr,
->                     convertSTErr, Error(..), mapl, foreach)
+>                     convertSTErr, Error(..), mapl, foreach,changeError)
 > import MyPrelude(pair,mapSnd,splitUp,fMap,  maytrace)
 > import StartTBasis(startTBasis)
 > import StartTBasis(charType,intType,floatType,boolType,strType)
@@ -145,7 +145,7 @@ inference.
 >   = inferLiteral basis lit <@ pair e
 
 > _     |-> e@WildCard
->   = lift (mkVar <@ ([]:=>) <@ pair e)
+>   = lift (mkVar <@ qualify <@ pair e)
 
 > basis |-> (Case expr alts)
 >   = basis |-> expr >>= \(expr',ps:=>tExpr) -> 
@@ -178,18 +178,20 @@ could perhaps be used in the parser.
 >     pair (Letrec eqnss' expr')
 
 \end{verbatim}
-*** line 3 below: checkInstance allGeneric hpType tExpr 
-%
+Infer the type of the expression, and check that it is more general
+than the supplied type. Label with the (less general) explicit type.
+When comparing generality the inferred type (tExpr) is instantiated so
+that if the check succeeds tExpr should be equal to the explicitly
+supplied type hpType.
+
+%***BUG: The contexts are not compared => bad contexts are allowed.
+%***BUG: line 3 below: checkInstance allGeneric hpType tExpr 
 This should not be allGeneric but ngs, or something like that, but it
 interferes with explicitly typed equations. This means that the
 present trick for handling explicitly typed equations by translation
-to explicitly typed exprssions should be changed, and a special rule
+to explicitly typed expressions should be changed, and a special rule
 for type checking equations should be used.
 
-Infer the type of the expression, and check that it is more general
-than the supplied type. Label with the (less general) explicit type.
-
-%***BUG: The contexts are not compared => bad contexts are allowed.
 \begin{verbatim}
 
 > basis |-> (Typed expr hpType)
@@ -200,12 +202,14 @@ than the supplied type. Label with the (less general) explicit type.
 >   -- where ngs = getNonGenerics basis
 
 \end{verbatim}
+
+
 \section{Patterns}
 When checking a pattern we extend the nevironment with new types for
 the variables in the pattern and check the pattern as an expression in
 this environment. It is important that {\tt extendTypeEnv} puts these
 new bindings in front of old bindings, possibly hiding some of them,
-as these bindings new are more local. The extend environment is
+as these new bindings are more local. The extend environment is
 returned for use in the right hand side of the construct that used the
 pattern.
 
@@ -218,7 +222,7 @@ scope rules right.
 > basis `labelPat` pat
 >   = inventTypes vars >>= \tVars -> 
 >     let basis' = ( makeNonGeneric tVars
->                  . extendTypeEnv (zip vars (map ([]:=>) tVars)) 
+>                  . extendTypeEnv (zip vars (map qualify tVars)) 
 >                  ) basis
 >     in (basis' |-> pat) <@ (`pair` basis')
 >   where vars = freeVarsPat pat
@@ -296,7 +300,7 @@ recursive, n is mostly 1.)
 > prepBasis basis (peqns,veqns) = 
 >     foreach veqns typeVar  <@
 >     pair (extendTypeEnv (map typePoly peqns) basis)
->  where typeVar veqn = mkVar <@ (pair (getNameOfVarBind veqn) . ([]:=>))
+>  where typeVar veqn = mkVar <@ (pair (getNameOfVarBind veqn) . qualify)
 >        typePoly (Polytypic v hpt _ _) = (v,hpt)
 >	 typePoly _	                = error "LabelType.prepBasis: Impossible!"
 
@@ -367,15 +371,22 @@ labelling rules.
 
 > labelVal :: Basis s -> (HpTEqn s,HpType s) -> 
 >                STErr s (HpTEqn s,HpQType s)
-> labelVal basis (eqn,tLhs) = 
+> labelVal basis (eqn,tLhs) = changeError addPosition $
 >     basis |-> e >>= \(e',t@(_:=>tRhs)) -> 
 >     unify tLhs tRhs <@-
 >     (insType t (inv e'),t)
 >  where (e,inv) = patBindToVarBind eqn
 >        insType t (VarBind v Nothing ps e') = VarBind v (Just t) ps e'
 >        insType _ q = q
+>	 addPosition s = getNameOfVarBind eqn++": error in type checking:\n"++s
 
 \end{verbatim}
+
+To improve the error messages from the unification algorithm, we
+prepend a line to the error message to indicate the location of the
+error. To do this we use the function \texttt{changeError :: (String
+-> String) -> STErr s a -> STErr s a}.
+
 \subsection{labelPoly in the heap}
 To check a polytypic definition we first infer the types of the case 
 alternatives one by one.
