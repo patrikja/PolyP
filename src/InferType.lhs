@@ -10,7 +10,7 @@
 > import TypeBasis(Basis,FuncEnv,getTBasis,getFuncEnv,instantiate)
 > import Env(Env,newEnv,rangeEnv,lookupEnv,extendsEnv)
 > import MyPrelude(fMap, trace,debug)
-> import MonadLibrary(STErr,mliftErr,unDone,(@@),
+> import MonadLibrary(STErr,mliftErr,unDone,(@@),mplus,
 >                     mapl,(<@),(<@-),accumseq,accumseq_)
 > import StateFix -- (ST [,runST [,RunST]]) in hugs, ghc, hbc
 > import Grammar(Eqn'(..),Expr'(..),
@@ -70,8 +70,12 @@ typeEval t = __RUNST__ m
 > checkTypedInstance :: Basis s -> NonGenerics s -> 
 >                       HpQType s -> HpQType s -> STErr s ()
 > checkTypedInstance basis ngs small big 
->   = mliftErr (hpQTypeEval (getFuncEnv (getTBasis basis)) small) >>= \small' ->
->     checkInstance ngs small' big
+>   = checkInstance ngs small big 
+>   `mplus`
+>     (mliftErr (hpQTypeEval (getFuncEnv (getTBasis basis)) small) >>= \small' ->
+>     checkInstance ngs small' big)
+
+
 
 > hpQTypeEval :: FuncEnv -> HpQType s -> ST s (HpQType s)
 > hpQTypeEval funcenv (l :=> t) = 

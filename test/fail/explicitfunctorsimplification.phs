@@ -1,0 +1,5 @@
+data Tree a = Leaf a | Bin (Tree a) (Tree a)
+
+--x = out (Leaf 1) :: FunctorOf Tree Int (Tree Int)
+x = Left 1 :: FunctorOf Tree Int (Tree Int)
+main = inn x

@@ -11,7 +11,7 @@
 >                     STErr,mliftErr,convertSTErr,ErrorMonad(failEM),
 >                     OutputT,output,runOutput,mliftOut,
 >                     mapl,foreach,liftop,map0,map1,map2,mfoldl,mfoldr,
->		      mZero,
+>		      mZero,mplus,
 >		      accumseq,accumseq_,mguard) where
 > import StateFix
 > import MyPrelude(pair,mapFst,fMap)
@@ -23,8 +23,10 @@
 #endif
 #ifdef __Haskell98__
 #define MONADZERONAME MonadPlus
+#define MONADPLUSOP `mplus`
 #else
 #define MONADZERONAME MonadZero
+#define MONADPLUSOP ++
 #endif
 
 > infixl 9 <@
@@ -262,6 +264,21 @@ instance Functor (ST a) where
 > liftSTtoSTErr :: ST s a -> STErr s a
 > liftSTtoSTErr = STErr . fMap Done
 > 
+> mzeroSTErr = STErr (return (Err "mzero:"))
+>
+> instance MONADZERONAME (STErr s) where
+#ifdef __Haskell98__
+>   mzero  = mzeroSTErr
+#else
+>   zero = mzeroSTErr
+#endif
+
+> instance MonadPlus (STErr s) where
+>   a MONADPLUSOP b = STErr $ 
+>     convertSTErr a >>= \x -> case x of
+>   	Done y -> return (Done y)
+>   	Err _  -> convertSTErr b
+
 > {- 
 > dropSTErrtoST :: STErr s a -> ST s a
 > dropSTErrtoST (STErr m)
