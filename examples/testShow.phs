@@ -1,5 +1,5 @@
 module Main where
-import Show(pshow,ppretty,Expr(..),(+++))
+import Show(pshow,ppretty,Expr(..))
 
 main = print (showExpr (ppretty x))
 
@@ -24,8 +24,8 @@ showsPrecExpr s p e =
   case e of
     (Par x)      -> s p x
     (Constr c l) -> case l of
-                      ([]) -> (+++) c
-                      _    -> mayparen p (((+++) c).showsPrecExprList s high l)
+                      ([]) -> (++) c
+                      _    -> mayparen p (((++) c).showsPrecExprList s high l)
 
 high = 1
 low = 0

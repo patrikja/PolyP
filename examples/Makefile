@@ -42,6 +42,17 @@ MAKEFLAGS += -s
 
 include ../test/polyp.mk
 
+print:
+	cat ../polylib/Base.phs    ../polylib/Sum.phs       ../polylib/Crush.phs \
+	    ../polylib/Flatten.phs ../polylib/Propagate.phs ../polylib/Thread.phs\
+	    ../polylib/Zip.phs     ../polylib/ConstructorName.phs		 \
+            ../polylib/EqOrd.phs   ../polylib/Equal.phs				 \
+	    ../polylib/BaseM.phs   Show.phs > All.phs ; \
+	enscript -2Gr All.phs 
+
+.PHONY:	all print
+
+# The rest is old stuff
 ##################
 # using CHASE for import-chasing this rule translates its input file
 # using PolyP, prepends possible extra type information, and runs it
@@ -60,14 +71,3 @@ include ../test/polyp.mk
 #	@-($(PolyP) tmp.phs | cat $(wildcard type$*.hs) - >test$*.hs \
 #          && ${runhugs} test$*.hs > test$*.check) || echo >test$*.check
 #	@${DIFF} test$*.check test$*.out
-
-print:
-	cat ../polylib/Base.phs    ../polylib/Sum.phs       ../polylib/Crush.phs \
-	    ../polylib/Flatten.phs ../polylib/Propagate.phs ../polylib/Thread.phs\
-	    ../polylib/Zip.phs     ../polylib/ConstructorName.phs		 \
-            ../polylib/EqOrd.phs   ../polylib/Equal.phs				 \
-	    ../polylib/BaseM.phs   Show.phs > All.phs ; \
-	enscript -2Gr All.phs 
-
-.PHONY:	all print
-

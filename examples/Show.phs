@@ -6,12 +6,10 @@ module Show(pshow,ppretty) where
 import Base(pmap)
 import ConstructorName(constructorName,constructors)
 
--- pshow :: (a->[Char]) -> d a -> [Char]
+pshow :: Regular d =>(a->[Char]) -> d a -> [Char]
 pshow sh x = cata (fshow (cnames x)) (pmap sh x)
 
 cnames x = map constructorName (constructors `asTypeOf` [x])
-
-x +++ y = [] ++ x ++ y  -- trick to get the restricted type
 
 polytypic fshow :: [[Char]] -> f [Char] [Char] -> [Char] 
   =  \ss -> case f of
@@ -22,7 +20,7 @@ fshow2 str x = str ++ fshow3 x
 
 polytypic fshow3 :: f [Char] [Char] -> [Char] 
   = case f of
-      g * h	-> \(x,y)-> parenthesize (fshow3 x) +++ fshow3 y
+      g * h	-> \(x,y)-> parenthesize (fshow3 x) ++ fshow3 y
       d @ g	-> pshow id . pmap fshow3
       Empty	-> \_ -> ""
       Par	-> parenthesize 
@@ -52,7 +50,7 @@ fpretty2 c x = Constr c (fpretty3 x)
 
 polytypic fpretty3 :: f a (Expr a) -> [Expr a] 
   = case f of
-      g * h	-> \(x,y)-> fpretty3 x +++ fpretty3 y
+      g * h	-> \(x,y)-> fpretty3 x ++ fpretty3 y
       Empty	-> \_ -> []
       f		-> singleton . fpretty4 
 

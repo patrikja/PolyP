@@ -2,8 +2,8 @@
 #   example: PolyPFLAGS = -p ArrTypes.hs -r start
 
 # Extension names: .phs -- input polyp modules
-#                  .Phs -- one big import-chased polyp file
-#                  .Hs  -- output from polyp (may need som expl. types)
+#                  .Phs2 -- one big import-chased polyp file
+#                  .Hs2  -- output from polyp (may need som expl. types)
 #                  .hs  -- final Haskell code produced
 
 ################################################################
@@ -19,20 +19,23 @@ CHASE = chase
 %.run: %.hs
 	$(runhugs) $<
 
-%.hs: %.Hs
+%.hs: %.Hs2
 	cat $(wildcard type$*.hs) $< > $@
 
-%.Hs: %.Phs
+%.Hs2: %.Phs2
 	$(PolyP) $(PolyPFLAGS) $< > $@ 
 
-%.Phs: %.phs
+%.Phs2: %.phs
 	$(CHASE) $(CHASEFLAGS) $< > $@
 
-%.check: %.hs %.out
-	$(runhugs) $< | diff - $*.out
+%.out2: %.hs
+	$(runhugs) $< > $@
+
+%.check: %.out %.out2
+	diff $*.out2 $*.out
 
 clean:
-	rm -f $(targets:.hs=.Hs) $(targets:.hs=.Phs)
+	rm -f $(targets:.hs=.Hs2) $(targets:.hs=.Phs2)
 
 veryclean: clean
 	rm -f $(targets)
