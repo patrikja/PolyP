@@ -5,8 +5,9 @@ import PolyPTypes
 flatten :: Regular d => d a -> [a]
 flatten  =  fflatten . fmap2 singleton flatten . out
 
-fflatten :: f [a] [a] -> [a]
-fflatten x = error "fflatten: only useful for type checking" pmap x
+fflatten :: Bifunctor f => f [a] [a] -> [a]
+fflatten x = error "fflatten: only useful for type checking" x
+-- pmap is also used
 
 fl_par :: Bifunctor f => f a b -> [a]
 fl_rec :: Bifunctor f => f a b -> [b]

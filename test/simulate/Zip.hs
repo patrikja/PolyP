@@ -35,7 +35,8 @@ fzipWith :: Bifunctor f => ((a,a')->c) -> ((b,b')->d) ->
 fzipWith f g = mapMaybe (fmap2 f g) . fzip 
 
 fzip :: Bifunctor f => (f a b,f c d) -> Maybe (f (a,c) (b,d))
-fzip p = onlyUsefulForTypeChecking "fzip" (-+-) propagate sumprop prodprop p
+fzip p = onlyUsefulForTypeChecking "fzip" (-+-) sumprop prodprop p
+-- also depends on propagate, but referring to it messes up the Haskell type
 
 sumzip :: (Either a b,Either c d)-> Maybe (Either (a,c) (b,d))
 sumzip p = case p of
