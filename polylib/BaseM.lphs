@@ -3,10 +3,18 @@
 % Monadic polytypic functions
 %   980504 Patrik Jansson
 % ------------------------------------------------------------
+%if codeOnly
 
-> module BaseM(pmapM,fmap2M,cataM,anaM,hyloM,paraM,innM,outM,idM,(@@),liftM) where
+> module BaseM(pmapM,fmap2M,cataM,anaM,hyloM,paraM,innM,outM,idM,(@@)) where
 > import Base((-*-))
 
+%else
+
+> module BaseM(pmapM,fmap2M,cataM,anaM,hyloM,paraM,
+>              innM,outM,idM,(@@)) where
+> import Base((-*-))
+
+%endif codeOnly
 %{
 %align 26
 
@@ -27,10 +35,10 @@
 %align
 %}
 
-> summapM :: Monad b => (a -> b c) -> (d -> b e) -> 
->                       Either a d -> b (Either c e)
+> summapM :: Monad m => (a -> m c) -> (d -> m e) -> 
+>                       Either a d -> m (Either c e)
 > summapM f g = (liftM Left . f) `either` (liftM Right . g)
-> prodmapM :: Monad b => (a -> b c) -> (d -> b e) -> (a,d) -> b (c,e)
+> prodmapM :: Monad m => (a -> m c) -> (d -> m e) -> (a,d) -> m (c,e)
 > prodmapM  f g p = f (fst p) >>= \x-> g (snd p) >>= \y-> return (x,y) 
 > prodmapMr f g p = g (snd p) >>= \y-> f (fst p) >>= \x-> return (x,y) 
 

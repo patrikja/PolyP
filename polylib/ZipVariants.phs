@@ -1,9 +1,9 @@
 module ZipVariants(pzipWith'',pzip'',pzip') where
-import Zip(pzipWith,pzipWith',resultM)
+import Zip(pzipWith,pzipWith')
 import Flatten(fl_all)
 
 pzipWith'' :: Regular d => ((a, b) -> c) -> (d a, d b) -> Maybe (d c)
-pzipWith'' op = pzipWith (resultM.op)
+pzipWith'' op = pzipWith (return.op)
 
 pzip'' :: Regular d => (d a,d b) -> Maybe (d (a,b))
 pzip'' = pzipWith'' id

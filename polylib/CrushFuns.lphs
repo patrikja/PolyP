@@ -4,7 +4,17 @@
 %   980409 Patrik Jansson
 % ------------------------------------------------------------
 
+%if codeOnly
+
 > module CrushFuns(psum,prod,conc,pand,por,size,flatten,pall,pany,pelem) where
+
+%else
+
+> module CrushFuns(psum,prod,conc,pand,por,
+>                  size,flatten,pall,pany,pelem) where
+
+%endif codeOnly
+
 > import Crush(crush)
 > import Base(pmap)
 

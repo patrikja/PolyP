@@ -29,3 +29,6 @@
 > size :: Regular d => d a -> Int
 > size = psum . pmap (\_->1)
 
+The functions |psum| and |size| can also be defined using |crush| (see
+the module |CrushFuns|).
+

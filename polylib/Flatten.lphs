@@ -44,6 +44,9 @@ A variant: defining |flatten| using |cata|:
 
 > flatten  =  cata (fflatten . fmap2 singleton id)
 
+Function |flatten| can also be defined using |crush| (see the module
+|CrushFuns|).
+
 %endif
 
 \paragraph{Help functions for lists}

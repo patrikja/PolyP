@@ -1,19 +1,19 @@
 module Compare(pcompare',pcompare,fcompare) where
 pcompare' :: (Regular d, Ord a) => d a -> d a -> Ordering
 pcompare' = pcompare compare
-pcompare :: Regular d => (a->a->Ordering) -> d a -> d a -> Ordering
+pcompare :: Regular d    => (a->a->Ordering) -> d a -> d a -> Ordering
 pcompare eq x y = fcompare eq (pcompare eq) (out x) (out y)
 
 polytypic fcompare :: (a->a->Ordering) -> (b->b->Ordering) -> 
                       f a b -> f a b -> Ordering
   = \p r -> case f of
-              g + h     ->  sumcompare  (fcompare p r) (fcompare p r)
-              g * h     ->  prodcompare (fcompare p r) (fcompare p r)
-              Empty     ->  \_ _ -> EQ
-              Par       ->  p
-              Rec       ->  r
-              d @ g     ->  pcompare (fcompare p r)
-              Const t   ->  compare 
+              g + h    ->  sumcompare  (fcompare p r) (fcompare p r)
+              g * h    ->  prodcompare (fcompare p r) (fcompare p r)
+              Empty    ->  \_ _ -> EQ
+              Par      ->  p
+              Rec      ->  r
+              d @ g    ->  pcompare (fcompare p r)
+              Const t  ->  compare 
 sumcompare :: (a->a->Ordering) -> (b->b->Ordering) -> 
               Either a b -> Either a b -> Ordering
 sumcompare f g a b = case (a,b) of
