@@ -1,0 +1,4 @@
+-- Functions
+union	:: Eq a => [a] -> [a] -> [a]
+delete	:: Eq a => a -> [a] -> [a]
+-- Datatypes
