@@ -10,6 +10,10 @@ This leaves the executable in the file bin/Xpolyp.
 
 [The makefiles are written for GNU make, sometimes called gmake.]
 
+To run a test suite do
+  make check
+
+
 Please send an email to 
   patrikj@cs.chalmers.se 
 saying that you have installed PolyP so that we can give you

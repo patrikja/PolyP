@@ -1,5 +1,5 @@
 # The Makefile is for the following PolyP-version
-version=0.8
+version=0.9
 
 help: 
 	@echo Makefile for PolyP by Patrik Jansson
@@ -31,6 +31,9 @@ hugs ghc hbc:
 # runhugs hugssrc/Main.lhs
 
 # Run some regression tests
+check:
+	$(MAKE) -C examples check
+
 check.% : %
 	$(MAKE) -C examples check PolyP=../bin/$*polyp
 
