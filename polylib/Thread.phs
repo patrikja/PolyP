@@ -1,6 +1,6 @@
 module Thread(thread,pmapM,fthread,fmap2M) where
 import Base(cata,inn,pmap)
-import BaseM(pmapM,fmap2M)
+import BaseM(pmapM,fmap2M,(@@))
 thread :: (Regular d, Monad m) => d (m a) -> m (d a)
 thread  =  cata (liftM inn . fthread)
 

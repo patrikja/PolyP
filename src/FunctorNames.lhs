@@ -1,7 +1,8 @@
 > module FunctorNames(codeFunctors) where
 > import MonadLibrary(Error(..),ErrorMonad(..),map0,map1,map2,accumseq)
 > import MyPrelude(fMap)
-> import Grammar(Type(..),Func,ConID,VarID,listConstructor)
+> import Grammar(Type(..),Func,ConID,VarID,
+>                listConstructor,functionConstructor,isTupleCon)
 > import PrettyPrinter(pshow)
 
 % ----------------------------------------------------------------
@@ -120,10 +121,17 @@ Just a test expression --- not used.
 > -}
 
 > codeTCon :: ConID -> String
-> codeTCon c | c == listConstructor = "0"
->            | otherwise            = show (length c) ++ c
+> codeTCon c | c == listConstructor     = codeString ""
+>            | c == functionConstructor = codeString "_"
+>            | isTupleCon c = codeString ('_':show tuplesize)
+>            | otherwise    = codeString c
+>   where tuplesize :: Int
+>         tuplesize = let n = length c - 1 in if n==1 then 0 else n
 
 > codeTVar :: VarID -> String
-> codeTVar v = show (length v) ++ v
+> codeTVar = codeString
+
+> codeString :: String -> String
+> codeString s = show (length s) ++ s
 
 \end{verbatim}

@@ -27,3 +27,4 @@ less lazy than |peq|.
 > peq' x y = maybe False 
 >                  (all (uncurry (==)) . flatten) 
 >                  (pzip (x,y))
+

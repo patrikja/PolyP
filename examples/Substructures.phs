@@ -4,4 +4,4 @@ import Flatten(fl_rec)
 
 -- all substructures as a list
 substructures :: Regular d => d a -> [d a]
-substructures = para (\x -> \y -> x : concat (fl_rec y))
+substructures = para (\x y -> x : concat (fl_rec y))

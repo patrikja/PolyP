@@ -12,3 +12,4 @@
 > 
 > propagate :: Regular d => d (Maybe a) -> Maybe (d a)
 > propagate = thread 
+

@@ -78,3 +78,4 @@ functor arguments.
 > 
 > mapFst :: (a->b) -> (a,c) -> (b,c)
 > mapFst f p = (f (fst p), snd p)
+

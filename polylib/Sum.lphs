@@ -28,3 +28,4 @@
 
 > size :: Regular d => d a -> Int
 > size = psum . pmap (\_->1)
+

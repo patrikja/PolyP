@@ -105,3 +105,4 @@ an instance of |Eq|.
 > 
 > (@@)     :: (a -> Maybe b) -> (c -> Maybe a) -> c -> Maybe b
 > g @@ f = \a-> f a `bindM` g
+

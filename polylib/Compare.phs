@@ -1,23 +1,29 @@
-module Compare(pcompare,pcompareBy) where
-import Base(fmap2)
-import ConstructorName(fconstructor2Int)
-import Flatten(flatten,fl_all)
-import Zip(pzip,fzip,pzipWith')
-pcompare :: (Regular d, Ord a) => d a -> d a -> Ordering
-pcompare = pcompareBy compare
-pcompareBy :: Regular d => (a->a->Ordering) -> 
-                           d a -> d a -> Ordering
-pcompareBy op x y = fcompare op (pcompareBy op) (out x) (out y)
+module Compare(pcompare',pcompare,fcompare) where
+pcompare' :: (Regular d, Ord a) => d a -> d a -> Ordering
+pcompare' = pcompare compare
+pcompare :: Regular d => (a->a->Ordering) -> d a -> d a -> Ordering
+pcompare eq x y = fcompare eq (pcompare eq) (out x) (out y)
 
-fcompare :: Bifunctor f => (a->a->Ordering) -> (b->b->Ordering) -> 
-                           f a b -> f a b -> Ordering
-fcompare f g x y = 
-  maybe (compare (fconstructor2Int x) (fconstructor2Int y))                
-        (forder . fmap2 (uncurry f) (uncurry g))                           
-        (fzip (x,y))                                        
-forder :: Bifunctor f => f Ordering Ordering -> Ordering
-forder = foldr ordop EQ . fl_all
-
+polytypic fcompare :: (a->a->Ordering) -> (b->b->Ordering) -> 
+                      f a b -> f a b -> Ordering
+  = \p r -> case f of
+              g + h     ->  sumcompare  (fcompare p r) (fcompare p r)
+              g * h     ->  prodcompare (fcompare p r) (fcompare p r)
+              Empty     ->  \_ _ -> EQ
+              Par       ->  p
+              Rec       ->  r
+              d @ g     ->  pcompare (fcompare p r)
+              Const t   ->  compare 
+sumcompare :: (a->a->Ordering) -> (b->b->Ordering) -> 
+              Either a b -> Either a b -> Ordering
+sumcompare f g a b = case (a,b) of
+                       (Left  x, Left  v)   ->  f x v
+                       (Right y, Right w)   ->  g y w
+                       (Left  _, Right _)   ->  LT
+                       (Right _, Left  _)   ->  GT
+prodcompare :: (a->a->Ordering) -> (b->b->Ordering) -> 
+               (a,b)->(a,b) -> Ordering
+prodcompare f g p q = f (fst p) (fst q) `ordop` g (snd p) (snd q)
 ordop :: Ordering -> Ordering -> Ordering
 ordop x y = case x of 
               EQ -> y

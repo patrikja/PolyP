@@ -1,4 +1,4 @@
 module Main where
-import Compare(pcompare)
-main = print (pcompare "Pat" "rik")
+import Compare(pcompare')
+main = print (pcompare' "Pat" "rik")
 -- expected output: LT

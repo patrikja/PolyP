@@ -6,7 +6,7 @@
 
 > module Thread(thread,pmapM,fthread,fmap2M) where
 > import Base(cata,inn,pmap)
-> import BaseM(pmapM,fmap2M)
+> import BaseM(pmapM,fmap2M,(@@))
 
 %{
 %align 21
@@ -50,3 +50,4 @@ Alternative definitions of |pmapM| and |fmap2M|:
 > fmap2M f g = fthread . fmap2 f g
 
 %endif not codeOnly
+

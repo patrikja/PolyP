@@ -18,3 +18,4 @@
 > pzip' p = ( pzipWith'    inn     (const undefined)    id      p
 >           , pzipWith' (and.fl_all) (const False) (const True) p
 >           )
+

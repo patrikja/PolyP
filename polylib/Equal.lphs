@@ -51,3 +51,4 @@ A slightly less lazy variant:
 > prodequal f g (x,y) (v,w) = f x v && g y w
 
 %endif not codeOnly
+
