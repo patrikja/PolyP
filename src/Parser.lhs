@@ -90,6 +90,7 @@ The module parser accepts but ignores the module head, exports and imports.
 
 > pImport :: Parser Import
 > pImport =   pVarID <@ Plain
+>	 +++ pConID <@ Plain
 >        +++ (pConID <*> pParenthesized 
 >                          (   symbol ".." <@- []
 >                          +++ pCommaList (pConID+++pVarID)
