@@ -1,0 +1,59 @@
+% Literate PolyP + LaTeX script for use with lhs2TeX -*- Mode: latex; -*-
+% ------------------------------------------------------------
+% Comparing and ordering
+%   000330 Patrik Jansson 
+% ------------------------------------------------------------
+
+> module Compare(pcompare,pcompareBy) where
+> import Base(fmap2)
+> import ConstructorName(fconstructor2Int)
+> import Flatten(flatten,fl_all)
+> import Zip(pzip,fzip,pzipWith')
+
+%if simulateInHaskell
+
+> import PolyPTypes
+
+%endif simulateInHaskell
+
+> pcompare :: (Regular d, Ord a) => d a -> d a -> Ordering
+> pcompare = pcompareBy compare
+
+> pcompareBy :: Regular d => (a->a->Ordering) -> 
+>                            d a -> d a -> Ordering
+> pcompareBy op x y = fcompare op (pcompareBy op) (out x) (out y)
+>
+> fcompare :: Bifunctor f => (a->a->Ordering) -> (b->b->Ordering) -> 
+>                            f a b -> f a b -> Ordering
+> fcompare f g x y = 
+>   maybe (compare (fconstructor2Int x) (fconstructor2Int y))                
+>         (forder . fmap2 (uncurry f) (uncurry g))                           
+>         (fzip (x,y))                                        
+
+%{
+%align 20
+
+> forder :: Bifunctor f => f Ordering Ordering -> Ordering
+> forder = foldr ordop EQ . fl_all
+>
+> ordop :: Ordering -> Ordering -> Ordering
+> ordop x y = case x of 
+>               EQ -> y
+>               _  -> x
+
+%align
+%}
+
+%if not codeOnly
+
+Possible variants:
+
+< forder = fcrush ordop EQ
+<
+< pcompareBy op x y = 
+<   pzipWith' forder
+<             (uncurry compare . (constructor2Int -*- constructor2Int)) 
+<             (uncurry op) 
+<             (x,y)
+
+%endif not codeOnly

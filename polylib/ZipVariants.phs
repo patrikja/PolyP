@@ -1,7 +1,3 @@
-----------------------------------------------------------------
--- ZipVariants
--- 980409 Patrik Jansson
-----------------------------------------------------------------
 module ZipVariants(pzipWith'',pzip'',pzip') where
 import Zip(pzipWith,pzipWith',resultM)
 import Flatten(fl_all)
@@ -16,4 +12,3 @@ pzip' :: Regular d => (d a, d b) -> (d (a,b), Bool)
 pzip' p = ( pzipWith'    inn     (const undefined)    id      p
           , pzipWith' (and.fl_all) (const False) (const True) p
           )
-

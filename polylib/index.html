@@ -37,7 +37,7 @@ in the library, and gives a rationale for their design.
 <A Href="#ConstructorName">ConstructorName</A>
 <A Href="#Crush">Crush</A>
 <A Href="#CrushFuns">CrushFuns</A>
-<A Href="#EqOrd">EqOrd</A>
+<A Href="#Compare">Compare</A>
 <A Href="#Equal">Equal</A>
 <A Href="#Flatten">Flatten</A>
 <A Href="#Propagate">Propagate</A>
@@ -65,7 +65,7 @@ para :: Regular d =&gt; (d a -&gt; FunctorOf d a b -&gt; b) -&gt; d a -&gt; b
 <H3><A Name="BaseM" Href="BaseM.phs">BaseM</A></H3>
 <pre>
 -- Monadic polytypic functions
-module BaseM(pmapM,fmap2M,cataM,anaM,hyloM,paraM,innM,outM,idM,(@@),mapm) where
+module BaseM(pmapM,fmap2M,cataM,anaM,hyloM,paraM,innM,outM,idM,(@@)) where
 pmapM :: (Regular d, Monad m) =&gt; (a -&gt; m b) -&gt; d a -&gt; m (d b)
 polytypic fmap2M :: Monad m =&gt; (a -&gt; m c) -&gt; (b -&gt; m d) -&gt; f a b -&gt; m (f c d)
 summapM :: Monad b =&gt; (a -&gt; b c) -&gt; (d -&gt; b e) -&gt; Either a d -&gt; b (Either c e)
@@ -87,7 +87,7 @@ cataMr :: (Regular d,Monad m) =&gt; (FunctorOf d a b -&gt; m b) -&gt; (d a -&gt;
 anaMr  :: (Regular d,Monad m) =&gt; (b -&gt; m (FunctorOf d a b)) -&gt; (b -&gt; m (d a))
 hyloMr :: (Bifunctor f,Monad m) =&gt; (f a b -&gt; m b)-&gt; (c -&gt; m (f a c)) -&gt; c -&gt; m b
 -- Monad operations (that are not in PolyPs prelude)
-mapm :: Monad m =&gt; (a-&gt;b) -&gt; m a -&gt; m b
+liftM :: Monad m =&gt; (a-&gt;b) -&gt; m a -&gt; m b
 (@@) :: Monad m =&gt; (b-&gt;m c) -&gt; (a-&gt;m b) -&gt; (a-&gt;m c)
 </pre>
 <H3><A Name="ConstructorName" Href="ConstructorName.phs">ConstructorName</A></H3>
@@ -131,14 +131,13 @@ pany    :: Regular d =&gt; (a -&gt; Bool) -&gt; d a -&gt; Bool
 pelem   :: (Regular d,Eq a) =&gt; a -&gt; d a -&gt; Bool
 flatten' :: Regular d =&gt; d a -&gt; [a]
 </pre>
-<H3><A Name="EqOrd" Href="EqOrd.phs">EqOrd</A></H3>
+<H3><A Name="Compare" Href="Compare.phs">Compare</A></H3>
 <pre>
--- Equality and ordering
-module EqOrd(pequal,peq,peq',pord) where
-pequal :: Regular d =&gt; (a-&gt;b-&gt;Bool) -&gt; d a -&gt; d b -&gt; Bool
-peq :: (Regular d, Eq a) =&gt; d a -&gt; d a -&gt; Bool
-peq' :: (Regular d, Eq a) =&gt; d a -&gt; d a -&gt; Bool
-pord :: (Regular d, Ord a) =&gt; (d a,d a) -&gt; Ordering
+-- Ordering
+module Compare(pcompare,pcompareBy) where
+pcompare :: (Regular d, Ord a) =&gt; d a -&gt; d a -&gt; Ordering
+pcompareBy :: Regular d =&gt; (a-&gt;a-&gt;Ordering) -&gt; 
+                           d a -&gt; d a -&gt; Ordering
 ordop :: Ordering -&gt; Ordering -&gt; Ordering
 </pre>
 <H3><A Name="Equal" Href="Equal.phs">Equal</A></H3>
@@ -195,7 +194,7 @@ polytypic fthread :: Monad m =&gt; f (m a) (m b) -&gt; m (f a b)
 sumthread  :: Monad m =&gt; Either (m a) (m b) -&gt; m (Either a b)
 prodthread :: Monad m =&gt; (m a,m b) -&gt; m (a,b)
 -- Monad operations (that are not in PolyPs prelude)
-mapm :: Monad m =&gt; (a-&gt;b) -&gt; m a -&gt; m b
+liftM :: Monad m =&gt; (a-&gt;b) -&gt; m a -&gt; m b
 -- pmapM :: (Regular d, Monad m) =&gt; (a -&gt; m b) -&gt; d a -&gt; m (d b)
 -- fmap2M :: (Bifunctor f, Monad m) =&gt; (a -&gt; m c) -&gt; (b -&gt; m d) -&gt; 
 --                                     f a b -&gt; m (f c d)
@@ -283,30 +282,28 @@ pzip' :: Regular d =&gt; (d a, d b) -&gt; (d (a,b), Bool)
 <!-- BaseM.innM --> <a href="#BaseM">innM</a>
 <!-- ConstructorName.int2constructor --> <a href="#ConstructorName">int2constructor</a>
 <!-- ConstructorName.int2fconstructor --> <a href="#ConstructorName">int2fconstructor</a>
+<!-- BaseM.liftM --> <a href="#BaseM">liftM</a>
+<!-- Thread.liftM --> <a href="#Thread">liftM</a>
 <!-- ConstructorName.mapFst --> <a href="#ConstructorName">mapFst</a>
 <!-- Propagate.mapMaybe --> <a href="#Propagate">mapMaybe</a>
-<!-- BaseM.mapm --> <a href="#BaseM">mapm</a>
-<!-- Thread.mapm --> <a href="#Thread">mapm</a>
 <!-- Flatten.nil --> <a href="#Flatten">nil</a>
-<!-- EqOrd.ordop --> <a href="#EqOrd">ordop</a>
+<!-- Compare.ordop --> <a href="#Compare">ordop</a>
 <!-- BaseM.outM --> <a href="#BaseM">outM</a>
 <!-- CrushFuns.pall --> <a href="#CrushFuns">pall</a>
 <!-- CrushFuns.pand --> <a href="#CrushFuns">pand</a>
 <!-- CrushFuns.pany --> <a href="#CrushFuns">pany</a>
 <!-- Base.para --> <a href="#Base">para</a>
 <!-- BaseM.paraM --> <a href="#BaseM">paraM</a>
+<!-- Compare.pcompare --> <a href="#Compare">pcompare</a>
+<!-- Compare.pcompareBy --> <a href="#Compare">pcompareBy</a>
 <!-- CrushFuns.pelem --> <a href="#CrushFuns">pelem</a>
-<!-- EqOrd.peq --> <a href="#EqOrd">peq</a>
 <!-- Equal.peq --> <a href="#Equal">peq</a>
-<!-- EqOrd.peq' --> <a href="#EqOrd">peq'</a>
-<!-- EqOrd.pequal --> <a href="#EqOrd">pequal</a>
 <!-- Equal.pequal --> <a href="#Equal">pequal</a>
 <!-- Base.pmap --> <a href="#Base">pmap</a>
 <!-- BaseM.pmapM --> <a href="#BaseM">pmapM</a>
 <!-- BaseM.pmapMl --> <a href="#BaseM">pmapMl</a>
 <!-- BaseM.pmapMr --> <a href="#BaseM">pmapMr</a>
 <!-- CrushFuns.por --> <a href="#CrushFuns">por</a>
-<!-- EqOrd.pord --> <a href="#EqOrd">pord</a>
 <!-- CrushFuns.prod --> <a href="#CrushFuns">prod</a>
 <!-- Equal.prodequal --> <a href="#Equal">prodequal</a>
 <!-- BaseM.prodmapM --> <a href="#BaseM">prodmapM</a>
@@ -339,7 +336,7 @@ pzip' :: Regular d =&gt; (d a, d b) -&gt; (d (a,b), Bool)
 
 <hr>
 <!-- hhmts start -->
-Last modified: Thu Oct 21 10:17:15 MET DST 1999
+Last modified: Thu Mar 30 11:40:53 CEST 2000
 <!-- hhmts end -->
 by
 <address>

@@ -1,0 +1,29 @@
+% Literate PolyP + LaTeX script for use with lhs2TeX -*- Mode: latex; -*-
+% ------------------------------------------------------------
+% Equality - alternative definitions
+%   000330 Patrik Jansson 
+% ------------------------------------------------------------
+
+> module EqualVariants(pequal,peq) where
+> import Flatten(flatten,fl_all)
+> import Zip(pzip,pzipWith')
+
+> pequal :: Regular d => (a->b->Bool) -> d a -> d b -> Bool
+> pequal op l r = pzipWith' (and . fl_all)
+>                           (\_ -> False) 
+>                           (uncurry op)
+>                           (l,r)        
+
+> peq :: (Regular d, Eq a) => d a -> d a -> Bool
+> peq l r = pzipWith' (and . fl_all)
+>                     (\_ -> False) 
+>                     (uncurry (==))
+>                     (l,r)        
+
+The variant |peq'| compares contents and structure separately. It is
+less lazy than |peq|.
+
+> peq' :: (Regular d, Eq a) => d a -> d a -> Bool
+> peq' x y = maybe False 
+>                  (all (uncurry (==)) . flatten) 
+>                  (pzip (x,y))

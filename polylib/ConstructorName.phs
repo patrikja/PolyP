@@ -1,64 +1,55 @@
----------------------------------------------------------------
--- ConstructorName
---   990602 Patrik Jansson
 module ConstructorName where
----------------------------------------------------------------
 datatypeName :: Regular d => d a -> String
--- datatypeName  is built in
-
+fconstructorName :: Bifunctor f => f a b -> String
 constructorName :: Regular d => d a -> String
 constructorName = fconstructorName . out
--- fconstructorName :: Bifunctor f => f a b -> String -- is built in
-
 constructorNames :: Regular d => d a -> [String]
 constructorNames = fconstructorNames . out
 
 fconstructorNames :: Bifunctor f => f a b -> [String]
 fconstructorNames x =
   map fconstructorName (fconstructors `asTypeOf` [x])
-
 constructorNamesAndArities :: Regular d => d a -> [(String,Int)]
 constructorNamesAndArities = fconstructorNamesAndArities . out
 
 fconstructorNamesAndArities :: Bifunctor f => f a b -> [(String,Int)]
 fconstructorNamesAndArities x = 
-  map (mapFst fconstructorName) (fconstructorsAndArities `asTypeOf` [(x,undefined)])
-
-mapFst :: (a->b) -> (a,c) -> (b,c)
-mapFst f p = (f (fst p), snd p)
-
+  map (mapFst fconstructorName) 
+      (fconstructorsAndArities `asTypeOf`  [(x,undefined)])
 constructors  :: Regular d => [d a]
 constructors  =  map inn fconstructors
 
 polytypic fconstructors :: [f a b] =
   case f of 
-    g + h -> map Left fconstructors ++ map Right fconstructors
-    g     -> [undefined]
+    g + h  ->  map Left fconstructors ++ map Right fconstructors
+    g      ->  [undefined]
 
 polytypic fconstructorsAndArities :: [(f a b,Int)] =
   case f of 
-    g + h -> map (mapFst Left) fconstructorsAndArities ++ map (mapFst Right) fconstructorsAndArities
-    g     -> (\x -> [(x,fconstructorArity x)]) undefined
+    g + h  ->  map (mapFst Left) fconstructorsAndArities ++ 
+               map (mapFst Right) fconstructorsAndArities
+    g      ->  (\x -> [(x,fconstructorArity x)]) undefined
 
 polytypic fconstructorArity :: f a b -> Int =
   case f of
-    g * h -> \p->fconstructorArity (fst p) + fconstructorArity (snd p)
-    Empty -> const 0
-    f     -> const 1
-
+    g * h  ->  \p-> fconstructorArity (fst p) + 
+                    fconstructorArity (snd p)
+    Empty  ->  const 0
+    f      ->  const 1
 constructor2Int :: Regular d => d a -> Int
 constructor2Int = fconstructor2Int . out
 
 polytypic fconstructor2Int :: f a b -> Int =
   case f of 
-    g + h -> const 0 `either` (plus1 . fconstructor2Int)
-    g     -> const 0
-
-plus1 :: Int -> Int
-plus1 x = 1 + x
-
+    g + h  ->  const 0 `either` (plus1 . fconstructor2Int)
+    g      ->  const 0
 int2constructor :: Regular d => Int -> d a
 int2constructor n = constructors !! n
 
 int2fconstructor :: Bifunctor f => Int -> f a b
 int2fconstructor n = fconstructors !! n
+plus1 :: Int -> Int
+plus1 x = 1 + x
+
+mapFst :: (a->b) -> (a,c) -> (b,c)
+mapFst f p = (f (fst p), snd p)

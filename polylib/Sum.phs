@@ -1,14 +1,8 @@
----------------------------------------------------------------
--- Sum and size
---   980410 Patrik Jansson
----------------------------------------------------------------
 module Sum(psum,fsum,size) where 
 import Base(cata,pmap)
-
 psum :: Regular d => d Int -> Int
 psum = cata fsum
 
--- Bifunctor f => ...
 polytypic fsum :: f Int Int -> Int
   = case f of 
       g + h    ->  fsum `either` fsum
@@ -18,6 +12,5 @@ polytypic fsum :: f Int Int -> Int
       Rec      ->  id
       d @ g    ->  psum . pmap fsum 
       Const t  ->  \x -> 0
-
 size :: Regular d => d a -> Int
 size = psum . pmap (\_->1)

@@ -1,0 +1,107 @@
+% Literate PolyP + LaTeX script for use with lhs2TeX -*- Mode: latex; -*-
+% ------------------------------------------------------------
+% Zip functions
+%   980409 Patrik Jansson
+% ------------------------------------------------------------
+
+> module Zip(pzip,fzip,pzipWith,pzipWith',fzipWith,fzipWith,(@@),resultM) where
+> import Base(pmap,fmap2,(-+-),(-*-))
+> import Propagate(fprop,sumprop,prodprop,propagate,mapMaybe)
+
+In this module |Maybe| could be replaced by any |Monad| using |fail
+"err"| for |zeroM|.
+
+Unzipping is easy:
+
+> punzip :: Regular d => d (a,b) -> (d a,d b)
+> punzip x = (pmap fst x, pmap snd x)
+>
+> funzip :: Bifunctor f => f (a,c) (b,d) -> (f a b,f c d)
+> funzip x = (fmap2 fst fst x, fmap2 snd snd x)
+
+Zipping is a little more complex:
+
+> pzip :: Regular d => (d a,d b) -> Maybe (d (a,b))
+> pzip  = (innM @@ (fprop.fmap2 resultM pzip) @@ fzip ) . (out -*- out)
+> 
+> pzipWith' :: Regular d => (FunctorOf d c e -> e) -> 
+>                           ((d a,d b)->e) -> 
+>                           ((a,b)->c) -> (d a,d b) -> e
+> pzipWith' ins fail op (x,y)  =
+>   maybe (fail (x,y)) (ins . fmap2 op (pzipWith' ins fail op)) 
+>         (fzip (out x, out y))
+
+%if not codeOnly 
+
+A possible variant:
+
+> pzipWith' ins fail op (x,y) =  
+>   maybe (fail (x,y)) ins (fzipWith op (pzipWith' ins fail op) (out x, out y))
+
+%endif not codeOnly
+
+> pzipWith :: Regular d => ((a, b) -> Maybe c) -> (d a, d b) -> Maybe (d c)
+> pzipWith  = pzipWith' (mapMaybe inn.fprop) (const zeroM)
+
+Note: |fzipWith| has a different kind of typing compared to |pzipWith|.
+
+%{
+%align 19
+
+> fzipWith :: ((a,a')->c) -> ((b,b')->d) -> (f a b, f a' b') -> Maybe (f c d)
+> fzipWith f g = mapMaybe (fmap2 f g) . fzip 
+> 
+> polytypic fzip  :: (f a b,f c d) -> Maybe (f (a,c) (b,d))
+>   = case f of   
+>       g + h     ->  (sumprop   . (fzip -+- fzip)) @@ sumzip
+>       g * h     ->  (prodprop  . (fzip -*- fzip)) @@ prodzip
+>       Empty     ->  const (resultM ())
+>       Par       ->  resultM
+>       Rec       ->  resultM
+>       d @ g     ->  (propagate . (pmap fzip)    ) @@ pzip
+>       Const t   ->  constzip
+
+%align
+%}
+%{
+%align 37
+
+> sumzip :: (Either a b,Either c d) -> Maybe (Either (a,c) (b,d))
+> sumzip p = case p of
+>              (Left s ,Left t )    -> resultM (Left (s,t))
+>              (Right s,Right t)    -> resultM (Right (s,t))
+>              _                    -> zeroM
+
+%align
+%}
+
+> prodzip :: ((a,b),(c,d)) -> Maybe ((a,c),(b,d))
+> prodzip ((a,b),(c,d))  =  resultM ((a,c),(b,d))
+
+Using this definition of |constzip| in the |Const t| case above
+formally requires an |Eq t| constraint, which is inexpressible in
+PolyP.  It works due to an undocumented feature (bug?) in PolyP.
+
+> constzip :: Eq t => (t,t) -> Maybe t
+> constzip (x,y) = if x==y then resultM x else zeroM
+
+The intended (and implemented) meaning is fairly clear: one branch
+|Const T -> constzip| in the polytypic case for each type |T| that is
+an instance of |Eq|.
+
+\paragraph{|Maybe|-monad functions}
+
+> zeroM :: Maybe a
+> zeroM = Nothing
+>
+> resultM  :: a -> Maybe a
+> resultM x  =  Just x
+> 
+> innM :: Regular d => FunctorOf d a (d a) -> Maybe (d a)
+> innM  =  resultM . inn
+> 
+> bindM    :: Maybe a -> (a -> Maybe b) -> Maybe b
+> bindM x f  =  maybe Nothing f x
+> 
+> (@@)     :: (a -> Maybe b) -> (c -> Maybe a) -> c -> Maybe b
+> g @@ f = \a-> f a `bindM` g

@@ -1,7 +1,3 @@
----------------------------------------------------------------
--- ThreadFuns
---   990527 Patrik Jansson  
----------------------------------------------------------------
 module ThreadFuns(propagate,cross) where
 import Thread(thread)
 
