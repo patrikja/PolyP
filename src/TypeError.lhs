@@ -56,7 +56,7 @@
 >          st'= show (pretty t') 
 
 
-> data ErrMsg = EUnifyConstApp 
+> data ErrMsg = EUnifyConstApp String 
 >             | EUnifyKind     
 >             | ENoMuApp       
 >             | EMissedCase    
@@ -69,7 +69,8 @@
 
 
 > prError :: ErrMsg -> String
-> prError EUnifyConstApp   = "Unify: constructor match against application"
+> prError (EUnifyConstApp c)  = "Unify: constructor `" ++ c ++
+>                               "' can not be unified with type application"
 > prError EUnifyKind       = "Unify: kind error"
 > prError ENoMuApp         = "Unify: Mu f can't match a typeapplication"
 > prError (ENoFunctorFor d)= "Unify: No functor defined for datatype constructor "++d

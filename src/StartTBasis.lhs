@@ -86,6 +86,7 @@ These should be read from a file.
 >               ("head","[a]->a"),("tail","[a]->[a]"),
 >               ("take","Int->[a]->[a]"),
 >               ("filter","(a->Bool)->[a]->[a]"),
+>               ("asTypeOf","a->a->a"),
 >               ("!!","[a] -> Int -> a"),
 >               ("show","Show a => a -> String"),
 >               ("isSpace","Char->Bool"),

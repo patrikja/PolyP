@@ -275,7 +275,7 @@ the children pairwise.
 Now there is the classical mismatch case, and a new error case due to
 kind mismatch as \texttt{Mu f :: *->*} and \texttt{FOf d :: *->*->*}.
 
-> punify2 (a,C cA)  (b,A _ _) = errorHere EUnifyConstApp
+> punify2 (a,C cA)  (b,A _ _) = errorHere (EUnifyConstApp cA)
 > punify2 (a,Mu f ) (b,FOf e) = errorHere EUnifyKind
 
 Finally we have the four interesting new cases when the functor
