@@ -59,7 +59,7 @@ in inn, out, or forbidden below.
 > convType :: ConID -> Type -> Func
 > convType def (TVar _) = TCon "Par" -- indexed if multiple params
 > convType def t | isConstantType t = TCon "Const" :@@: t
-> convType def (TCon con :@@: TVar _)  -- should compare variable with lhs
+> convType def (TCon con :@@: TVar _)
 >   | con == def = TCon "Rec"
 > convType def t | isTupleCon tup   = convProd def ts
 >      where (TCon tup:ts) = spineWalkType t
