@@ -43,13 +43,14 @@ hugssrc: $(lhs_files:%=../hugssrc/%)
 ../hugssrc/%.lhs:	../src/%.lhs
 	$(CPP) $(CPPFLAGS) -D__HUGS__ '-D__RUNST__=runST' $< -o $@  
 
-ghcsrc: $(lhs_files:%=../ghcsrc/%)
+ghcsrc: $(lhs_files:%.lhs=../ghcsrc/%.hs)
 	cp ghc.mk ../ghcsrc/Makefile
 	cp rules.mk ../ghcsrc/
-	sed -e "s/\.g_o/\.o/g" -e "s/\.g_hi/\.hi/g" <depends.mk >../ghcsrc/depends.mk
+	sed -e "s/\.g_o/\.o/g" -e "s/\.g_hi/\.hi/g" -e "s/\.lhs/\.hs/g" <depends.mk >../ghcsrc/depends.mk
 
-../ghcsrc/%.lhs:	../src/%.lhs
-	$(CPP) $(CPPFLAGS) -D__GLASGOW_HASKELL__ -D__RUNST__=runST $< -o $@  
+../ghcsrc/%.hs:	../src/%.lhs
+#	$(CPP) $(CPPFLAGS) -D__GLASGOW_HASKELL__ -D__RUNST__=runST $< -o $@  
+	$(hc) -cpp -E $(CPPFLAGS) -D__RUNST__=runST $< -o $@  
 
 hbcsrc: $(lhs_files:%=../hbcsrc/%)
 	cp hbc.mk ../hbcsrc/Makefile

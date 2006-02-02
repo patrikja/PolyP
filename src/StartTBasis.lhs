@@ -18,7 +18,11 @@
 > import InferKind(inferDataDefs)
 > import NonStdTrace(unsafePerformIO)
 > import Flags(Flags(..),flags)
+#if __GLASGOW_HASKELL__ > 600
+> import Data.IORef
+#else
 > import IOExts
+#endif
 
 \end{verbatim}
 We could need three versions of the prelude:

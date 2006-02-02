@@ -24,9 +24,16 @@ The differences are of two kinds:
 \begin{verbatim}
 
 #if defined(__HUGS__) || defined(__GLASGOW_HASKELL__)
-> module StateFix(module ST,MutVar,newVar,readVar,writeVar,(===),
+> module StateFix(MutVar,newVar,readVar,writeVar,(===),
+>                 module ST,
 >                 MutArr,newArr,readArr,writeArr) where
+#if __GLASGOW_HASKELL__ > 600
+> import Control.Monad.ST as ST
+> import Data.STRef       as ST
+> import Data.Array.ST
+#else
 > import ST -- (ST,STRef,runST,newSTRef,readSTRef,writeSTRef)
+#endif
 #endif
 #ifdef __HBC__
 > module StateFix(module State,module MutArray,MutVar,(===),
@@ -96,9 +103,15 @@ equality.
 > readArr      :: Ix a => MutArr s a b -> a -> ST s b
 > writeArr     :: Ix a => MutArr s a b -> a -> b -> ST s ()
 # if defined(__HUGS__) || defined(__GLASGOW_HASKELL__)
+#  if __GLASGOW_HASKELL__ > 600 
+> newArr   = newArray
+> readArr  = readArray
+> writeArr = writeArray
+#  else
 > newArr   = newSTArray
 > readArr  = readSTArray
 > writeArr = writeSTArray
+#  endif
 # endif
 # ifdef __HBC__
 > newArr   = newMutArray
