@@ -10,6 +10,9 @@ export ghc  = ghc
 export hbc  = hbc
 export hugs = runhugs
 
+TAR = tar
+# TAR = gtar
+
 POLYPDIR   = ${shell pwd}
 
 INSTALLBINDIR = ${HOME}/bin
@@ -119,7 +122,7 @@ polyp-${polyp_version}:
 
 polyp-${polyp_version}.tar.gz: polyp-${polyp_version}
 	-rm -r $@
-	gtar -zcf $@ $<
+	${TAR} -zcf $@ $<
 
 WWWDIR = ${HOME}/pub/www/poly
 
@@ -132,7 +135,7 @@ www: polyp-${polyp_version}.tar.gz
 #     variables from makefiles. Used here to export ${polyp_version}
 
 packpolylib:
-	gtar -zcf polylib.tar.gz polylib examples 
+	${TAR} -zcf polylib.tar.gz polylib examples 
 
 local:	polyp-${polyp_version}
 	${MAKE} -C polyp-${polyp_version} ghc
