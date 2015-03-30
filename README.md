@@ -5,3 +5,5 @@ probably bit-rotted, but it could still be interesting to what "early
 Haskell" was like.
 
   Patrik
+
+More about the project can be found in the original [README](README).
